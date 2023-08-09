@@ -6,6 +6,7 @@ import LoginFormPage from "./components/LoginFormPage";
 import { authenticate } from "./store/session";
 import Navigation from "./components/Navigation";
 import RestaurantList from "./components/RestaurantList"
+import SingleRestaurant from "./components/SingleRestaurant"
 
 function App() {
   const dispatch = useDispatch();
@@ -27,6 +28,9 @@ function App() {
           </Route>
           <Route exact path="/">
             <RestaurantList />
+          </Route>
+          <Route exact path="/single/:restaurantId">
+            <SingleRestaurant />
           </Route>
         </Switch>
       )}
