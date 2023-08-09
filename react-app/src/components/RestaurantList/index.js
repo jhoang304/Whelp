@@ -5,8 +5,8 @@ import { useState } from "react"
 import "./RestaurantList.css"
 import Restaurant from "../Restaurant"
 import { getAllRestaurants } from "../../store/restaurants";
-// import OpenModalButton from "../OpenModalButton";
-// import AddRestaurantModal from "../AddRestaurantModal";
+import OpenModalButton from "../OpenModalButton";
+import CreateRestaurantModal from "../CreateRestaurantModal";
 
 
 function RestaurantList() {
@@ -28,12 +28,12 @@ function RestaurantList() {
         isLoaded && (
             <>
                 <div className="add-restaurant-button">
-                    {/* {sessionUser && (
+                    {sessionUser && (
                         <OpenModalButton
                             buttonText="Add Restaurant"
-                            modalComponent={<AddRestaurantModal />}
+                            modalComponent={<CreateRestaurantModal />}
                         />
-                    )} */}
+                    )}
                 </div>
                 <div className="restaurant-list">
                     {
