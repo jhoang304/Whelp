@@ -16,6 +16,7 @@ function getMap(str) {
 
 function SingleRestaurant() {
 
+
     const { restaurantId } = useParams()
 
     const singleRestaurant = useSelector((state) => {
