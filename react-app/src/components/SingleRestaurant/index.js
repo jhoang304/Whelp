@@ -2,10 +2,13 @@ import "./SingleRestaurant.css"
 import { useEffect } from "react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useHistory } from "react-router-dom";
 import { useParams } from 'react-router-dom';
 import { getSingleRestaurant } from "../../store/restaurants"
 import AddPhotoModal from "../AddPhotoModal";
 import OpenModalButton from "../OpenModalButton";
+import EditRestaurant from "../EditRestaurantModal";
+import DeleteRestaurant from "../DeleteRestaurant";
 import RatingStar from "../RatingStar";
 import DisplayPhotos from "../DisplayPhotos";
 
@@ -17,6 +20,7 @@ function getMap(str) {
 function SingleRestaurant() {
 
 
+    const history = useHistory();
     const { restaurantId } = useParams()
 
     const singleRestaurant = useSelector((state) => {
@@ -30,6 +34,7 @@ function SingleRestaurant() {
 
 
     const [isLoaded, setIsLoaded] = useState(false);
+    const [showDeleteEdit, setShowDeleteEdit] = useState(false)
 
     const sessionUser = useSelector(state => state.session.user);
 
@@ -79,6 +84,28 @@ function SingleRestaurant() {
                                         buttonText="Add photo"
                                         modalComponent={<AddPhotoModal restaurantId={restaurantId} />}
                                     />
+                                    {sessionUser.id == singleRestaurant.user_id && (
+                                        <>
+                                            <OpenModalButton
+                                                buttonText="Edit Restaurant"
+                                                modalComponent={<EditRestaurant singleRestaurant={singleRestaurant} />}
+                                            />
+                                            <button
+                                                onClick={() => setShowDeleteEdit(!showDeleteEdit)}
+                                            >Delete Restaurant</button>
+                                            {showDeleteEdit && (
+                                                <DeleteRestaurant
+                                                    singleRestaurant={singleRestaurant}
+                                                    sessionUser={sessionUser}
+                                                    dispatch={dispatch}
+                                                    history={history}
+                                                    restaurantId={restaurantId}
+                                                    setShowDeleteEdit={setShowDeleteEdit}
+
+                                                />
+                                            )}
+                                        </>
+                                    )}
                                 </div>
                                 </>
                             )}
@@ -94,7 +121,6 @@ function SingleRestaurant() {
                                 <h2>About the Business</h2>
                                 <div className="restaurant-description">{singleRestaurant.description}</div>
                                 <hr></hr>
-                                {/* < GetAllReviews restaurantId={restaurantId} /> */}
                             </div>
                         </div>
                         <div className="bottom-right-section">
