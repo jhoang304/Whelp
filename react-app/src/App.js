@@ -7,6 +7,8 @@ import { authenticate } from "./store/session";
 import Navigation from "./components/Navigation";
 import RestaurantList from "./components/RestaurantList"
 import SingleRestaurant from "./components/SingleRestaurant"
+import CreateNewReview from "./components/Reviews/CreateNewReview";
+import UpdateReview from "./components/Reviews/UpdateReview";
 
 function App() {
   const dispatch = useDispatch();
@@ -31,6 +33,12 @@ function App() {
           </Route>
           <Route exact path="/single/:restaurantId">
             <SingleRestaurant />
+          </Route>
+          <Route exact path="/:restaurantId/create-review">
+            <CreateNewReview />
+          </Route>
+          <Route exact path="/:restaurantId/reviews/:reviewId/update">
+            <UpdateReview />
           </Route>
         </Switch>
       )}

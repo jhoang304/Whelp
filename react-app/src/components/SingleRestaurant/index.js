@@ -9,6 +9,7 @@ import AddPhotoModal from "../AddPhotoModal";
 import OpenModalButton from "../OpenModalButton";
 import EditRestaurant from "../EditRestaurantModal";
 import DeleteRestaurant from "../DeleteRestaurant";
+import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
 import DisplayPhotos from "../DisplayPhotos";
 
@@ -121,6 +122,7 @@ function SingleRestaurant() {
                                 <h2>About the Business</h2>
                                 <div className="restaurant-description">{singleRestaurant.description}</div>
                                 <hr></hr>
+                                < GetAllReviews restaurantId={restaurantId} />
                             </div>
                         </div>
                         <div className="bottom-right-section">
