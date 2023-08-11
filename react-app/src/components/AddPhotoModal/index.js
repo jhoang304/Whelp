@@ -2,7 +2,7 @@ import "./AddPhoto.css"
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useModal } from "../../context/Modal";
-import { addPhoto } from "../../store/RestaurantPhoto";
+import { addPhoto } from "../../store/restaurantPhoto";
 
 function AddPhotoModal({ restaurantId }) {
     const dispatch = useDispatch();
