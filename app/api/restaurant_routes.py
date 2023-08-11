@@ -217,7 +217,6 @@ def edit_restaurant_by_restaurant_id(restaurantId):
 
 
 # Delete a Restaurant
-#Delete a restaurant
 @restaurant_routes.route('/<int:restaurantId>', methods=["DELETE"])
 @login_required
 def delete_restaurant(restaurantId):
