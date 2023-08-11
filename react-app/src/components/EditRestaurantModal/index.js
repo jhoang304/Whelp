@@ -22,6 +22,30 @@ export default function EditRestaurant({ singleRestaurant }) {
 
     const handleUpdate = (e) => {
         e.preventDefault();
+
+        // Perform client-side validation
+        const validationErrors = [];
+
+        if (!name) validationErrors.push("Name is required.");
+        if (name.length < 1 || name.length > 100) validationErrors.push("Name must be between 1 and 50 characters.");
+        if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 50 characters.");
+        if (city.length < 1 || city.length > 100) validationErrors.push("City must be between 1 and 85 characters.");
+        if (state.length !== 2) validationErrors.push("State must be 2 characters");
+        if (zipcode.length != 5) validationErrors.push("Zipcode must be 5 characters.");
+        if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
+        if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
+        if (website.length < 1 || website.length > 70) validationErrors.push("Phone Number must be between 1 and 70 characters.");
+        if (description.length < 1 || description.length > 500) validationErrors.push("Description must be between 1 and 500 characters.");
+        if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
+        // if (!/^\d{5}$/.test(zipcode)) validationErrors.push("Invalid zip code format.");
+        // if (!/^[\d-+()]+$/.test(phone_number)) validationErrors.push("Invalid phone number format.");
+        if (!/^https?:\/\/.+/.test(website)) validationErrors.push("Invalid website format.");
+
+        if (validationErrors.length > 0) {
+            setErrors(validationErrors);
+            return; // Exit if there are validation errors
+        }
+
         const updatedRestaurant = {
             id: singleRestaurant.id,
             user_id: sessionUser.id,

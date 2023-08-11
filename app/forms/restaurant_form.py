@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import IntegerField, StringField
-from wtforms.validators import DataRequired, ValidationError, Length, URL
+from wtforms.validators import DataRequired, Length, URL
 
 
 class RestaurantForm(FlaskForm):
@@ -14,7 +14,3 @@ class RestaurantForm(FlaskForm):
     phone_number = StringField("phone_number",validators=[DataRequired(), Length(min=1, max=20)])
     website = StringField("website",validators=[DataRequired(), Length(min=1, max=70), URL(require_tld=True)])
     description= StringField("description",validators=[DataRequired(), Length(min=1, max=500)])
-
-    def validate_zipcode(self, field):
-        if len(str(field.data)) != 5:
-            raise ValidationError("Zipcode must be 5 digits long.")
