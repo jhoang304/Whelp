@@ -1,0 +1,71 @@
+.square {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    margin-right: 20px;
+}
+
+.restaurant-card {
+    display: flex;
+    flex-direction: row;
+    color: black;
+    font-weight: 700;
+    letter-spacing: normal;
+    border-bottom: 1px solid rgb(211, 211, 211);
+    padding: 20px;
+    margin:auto;
+    width: 900px;
+}
+
+.restaurant-card:hover {
+    box-shadow: 0 0 10px #0000001a;
+}
+
+.small-words {
+    font-size: 14px;
+    font-weight: 400;
+    color: rgb(110, 112, 114);
+    line-height: 20px;
+}
+
+.green-word {
+    color: rgb(0, 128, 85);
+    font-weight: 700;
+}
+
+.delivery {
+    margin: 5px;
+    color: rgb(45, 46, 47);
+    font-size: 12px;
+    position: relative;
+}
+
+.tick {
+    fill: rgb(2, 161, 109);
+    line-height: 16px;
+    height: 16px;
+    position: relative;
+    bottom: -5px;
+}
+
+.cloud {
+    fill: rgb(45, 46, 47);
+    line-height: 16px;
+    height: 16px;
+    position: relative;
+    bottom: -5px;
+}
+
+
+.bold-name{
+    font-size: 20px;
+}
+
+.stars-home{
+    margin-top: 5px;
+}
+
+a {
+    text-decoration: none;
+}

@@ -1,0 +1,9 @@
+.add-restaurant-button{
+    display: flex;
+    flex-direction: row-reverse;
+}
+
+.restaurant-list a {
+    margin-left: auto;
+    margin-right: auto;
+}
