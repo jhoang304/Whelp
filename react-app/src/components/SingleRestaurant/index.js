@@ -68,7 +68,7 @@ function SingleRestaurant() {
                                 <span><RatingStar size="32" rating={singleRestaurant.avgStarRating} /></span>
                                 <span className="num-reviews">{singleRestaurant.numReviews} reviews</span>
                             </div>
-                            <div className="price">Unclaimed <b>·</b> {singleRestaurant.price}</div>
+                            <div className="price">Claimed <b>·</b> {singleRestaurant.price}</div>
                             <div className="price"><span className="single-green-word">Open</span> until 9:30PM</div>
                         </div>
                         <OpenModalButton
