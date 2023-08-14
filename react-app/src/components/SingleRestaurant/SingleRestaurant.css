@@ -1,0 +1,169 @@
+.singlePhoto {
+    height: 100%;
+    object-fit: cover;
+}
+
+.side-bar {
+    display: flex;
+    flex-direction: column;
+    margin-right: 40px;
+}
+
+.summary-line span {
+    margin: 5px
+}
+
+.only-for-owner button {
+    margin: 5px
+}
+
+.photos {
+    height: 435px;
+    width: 100vw;
+    overflow-y: hidden;
+    overflow-x: scroll;
+    white-space: nowrap;
+}
+
+.top-section {
+    position: relative;
+
+}
+
+.summary-line {
+    position: absolute;
+    font-weight: 700;
+    color: white;
+    top: 150px;
+    margin: 50px;
+}
+
+.see-all-photo {
+    position: absolute;
+    bottom: 50px;
+    right: 50px;
+    font-weight: 900;
+    background-color: transparent;
+    color: white;
+    font-size: 16px;
+    padding: 12px 32px 12px 32px;
+    border: 4px solid white;
+    border-radius: 4px;
+}
+
+h1 {
+    font-size: 48px;
+    margin: 10px;
+    white-space: nowrap;
+}
+
+.one-line-review {
+    display: flex;
+    align-items: center;
+}
+
+.price {
+    margin: 10px;
+}
+
+.single-green-word {
+    color: rgb(4, 197, 133);
+}
+
+.buttons {
+    margin: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid rgb(211, 211, 211);
+}
+
+.bottom-section {
+    display: flex;
+}
+
+.bottom-left-section {
+    margin-right: 20px;
+}
+
+.side-bar {
+    border: 1px solid rgb(211, 211, 211);
+    border-radius: 4px;
+    padding: 10px;
+    margin-top: 20px;
+    font-weight: 600;
+    color: rgb(110, 112, 114);
+    max-width: 365px;
+}
+
+.bottom-border {
+    border-bottom: 1px solid rgb(211, 211, 211);
+    padding: 20px;
+}
+
+a {
+    color: rgb(0, 0, 0);
+    font-weight: 700;
+    font-size: 16px;
+}
+
+.single-page-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 60px;
+}
+
+
+.amenities {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+}
+
+
+.indi-amenity {
+    flex-basis: 40%;
+    margin: 10px;
+    display: flex;
+    font-size: 16px;
+    font-weight: 600;
+    align-items: center;
+}
+
+.indi-amenity .icon_svg {
+    margin: 5px;
+}
+
+.website-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 0;
+}
+
+.restaurant-description {
+    font-size: 16px;
+    font-weight: 400;
+    color: rgb(45, 46, 47);
+    line-height: 1.6;
+    margin-top: 20px;
+}
+
+.phone-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 0;
+    padding-left: 10px;
+}
+
+.address-line {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-right: 0;
+    padding-left: 10px;
+}
+
+.bottom-left-section {
+    margin-left: 40px;
+}
