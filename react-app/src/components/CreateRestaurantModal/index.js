@@ -40,11 +40,9 @@ function CreateRestaurantModal() {
         if (zipcode.length !== 5) validationErrors.push("Zipcode must be 5 characters.");
         if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
         if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
-        if (website.length < 1 || website.length > 70) validationErrors.push("Phone Number must be between 1 and 70 characters.");
+        if (website.length < 1 || website.length > 70) validationErrors.push("Website must be between 1 and 70 characters.");
         if (description.length < 1 || description.length > 500) validationErrors.push("Description must be between 1 and 500 characters.");
         if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
-        // if (!/^\d{5}$/.test(zipcode)) validationErrors.push("Invalid zip code format.");
-        // if (!/^[\d-+()]+$/.test(phone_number)) validationErrors.push("Invalid phone number format.");
         if (!/^https?:\/\/.+/.test(website)) validationErrors.push("Invalid website format.");
         if (url && !/^https?:\/\/.+/.test(url)) validationErrors.push("Invalid preview image URL format.");
 
