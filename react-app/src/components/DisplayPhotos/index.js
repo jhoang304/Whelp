@@ -3,21 +3,21 @@ import { useDispatch, useSelector } from "react-redux";
 import { getRestaurantPhotos, deletePhotoThunk } from "../../store/restaurantPhoto";
 import { useEffect } from "react";
 import { useState } from "react";
-// import { useModal } from "../../context/Modal";
-
 
 
 function DisplayPhotos({ singleRestaurant }) {
 
-    // const { closeModal } = useModal()
     const [isLoaded, setIsLoaded] = useState(false);
     const sessionUser = useSelector(state => state.session.user);
     const dispatch = useDispatch()
 
-    useEffect( () => {
-        dispatch(getRestaurantPhotos(singleRestaurant.id))
-        setIsLoaded(true)
-    }, [dispatch, singleRestaurant.id])
+    useEffect(() => {
+        async function fetchData() {
+            await dispatch(getRestaurantPhotos(singleRestaurant.id));
+            setIsLoaded(true);
+        }
+        fetchData();
+    }, [dispatch, singleRestaurant.id]);
 
 
     const allResPhotoState = useSelector((state) => {
