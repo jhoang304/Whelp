@@ -123,7 +123,7 @@ function SignupFormPage() {
             <button className="sibutton" type="submit">Sign Up</button>
           </div>
           <div className="redcarpetpic">
-            <img src="https://s3-media0.fl.yelpcdn.com/assets/2/www/img/7922e77f338d/signup/signup_illustration.png"></img>
+            <img src="https://s3-media0.fl.yelpcdn.com/assets/2/www/img/7922e77f338d/signup/signup_illustration.png" alt="signup-pic"></img>
           </div>
         </div>
       </form>

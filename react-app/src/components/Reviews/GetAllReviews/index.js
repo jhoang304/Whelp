@@ -26,7 +26,8 @@ function GetAllReviews({ restaurantId }) {
 
   useEffect(() => {
     dispatch(fetchAllReviewsByRestaurantId(restaurantId));
-  }, [dispatch]);
+  }, [dispatch, restaurantId]);
+
   const reviews = Object.values(allReviews);
 
   let userReview = null;

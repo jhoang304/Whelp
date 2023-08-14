@@ -20,7 +20,7 @@ function UpdateReview(){
 
   useEffect( () => {
     dispatch(getSingleRestaurant(restaurantId));
-  }, [dispatch. restaurantId]);
+  }, [dispatch, restaurantId]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,7 +41,8 @@ function UpdateReview(){
       review,
       rating
     };
-    const updatedReview = await dispatch(updateOneReview(newReview,reviewId))
+
+    await dispatch(updateOneReview(newReview,reviewId))
       .then(() => dispatch(fetchAllReviewsByRestaurantId(restaurantId)))
       .then(() => dispatch(getSingleRestaurant(restaurantId)))
       .catch(async (res) => {

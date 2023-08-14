@@ -37,7 +37,7 @@ function CreateRestaurantModal() {
         if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 50 characters.");
         if (city.length < 1 || city.length > 100) validationErrors.push("City must be between 1 and 85 characters.");
         if (state.length !== 2) validationErrors.push("State must be 2 characters");
-        if (zipcode.length != 5) validationErrors.push("Zipcode must be 5 characters.");
+        if (zipcode.length !== 5) validationErrors.push("Zipcode must be 5 characters.");
         if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
         if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
         if (website.length < 1 || website.length > 70) validationErrors.push("Phone Number must be between 1 and 70 characters.");

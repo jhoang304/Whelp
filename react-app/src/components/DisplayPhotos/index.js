@@ -3,20 +3,21 @@ import { useDispatch, useSelector } from "react-redux";
 import { getRestaurantPhotos, deletePhotoThunk } from "../../store/restaurantPhoto";
 import { useEffect } from "react";
 import { useState } from "react";
-import { useModal } from "../../context/Modal";
+// import { useModal } from "../../context/Modal";
 
 
 
 function DisplayPhotos({ singleRestaurant }) {
 
-    const { closeModal } = useModal()
+    // const { closeModal } = useModal()
     const [isLoaded, setIsLoaded] = useState(false);
     const sessionUser = useSelector(state => state.session.user);
     const dispatch = useDispatch()
-    useEffect(async () => {
-        await dispatch(getRestaurantPhotos(singleRestaurant.id))
+
+    useEffect( () => {
+        dispatch(getRestaurantPhotos(singleRestaurant.id))
         setIsLoaded(true)
-    }, [dispatch])
+    }, [dispatch, singleRestaurant.id])
 
 
     const allResPhotoState = useSelector((state) => {
@@ -41,7 +42,7 @@ function DisplayPhotos({ singleRestaurant }) {
                     {allResPhotoArray.map(photo => {
                         return (
                             <li className="photo-li">
-                                <img className="indi-photo" src={photo.url}></img>
+                                <img className="indi-photo" src={photo.url} alt="res-photos"></img>
                                 {sessionUser && photo.createdByUserId === sessionUser.id ? (
                                     <button
                                         className="delete-photo"

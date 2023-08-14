@@ -85,7 +85,7 @@ function SingleRestaurant() {
                                         buttonText="Add photo"
                                         modalComponent={<AddPhotoModal restaurantId={restaurantId} />}
                                     />
-                                    {sessionUser.id == singleRestaurant.user_id && (
+                                    {sessionUser.id === singleRestaurant.user_id && (
                                         <>
                                             <OpenModalButton
                                                 buttonText="Edit Restaurant"
