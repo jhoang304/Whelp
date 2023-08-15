@@ -127,7 +127,13 @@ function SingleRestaurant() {
                         </div>
                         <div className="bottom-right-section">
                             <div className="side-bar">
-                                <div className="website-line"><a className="bottom-border" href={singleRestaurant.website}>{singleRestaurant.website}</a>{websiteIcon}</div>
+                                {/* <div className="website-line"><a className="bottom-border" href={singleRestaurant.website}>{singleRestaurant.website}</a>{websiteIcon}</div> */}
+                                <div className="website-line">
+                                    <a className="bottom-border" href={singleRestaurant.website.startsWith("http") ? singleRestaurant.website : `http://${singleRestaurant.website}`}>
+                                        {singleRestaurant.website}
+                                    </a>
+                                    {websiteIcon}
+                                </div>
                                 <div className="bottom-border phone-line"><span>{singleRestaurant.phone_number}</span>{phoneIcon}</div>
                                 <div className="map-direction">
                                     <a href={getMap("https://www.google.com/maps/place/" + singleRestaurant.address + " " + singleRestaurant.city + " " + singleRestaurant.state + " " + singleRestaurant.zipcode)}>Get Direction</a>

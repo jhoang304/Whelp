@@ -12,5 +12,5 @@ class RestaurantForm(FlaskForm):
     zipcode = IntegerField("zipcode",validators=[DataRequired()])
     country = StringField("country",validators=[DataRequired(), Length(min=1, max=56)])
     phone_number = StringField("phone_number",validators=[DataRequired(), Length(min=1, max=20)])
-    website = StringField("website",validators=[DataRequired(), Length(min=1, max=70), URL(require_tld=True)])
+    website = StringField("website",validators=[DataRequired(), Length(min=1, max=70)])
     description= StringField("description",validators=[DataRequired(), Length(min=1, max=500)])

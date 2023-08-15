@@ -43,7 +43,7 @@ function CreateRestaurantModal() {
         if (website.length < 1 || website.length > 70) validationErrors.push("Website must be between 1 and 70 characters.");
         if (description.length < 1 || description.length > 500) validationErrors.push("Description must be between 1 and 500 characters.");
         if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
-        if (!/^https?:\/\/.+/.test(website)) validationErrors.push("Invalid website format.");
+        if (!/\.com$/.test(website)) validationErrors.push("Invalid website format.");
         if (url && !/^https?:\/\/.+/.test(url)) validationErrors.push("Invalid preview image URL format.");
 
         if (validationErrors.length > 0) {
