@@ -3,3 +3,34 @@ body {
     display: flex;
     justify-content: center;
 }
+
+button {
+    margin: 5px;
+    border-color: rgb(200, 201, 202);
+    border-width: 1px;
+    border-radius: 4px;
+    padding: 10px 20px;
+    background-color: rgb(217, 217, 217);
+    font-size: 16px;
+    font-weight: 400;
+    box-shadow: none;
+    outline: none;
+}
+
+.red-button {
+    border-color: white;
+    border-width: 1px;
+    border-radius: 4px;
+    background-color: rgb(240, 12, 19);
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    font-weight: 400;
+    display: flex;
+    align-items: center;
+}
+
+.white-star {
+    fill: white;
+    padding-right: 8px;
+}
