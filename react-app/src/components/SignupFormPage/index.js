@@ -7,7 +7,7 @@ import './SignupForm.css';
 function SignupFormPage() {
   const dispatch = useDispatch();
   const sessionUser = useSelector((state) => state.session.user);
-  const [email_address, setEmail] = useState("");
+  const [email, setEmail] = useState("");
   const [username, setUsername] = useState("");
   const [first_name, setFirst_Name] = useState("");
   const [last_name, setLast_Name] = useState("");
@@ -15,29 +15,45 @@ function SignupFormPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState([]);
 
-  const uponSignUp = async (e) => {
-    const regex = new RegExp('.+@.+\\..+')
-		const isvalidEmail = regex.test(email_address)
-    e.preventDefault();
-    if (password === confirmPassword){
-      if(!isvalidEmail){
-        setErrors(["Please enter a valid email address"])
-      }else if (username.length < 4 || username.length > 60){
-				setErrors(["Username must be between 4 and 60 characters"])
-      }else if(first_name.length < 1 || first_name.length > 50){
-        setErrors(["First name must be between 1 and 50 characters long"])
-      }else if(last_name.length < 1 || last_name.length > 50){
-        setErrors(["Last name must be between 1 and 50 characters long"])
-      }else {
-        const data = await dispatch(signUp(email_address, username, first_name, last_name, password));
-        if(data){
-          setErrors(data)
-        }
-      }
-    }else{
-      setErrors(["Confirm Password field must be the same as the Password field"])
-    }
-  }
+  // const uponSignUp = async (e) => {
+  //   const regex = new RegExp('.+@.+\\..+');
+	// 	const isvalidEmail = regex.test(email)
+  //   e.preventDefault();
+  //   if (password === confirmPassword){
+  //     if(!isvalidEmail){
+  //       setErrors(["Please enter a valid email address"])
+  //     }else if (username.length < 4 || username.length > 60){
+	// 			setErrors(["Username must be between 4 and 60 characters"])
+  //     }else if(first_name.length < 1 || first_name.length > 50){
+  //       setErrors(["First name must be between 1 and 50 characters long"])
+  //     }else if(last_name.length < 1 || last_name.length > 50){
+  //       setErrors(["Last name must be between 1 and 50 characters long"])
+  //     }else {
+  //       const data = await dispatch(signUp(email, username, first_name, last_name, password));
+  //       if(data){
+  //         setErrors(data)
+  //       }
+  //     }
+  //   }else{
+  //     setErrors(["Confirm Password field must be the same as the Password field"])
+  //   }
+  // }
+
+  const handleSubmit = async (e) => {
+		e.preventDefault();
+		if (password === confirmPassword) {
+			const data = await dispatch(signUp(username, email, first_name, last_name, password));
+			if (data) {
+				setErrors(data);
+			// } else {
+			// 	closeModal();
+			}
+		} else {
+			setErrors([
+				"Confirm Password field must be the same as the Password field",
+			]);
+		}
+	};
 
   if (sessionUser) return <Redirect to="/" />;
 
@@ -45,7 +61,7 @@ function SignupFormPage() {
   return (
     <>
       <h1 className="signuptext">Sign Up</h1>
-      <form onSubmit={uponSignUp}>
+      <form onSubmit={handleSubmit}>
         <div className="errors">
           {errors.map((error, idx) => (
             <div className="error" key={idx}>{error}</div>))}
@@ -81,7 +97,7 @@ function SignupFormPage() {
                 className="inputdeet"
                 type="text"
                 name="email_address"
-                value={email_address}
+                value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
