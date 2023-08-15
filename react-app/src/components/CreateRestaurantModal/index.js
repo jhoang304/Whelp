@@ -176,7 +176,7 @@ function CreateRestaurantModal() {
                         required
 
                     />
-                <button className="add-business-button" type="submit">Add Business</button>
+                <button className="add-business-button" type="submit">Create Restaurant</button>
             </form>
         </>
     )
