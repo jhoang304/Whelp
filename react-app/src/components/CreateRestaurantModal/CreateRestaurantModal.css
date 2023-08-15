@@ -3,3 +3,52 @@
     flex-direction: column;
     gap: 20px;
 }
+
+.add-restaurant-form input {
+    width: 500px;
+    height: 40px;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    margin: 0px 80px;
+    border: rgb(200, 200, 200) 1px solid;
+    text-overflow: ellipsis;
+}
+
+.add-restaurant-form select {
+    width: 500px;
+    height: 40px;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    margin: 0px 80px;
+    border: rgb(200, 200, 200) 1px solid;
+    color: rgb(45, 46, 47);
+
+}
+
+.add-restaurant-form span {
+    display: inline-block;
+    width: 125px;
+    font-size: 14px;
+}
+
+.add-restaurant-text {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+}
+
+button.add-business-button {
+    margin-top: 20px;
+    background-color: rgb(244, 13, 21);
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    width: 150px;
+    height: 56px;
+    padding: 10px 16px;
+    border-radius: 4px;
+   display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 45px;
+}
