@@ -70,8 +70,7 @@ function UpdateReview(){
           </label>
           <label>
           <span>rating:</span>
-            <select onChange={e => setRating(e.target.value)}>
-            <option>{rating}</option>
+            <select onChange={e => setRating(e.target.value)} value={rating}>
             <option>1</option>
             <option>2</option>
             <option>3</option>

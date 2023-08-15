@@ -61,7 +61,6 @@ function CreateNewReview(){
           </label>
           <label>
           <span>rating:</span>
-
             <select onChange={e => setRating(e.target.value)} value={rating}>
               <option value="1">1</option>
               <option value="2">2</option>
@@ -69,9 +68,7 @@ function CreateNewReview(){
               <option value="4">4</option>
               <option value="5">5</option>
             </select>
-
           </label>
-
           <button type="submit">Submit</button>
         </form>
       </div>
