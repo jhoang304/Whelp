@@ -1,0 +1,44 @@
+.add-photo-form label {
+    display: block;
+    margin: 20px;
+}
+
+.add-photo-form input {
+    text-overflow: ellipsis;
+    width: 500px;
+    height: 40px;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    margin: 0px 80px;
+    border: rgb(200, 200, 200) 1px solid;
+    text-overflow: ellipsis;
+}
+
+.add-photo-form button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 20px;
+    background-color: rgb(255, 25, 33);
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    width: 150px;
+    height: 48px;
+    padding: 10px 16px;
+    border-radius: 26px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 45px;
+}
+
+.add-photo-form button:hover {
+    cursor: pointer;
+}
+
+.add-photo-text {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+}
