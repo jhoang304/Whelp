@@ -15,38 +15,12 @@ function SignupFormPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState([]);
 
-  // const uponSignUp = async (e) => {
-  //   const regex = new RegExp('.+@.+\\..+');
-	// 	const isvalidEmail = regex.test(email)
-  //   e.preventDefault();
-  //   if (password === confirmPassword){
-  //     if(!isvalidEmail){
-  //       setErrors(["Please enter a valid email address"])
-  //     }else if (username.length < 4 || username.length > 60){
-	// 			setErrors(["Username must be between 4 and 60 characters"])
-  //     }else if(first_name.length < 1 || first_name.length > 50){
-  //       setErrors(["First name must be between 1 and 50 characters long"])
-  //     }else if(last_name.length < 1 || last_name.length > 50){
-  //       setErrors(["Last name must be between 1 and 50 characters long"])
-  //     }else {
-  //       const data = await dispatch(signUp(email, username, first_name, last_name, password));
-  //       if(data){
-  //         setErrors(data)
-  //       }
-  //     }
-  //   }else{
-  //     setErrors(["Confirm Password field must be the same as the Password field"])
-  //   }
-  // }
-
   const handleSubmit = async (e) => {
 		e.preventDefault();
 		if (password === confirmPassword) {
 			const data = await dispatch(signUp(username, email, first_name, last_name, password));
 			if (data) {
 				setErrors(data);
-			// } else {
-			// 	closeModal();
 			}
 		} else {
 			setErrors([
