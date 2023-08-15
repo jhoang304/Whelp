@@ -13,8 +13,8 @@ function Navigation() {
 		<nav className='navBar-container'>
 			<div className='navigationBar'>
 				<div className='nav-logo'>
-					{/* <div><NavLink to="/"><img className="logo-img" src={logo}></img></NavLink></div> */}
-					<div><NavLink to="/">Logo</NavLink></div>
+					<div><NavLink to="/"><img className="logo-img" src="https://cdn.discordapp.com/attachments/320286625521336341/1141155662915698808/Whelp_logo.png" alt="logo"></img></NavLink></div>
+					{/* <div><NavLink to="/">Logo</NavLink></div> */}
 				</div>
 				{/* <SearchBar /> */}
 				{(sessionUser === null) ?

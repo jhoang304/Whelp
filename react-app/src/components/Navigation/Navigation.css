@@ -5,3 +5,30 @@
 .hidden {
   display: none;
 }
+
+.logo-img {
+  width: 120px;
+  height: 20%;
+  top: 30px;
+}
+
+.navBar-container {
+  padding-left: 20px;
+  padding-right: 20px;
+  border-bottom: 1px solid rgb(211, 211, 211);
+}
+
+.navigationBar {
+  font-family: Helvetica;
+  width: 720px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+
+  align-items: center;
+  margin-top: 25px;
+  margin-bottom: 20px;
+  margin-left: auto;
+  margin-right: auto;
+  position: relative;
+}
