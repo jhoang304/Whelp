@@ -167,7 +167,6 @@ function CreateRestaurantModal() {
                         value={url}
                         onChange={(e) => setUrl(e.target.value)}
                         required
-
                     />
                     <input
                         type="textarea"

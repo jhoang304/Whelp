@@ -57,7 +57,7 @@ function SingleRestaurant() {
                             {
                                 singleRestaurant.restaurantImages.map(image => {
                                     return (
-                                        <img className="singlePhoto" alt="" key={image.id} src={image.url} />
+                                        <img className="singlePhoto" alt="images" key={image.id} src={image.url} onError={e => {e.currentTarget.src = "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png"}}/>
                                     )
                                 })
                             }

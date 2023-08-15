@@ -40,15 +40,18 @@ function DisplayPhotos({ singleRestaurant }) {
                 <h2 className="display-h2">Photos for {singleRestaurant.name}</h2>
                 <ul className="photo-container">
                     {allResPhotoArray.map(photo => {
+                        const isDefaultPhoto = photo.url === "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png";
                         return (
                             <li className="photo-li">
-                                <img className="indi-photo" src={photo.url} alt="res-photos"></img>
+                                <img className="indi-photo" src={photo.url} alt="res-photos" onError={e => {e.currentTarget.src = "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png"}}></img>
                                 {sessionUser && photo.createdByUserId === sessionUser.id ? (
                                     <button
                                         className="delete-photo"
                                         onClick={async () => {
-                                            await dispatch(deletePhotoThunk(photo.id, photo.restaurant_id));
-                                            getRestaurantPhotos()
+                                            if (!isDefaultPhoto) {
+                                                await dispatch(deletePhotoThunk(photo.id, photo.restaurant_id));
+                                                getRestaurantPhotos()
+                                            }
                                         }}
                                     >
                                         <i class="fa-regular fa-trash-can"></i>

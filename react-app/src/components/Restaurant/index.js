@@ -16,7 +16,7 @@ function Restaurant({ restaurant }) {
 
     return (
         <div className="restaurant-card">
-            <img className="square" src={restaurant.previewImage} alt="" />
+            <img className="square" src={restaurant.previewImage} alt="preview-image" onError={e => {e.currentTarget.src = "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png"}}/>
             <div className="summary">
                 <span className="bold-name">
                     {restaurant.id}. {restaurant.name}
