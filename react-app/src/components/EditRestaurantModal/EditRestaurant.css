@@ -1,0 +1,55 @@
+.update-restaurant-form label {
+    display: block;
+    margin: 20px 50px;
+}
+
+
+.update-restaurant-form input {
+    text-overflow: ellipsis;
+    width: 500px;
+    height: 40px;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    margin: 0px 0px 0px 40px;
+    border: rgb(200, 200, 200) 1px solid;
+    font-size: 16px;
+}
+
+.update-restaurant-form button {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 30px;
+    background-color: rgb(244, 13, 21);
+    color: white;
+    font-weight: 600;
+    font-size: 16px;
+    width: 150px;
+    height: 56px;
+    padding: 10px 16px;
+    border-radius: 4px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 45px;
+}
+
+.update-restaurant-form span {
+    display: inline-block;
+    width: 100px;
+    font-size: 16px;
+}
+
+.edit-restaurant-text {
+    display: flex;
+    justify-content: center;
+    margin-top: 50px;
+}
+
+.add-restaurant-form{
+    color:rgb(45,46,47)
+}
+
+.price {
+    margin-left: 40px;
+}

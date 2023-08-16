@@ -149,6 +149,7 @@ export default function EditRestaurant({ singleRestaurant }) {
                         <label>
                             <span>Price Range</span>
                             <select
+                            class="price"
                             onChange={(e) => setPrice(e.target.value)}
                             value={price}
                             >
@@ -157,7 +158,7 @@ export default function EditRestaurant({ singleRestaurant }) {
                             <option value="$$$">$$$</option>
                             <option value="$$$$">$$$$</option>
                             <option value="$$$$$">$$$$$</option>
-                    </select>
+                            </select>
                         </label>
                         <label>
                             <span>Phone Number</span>
