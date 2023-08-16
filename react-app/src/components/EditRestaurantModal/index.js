@@ -149,7 +149,7 @@ export default function EditRestaurant({ singleRestaurant }) {
                         <label>
                             <span>Price Range</span>
                             <select
-                            class="price"
+                            class="price-selector"
                             onChange={(e) => setPrice(e.target.value)}
                             value={price}
                             >

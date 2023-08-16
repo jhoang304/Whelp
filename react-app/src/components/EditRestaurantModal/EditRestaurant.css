@@ -50,6 +50,12 @@
     color:rgb(45,46,47)
 }
 
-.price {
-    margin-left: 40px;
+.price-selector {
+    width: 500px;
+    height: 40px;
+    border-radius: 5px;
+    text-overflow: ellipsis;
+    margin: 0px 41px;
+    border: rgb(200, 200, 200) 1px solid;
+    color: rgb(45, 46, 47);
 }
