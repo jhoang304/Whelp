@@ -1,0 +1,38 @@
+.create-review-container{
+    width:550px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: auto;
+
+  }
+  .create-review-container label{
+    display: flex;
+    padding: 0.2em 0
+  }
+
+  .create-review-container span{
+    width: 80px;
+    margin-left: 10px;
+  }
+
+  .create-review-container input{
+    width: 167px;
+  }
+
+  .create-review-container select{
+    width: 175px;
+  }
+
+  .create-new-review-form{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    border: 1px solid grey;
+    border-radius: 10px;
+    width:280px;
+  }
+
+  .create-review-container button:hover {
+    background-color: lightgray;
+  }

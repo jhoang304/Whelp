@@ -45,7 +45,7 @@ function CreateNewReview(){
 
     return (
       <div  className="create-review-container">
-        <h2>Create new Review</h2>
+        <h2>Write a Review</h2>
         <form onSubmit={handleSubmit} className="create-new-review-form">
           <ul>
             {errors.map((error, idx) => <li key={idx}>{error}</li>)}
