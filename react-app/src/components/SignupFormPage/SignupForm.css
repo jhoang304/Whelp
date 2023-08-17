@@ -1,0 +1,62 @@
+.signuptext{
+    color:rgb(226, 13, 13);
+    font-size:25px;
+    font-weight:bold;
+    position: relative;
+    display: flex;
+    margin-left: 282px;
+}
+
+.signup-error {
+    margin-left: 25px;
+    display: flex;
+    justify-content: flex-start;
+    font-weight: bolder;
+    font-size: large;
+}
+
+.autharea{
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+
+.authdeets-signup{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width:40%
+}
+
+.autharea-items{
+    display: flex;
+    flex-direction: column;
+}
+
+.autharea-items input {
+    width:110%
+}
+
+.sibutton{
+    padding: .55em;
+    border: .35px solid grey;
+    width: 65%;
+    border-radius: 4px;
+    margin-left:15%;
+    background-color:rgb(226, 13, 13);
+    font-size: medium;
+    font-weight: bolder;
+    color: white;
+}
+
+.sibutton:hover{
+    background-color: rgba(205, 10, 10, 1);
+}
+
+.redcarpetpic{
+    display: flex;
+    align-items: flex-start;
+    margin-right: 1%;
+}

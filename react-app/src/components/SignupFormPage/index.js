@@ -36,9 +36,9 @@ function SignupFormPage() {
     <>
       <h1 className="signuptext">Sign Up</h1>
       <form onSubmit={handleSubmit}>
-        <div className="errors">
+        <div className="signup-errors">
           {errors.map((error, idx) => (
-            <div className="error" key={idx}>{error}</div>))}
+            <div className="signup-error" key={idx}>{error}</div>))}
         </div>
         <div className="autharea">
           <div className="authdeets-signup">
