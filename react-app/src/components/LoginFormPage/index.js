@@ -27,7 +27,7 @@ function LoginFormPage() {
       <form onSubmit={handleSubmit}>
         <div className="errors">
           {errors.map((error, idx) => (
-            <div className="error" key={idx}>{error}</div>
+            <div className="login-error" key={idx}>{error}</div>
           ))}
         </div>
         <div className="autharea">

@@ -12,13 +12,15 @@
     height: 70px;
 }
 
-.error {
+.login-error {
     position: relative;
-    top: 80px;
+    top: 100px;
     display: flex;
     justify-content: flex-start;
     font-weight: bolder;
     font-size: large;
+    left: 27px;
+    color: red;
 }
 
 .autharea {
