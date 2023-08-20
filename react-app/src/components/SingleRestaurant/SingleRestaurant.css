@@ -78,6 +78,7 @@ h1 {
 
 .bottom-section {
     display: flex;
+    gap: 50px;
 }
 
 .bottom-left-section {
@@ -95,8 +96,11 @@ h1 {
 }
 
 .bottom-border {
-    border-bottom: 1px solid rgb(211, 211, 211);
     padding: 20px;
+}
+
+.website-link {
+    padding-left: 10px;
 }
 
 a {
@@ -137,7 +141,7 @@ a {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-right: 0;
+    border-bottom: 1px solid rgb(211, 211, 211);
 }
 
 .restaurant-description {
@@ -156,6 +160,7 @@ a {
     justify-content: space-between;
     padding-right: 0;
     padding-left: 10px;
+    border-bottom: 1px solid rgb(211, 211, 211);
 }
 
 .address-line {
@@ -164,8 +169,22 @@ a {
     justify-content: space-between;
     padding-right: 0;
     padding-left: 10px;
+    margin-top: 10px;
 }
 
 .bottom-left-section {
     margin-left: 40px;
+}
+
+.map-direction {
+    margin-top: 20px;
+}
+
+.map-link {
+    margin-left: 10px;
+}
+
+.address-icon_svg {
+    position: relative;
+    bottom: 10px;
 }
