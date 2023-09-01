@@ -77,7 +77,9 @@ h1 {
 }
 
 .bottom-section {
+    width: 70%;
     display: flex;
+    justify-content: center;
     gap: 50px;
 }
 

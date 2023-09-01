@@ -55,7 +55,9 @@
     font-size: 14px;
     font-weight: 400;
     margin: 15px 0px;
-    color: rgb(45, 46, 47)
+    color: rgb(45, 46, 47);
+    word-wrap: break-word;
+    width: 90%;
   }
 
 

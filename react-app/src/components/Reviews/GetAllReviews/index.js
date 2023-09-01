@@ -82,7 +82,7 @@ function GetAllReviews({ restaurantId }) {
                 </div>
               </div>
             </div>
-            <div className="review-body">Review: {review.review}</div>
+            <div className="review-body">{review.review}</div>
           </div>
           <div className="delete-update">
             {sessionUser && review.user.id === sessionUser.id ? (
@@ -90,7 +90,7 @@ function GetAllReviews({ restaurantId }) {
                 className="delete-review red-button"
                 onClick={handleDelete(review.id, restaurantId)}
               >
-                {whiteStar}
+                {/* {whiteStar} */}
                 <span className="delete-review-text">Delete Review</span>
               </button>
             ) : (
@@ -101,7 +101,7 @@ function GetAllReviews({ restaurantId }) {
                 className="update-review red-button"
                 onClick={handleUpdate(review, review.id)}
               >
-                {whiteStar}
+                {/* {whiteStar} */}
                 <span className="update-review-text">Update Review</span>
               </button>
             ) : (
