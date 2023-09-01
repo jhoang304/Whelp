@@ -18,7 +18,7 @@ def seed_reviews():
     )
     review4 = Review(
         user_id=3, restaurant_id=2,
-        review="I'm normally not big on fusion, not because of the concept, but because so many places fail at getting it right. Decidedly NOT the case for Uchi. Every dish I've had there was successful in honoring the nature of the ingredient and how it is traditionally enjoyed with pairing of new flavors which enhance that tradition.",
+        review="I'm normally not big on fusion, not because of the concept, but because so many places fail at getting it right. Decidedly NOT the case for Uchi. Every dish I've had there was successful in honoring the nature of the ingredient.",
         rating=4
     )
     review5 = Review(
@@ -48,12 +48,12 @@ def seed_reviews():
     )
     review10 = Review(
         user_id=3, restaurant_id=5,
-        review="Green salad was not fresh with stale corn chips and very spicy dressing. When ask to replace it they brought green leaves with drops of olive oil - called it salad. Wine by glass choice is very poor -one bottle of sauvignon blanc and that's it",
+        review="Green salad was not fresh with stale corn chips and very spicy dressing. When ask to replace it they brought green leaves with drops of olive oil - called it salad.",
         rating=2
     )
     review11 = Review(
         user_id=1, restaurant_id=6,
-        review="I've been wanting to try Girl & the Goat for the longest time (like 5 or 6 years) and finally tried it when one of my friends was in town. We had such a wonderful dinner and our server Lucy was amazing. The ambiance is very nice, the lights dim down for dinner and it's a perfect spot for a date night or somewhere to take out of town guests.",
+        review="I've been wanting to try Girl & the Goat for the longest time (like 5 or 6 years) and finally tried it when one of my friends was in town. We had such a wonderful dinner and our server Lucy was amazing.",
         rating=4
     )
     review12 = Review(
