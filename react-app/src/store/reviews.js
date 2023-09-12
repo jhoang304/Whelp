@@ -16,6 +16,24 @@ export const fetchAllReviewsByRestaurantId = (restaurantId) => async(dispatch) =
     }
 }
 
+
+const LoadUserReviews = 'reviews/LoadUserReviews'
+
+const loadUserIdRev = (reviews) => ({
+  type: LoadUserReviews,
+  reviews
+})
+
+export const getAllReviewsByUserId = (user_id) => async(dispatch) => {
+  const response = await fetch(`/api/reviews/${user_id}`)
+  if(response.ok){
+    const data = await response.json()
+    await dispatch(loadUserIdRev(data))
+    return data
+  }
+  return
+}
+
 // Delete a review
 const DELETE_REVIEW = 'reviews/DELETE_REVIEW'
 const deleteReview = (reviewId) => {
@@ -88,23 +106,30 @@ const reviewReducer = (state = initialState, action) => {
             })
             return newState
 
-    case DELETE_REVIEW:
-        newState = {...state}
-        delete newState[action.reviewId]
-        return newState
+        case LoadUserReviews:
+            newState = {};
+            action.reviews.forEach(review => {
+                newState[review.id] = review
+                })
+            return newState
 
-    case CREATE_REVIEW:
-        newState = {...state}
-        newState[action.review.id] = action.review;
-        return newState;
+        case DELETE_REVIEW:
+            newState = {...state}
+            delete newState[action.reviewId]
+            return newState
 
-    case UPDATE_REVIEW:
-        newState = {...state}
-        newState[action.review.id] = action.review;
-        return newState;
+        case CREATE_REVIEW:
+            newState = {...state}
+            newState[action.review.id] = action.review;
+            return newState;
 
-    default:
-        return state;
+        case UPDATE_REVIEW:
+            newState = {...state}
+            newState[action.review.id] = action.review;
+            return newState;
+
+        default:
+            return state;
     }
 }
 export default reviewReducer;

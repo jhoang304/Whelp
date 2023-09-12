@@ -40,6 +40,12 @@ function ProfileButton({ user }) {
     closeMenu()
   };
 
+  const loadProfile = (e) => {
+    e.preventDefault();
+    history.push(`/users/get/${user.id}`);
+    closeMenu()
+  };
+
 
   const ulClassName = "profile-dropdown" + (showMenu ? "" : " hidden");
   const closeMenu = () => setShowMenu(false);
@@ -54,6 +60,10 @@ function ProfileButton({ user }) {
           <>
             <p className='user-dropdown-username'>{user.username}</p>
             <p className= 'user-dropdown-email'>{user.email}</p>
+            <li>
+              <button className="profdropdownbutt" onClick={loadProfile}>
+                My Profile</button>
+            </li>
             <div className="log-out-div-button">
               <button className='user-logout-button' onClick={handleLogout}><i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out</button>
             </div>

@@ -7,6 +7,18 @@ from sqlalchemy.sql import func
 
 review_routes = Blueprint('reviews', __name__)
 
+# get all reviews by user id
+@review_routes.route('/<int:id>')
+def get_reviews_by_userId(id):
+  reviews = Review.query.filter(Review.user_id == id).all()
+  data =[]
+  for review in reviews:
+    restaurants = Restaurant.query.filter(Restaurant.id == review.restaurant_id)
+    oneReviewInfor = {}
+    oneReviewInfor["restaurant"] = restaurants[0].to_dict()
+    oneReviewInfor.update(review.to_dict())
+    data.append(oneReviewInfor)
+  return data
 
 # Get reviews by restaurant's id
 @restaurant_routes.route('/<int:id>/reviews', methods=['GET'])

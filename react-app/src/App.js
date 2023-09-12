@@ -9,6 +9,8 @@ import RestaurantList from "./components/RestaurantList"
 import SingleRestaurant from "./components/SingleRestaurant"
 import CreateNewReview from "./components/Reviews/CreateNewReview";
 import UpdateReview from "./components/Reviews/UpdateReview";
+import UserProfilePage from "./components/UserPage";
+
 
 function App() {
   const dispatch = useDispatch();
@@ -22,6 +24,9 @@ function App() {
       <Navigation isLoaded={isLoaded} />
       {isLoaded && (
         <Switch>
+          <Route exact path='/users/get/:userId'>
+            <UserProfilePage />
+          </Route>
           <Route exact path="/login">
             <LoginFormPage />
           </Route>

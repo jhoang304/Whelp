@@ -1,0 +1,42 @@
+.update-profile-container{
+    width: 390px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .update-profile-form {
+    width: 370px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+
+  .update-profile-item{
+    display: flex;
+    padding: 0.2em 0
+  }
+
+  .update-profile-item span{
+    width: 90px;
+    margin-top: 5px;
+  }
+
+  .update-profile-form input{
+    width: 290px;
+    height: 25px
+  }
+
+  .update-profile-button {
+    width: 370px;
+    height: 25px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    background-color:antiquewhite;
+    cursor: pointer;
+    padding-bottom: 20px;
+  }
+  .update-profile-errors-item{
+    color: red;
+  }

@@ -1,0 +1,182 @@
+.mainlayer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.deetscontainer {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+
+}
+
+.yelpstar {
+    width: 4%;
+    margin-top: 4px;
+}
+
+.user-portrait {
+    width: 125px;
+    height: 125px;
+    object-fit: cover;
+}
+
+.topmost {
+    margin-top: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: rgba(0, 0, 0, .05);
+    height: 150px;
+}
+
+.portrait-and-info {
+    display: flex;
+    flex-direction: row;
+    justify-content: flex-start;
+}
+
+.userinfo {
+    position: relative;
+    display: flex;
+    flex-direction: row;
+    width: 60%;
+    align-items: center;
+    justify-content: space-around;
+}
+
+.update-userprofile {
+    margin-right: 30px;
+    display: flex;
+    align-items: center;
+    color: rgb(0, 115, 187);
+}
+
+.update-userprofile button {
+    width: 140px;
+}
+
+.profpic {
+    position: relative;
+    top: 50px;
+    width: 150px;
+    height: 150px;
+    border: solid 1px black;
+    border-radius: 15px;
+}
+
+.stats {
+    margin: 50px 0px 10px 70px;
+    display: flex;
+    flex-direction: column;
+}
+
+#name {
+    font-size: 30px;
+    font-weight: 700;
+    font-weight: bold;
+    color: black;
+    font-family: Helvetica
+}
+
+#reviews {
+    font-size: 14px;
+    font-weight: bold;
+    color: black;
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    column-gap: 5px;
+}
+
+.belowprofpic {
+    position: relative;
+    top: 75px;
+    left: 400px;
+    font-size: 18px;
+    font-weight: bold;
+    color: black;
+    width: 300px;
+    justify-content: left;
+    margin-right: 2.5%;
+    margin-top: 10px;
+}
+
+.deletingarea {
+    position: relative;
+    top: 15px;
+}
+
+
+.midpart {
+    color: rgb(226, 13, 13);
+    font-weight: bold;
+    font-size: 25px;
+    margin-top: 30px;
+    margin-right: 20px;
+    margin: 0px;
+    margin-top: 15px;
+}
+
+.width {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.reviewscontainer {
+    width: 40%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.restaurantname {
+    color: blue;
+    font-size: 17px;
+    font-weight: bold;
+}
+
+.amountstars {
+    display: flex;
+    flex-direction: row;
+    font-weight: bold;
+    align-items: center;
+    gap: 5px;
+}
+
+.showit {
+    font-weight: bold;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+.horizontal {
+    width: 100%
+}
+
+.inbetween {
+    margin-top: 60px;
+    background-color: rgb(186, 181, 181);
+}
+
+.horizontalline {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+button.update-profile-button {
+    border: none;
+    background-color: transparent;
+    color: rgb(187, 0, 0);
+    font-weight: 900;
+    font-size: 14px;
+    padding: 0px;
+}

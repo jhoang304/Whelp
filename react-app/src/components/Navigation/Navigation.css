@@ -14,6 +14,16 @@
   box-shadow: 4px 2px 10px rgb(166, 162, 162);
 }
 
+.user-dropdown-username {
+  display:flex;
+  justify-content: center;
+}
+
+.user-dropdown-email {
+  display:flex;
+  justify-content: center;
+}
+
 .hidden {
   display: none;
 }
@@ -57,6 +67,7 @@ a.visited {
 .log-out-div-button {
   padding-top: 8px;
   border-top: 1px solid rgb(211, 211, 211);
+  margin-left: 7px;
 }
 
 .fa-solid {
@@ -146,6 +157,10 @@ a.visited {
   border: none;
   background-color: white;
   font-size: 16px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
 }
 
 .fa-solid.fa-arrow-right-from-bracket {
@@ -166,7 +181,7 @@ a.visited {
   display: flex;
   padding: 8px;
   margin: 20px;
-  margin-left: .5px;
+  margin-left: 30px;
   margin-right: 20px;
 }
 
