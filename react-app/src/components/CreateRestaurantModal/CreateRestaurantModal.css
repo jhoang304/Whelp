@@ -52,3 +52,7 @@ button.add-business-button {
     margin-right: auto;
     margin-bottom: 45px;
 }
+
+li {
+    color: red;
+}

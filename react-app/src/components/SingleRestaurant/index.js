@@ -71,11 +71,13 @@ function SingleRestaurant() {
                             <div className="price">Claimed <b>·</b> {singleRestaurant.price}</div>
                             <div className="price"><span className="single-green-word">Open</span> until 9:30PM</div>
                         </div>
+                        <div className="see-all-photos">
                         <OpenModalButton
-                            className="see-all-photo"
+                            className="see-all-photos"
                             buttonText="See all photos"
                             modalComponent={<DisplayPhotos singleRestaurant={singleRestaurant} />}
                         />
+                        </div>
                     </div>
                     <div className="bottom-section">
                         <div className="bottom-left-section">

@@ -48,7 +48,7 @@ function LoginFormPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-            <button type="submit" className="sibutton2" onClick={() => {dispatch(login('demo@aa.io', 'password'))}}>Log in as a Demo User</button>
+            <button type="button" className="sibutton2" onClick={() => {dispatch(login('demo@aa.io', 'password'))}}>Log in as a Demo User</button>
             <button className="sibutton2" type="submit">Log In</button>
           </div>
           <div className="redcarpetpic">

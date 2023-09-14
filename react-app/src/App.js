@@ -10,7 +10,7 @@ import SingleRestaurant from "./components/SingleRestaurant"
 import CreateNewReview from "./components/Reviews/CreateNewReview";
 import UpdateReview from "./components/Reviews/UpdateReview";
 import UserProfilePage from "./components/UserPage";
-
+import Footer from "./components/Footer";
 
 function App() {
   const dispatch = useDispatch();
@@ -23,29 +23,32 @@ function App() {
     <>
       <Navigation isLoaded={isLoaded} />
       {isLoaded && (
-        <Switch>
-          <Route exact path='/users/get/:userId'>
-            <UserProfilePage />
-          </Route>
-          <Route exact path="/login">
-            <LoginFormPage />
-          </Route>
-          <Route exact path="/signup">
-            <SignupFormPage />
-          </Route>
-          <Route exact path="/">
-            <RestaurantList />
-          </Route>
-          <Route exact path="/single/:restaurantId">
-            <SingleRestaurant />
-          </Route>
-          <Route exact path="/:restaurantId/create-review">
-            <CreateNewReview />
-          </Route>
-          <Route exact path="/:restaurantId/reviews/:reviewId/update">
-            <UpdateReview />
-          </Route>
-        </Switch>
+        <>
+          <Switch>
+            <Route exact path='/users/get/:userId'>
+              <UserProfilePage />
+            </Route>
+            <Route exact path="/login">
+              <LoginFormPage />
+            </Route>
+            <Route exact path="/signup">
+              <SignupFormPage />
+            </Route>
+            <Route exact path="/">
+              <RestaurantList />
+            </Route>
+            <Route exact path="/single/:restaurantId">
+              <SingleRestaurant />
+            </Route>
+            <Route exact path="/:restaurantId/create-review">
+              <CreateNewReview />
+            </Route>
+            <Route exact path="/:restaurantId/reviews/:reviewId/update">
+              <UpdateReview />
+            </Route>
+          </Switch>
+          <Footer />
+        </>
       )}
     </>
   );
