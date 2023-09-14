@@ -37,13 +37,23 @@ def seed_restaurants():
         description="A diner-style bar and restaurant with a passion for eggs, Au Cheval elevates traditional diner fare. Guests can indulge in dishes ranging from chopped chicken liver and roasted bone marrow, to traditional sandwiches, egg-focused entrees, and the signature cheeseburger."
     )
     res8 = Restaurant(
-    user_id=4, name="Sixty Vines", price="$$", address="500 Crescent Ct Ste 160", city="Dallas",
-    state="TX", zipcode=75201, country="USA", phone_number="(214) 814-8463", website="https://www.sixtyvines.com/",
-    description="Welcome to Sixty Vines, where great food, wine, and company come together to create unforgettable moments! As 'the winemaker's restaurant,' we deliver wine country inspired-cuisine paired perfectly with 60 wines on our sustainable tap system."
+        user_id=4, name="Sixty Vines", price="$$", address="500 Crescent Ct Ste 160", city="Dallas",
+        state="TX", zipcode=75201, country="USA", phone_number="(214) 814-8463", website="https://www.sixtyvines.com/",
+        description="Welcome to Sixty Vines, where great food, wine, and company come together to create unforgettable moments! As 'the winemaker's restaurant,' we deliver wine country inspired-cuisine paired perfectly with 60 wines on our sustainable tap system."
+    )
+    res9 = Restaurant(
+        user_id=5, name="Yardbird", price="$$", address="3355 Las Vegas Blvd S", city="Las Vegas",
+        state="NV", zipcode=89109, country="USA", phone_number="(702) 297-6541", website="https://runchickenrun.com/las-vegas/",
+        description="A modern take on comfort food means shared plates, craft cocktails, critically acclaimed fried chicken, and an ideal place for brunch or dinner."
+    )
+    res10 = Restaurant(
+        user_id=5, name="Versailles", price="$$", address="3555 SW 8th St", city="Miami",
+        state="FL", zipcode=33135, country="USA", phone_number="(305) 444-0240", website="https://www.versaillesrestaurant.com/",
+        description="The Most Famous Cuban Restaurant in the World"
     )
 
 
-    db.session.add_all([res1, res2, res3, res4, res5, res6, res7, res8])
+    db.session.add_all([res1, res2, res3, res4, res5, res6, res7, res8, res9, res10])
     db.session.commit()
 
 def undo_restaurants():

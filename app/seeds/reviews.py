@@ -101,10 +101,83 @@ def seed_reviews():
         review="Stopped here for lunch on a recent business trip to Dallas. The dining space felt well lit with natural light. I had the Fig and Prosciutto pizza and my friend had the Margherita pizza. I'd definitely return.",
         rating=4
     )
+    review21 = Review(
+        user_id=1, restaurant_id=9,
+        review="Servers are excellent and knowledgeable, manager is very nice and we're especially kind to us after a bad situation had occurred earlier. Would definitely recommend food was delicious.",
+        rating=5
+    )
+    review22 = Review(
+        user_id=2, restaurant_id=9,
+        review="We had reservations, still had to wait 20 minutes. Then they came split the check when we had over 12 people.  Made it way more difficult.  I had Blacked salmon which was 4oz and did not feel us up at all.",
+        rating=2
+    )
+    review23 = Review(
+        user_id=3, restaurant_id=9,
+        review="Went here on the recommendation of many. Disappointed on the entrees unfortunately.. I chose the rotisserie chicken based on the recommendation of the server but unfortunately this was saturated in grease.",
+        rating=3
+    )
+    review24 = Review(
+        user_id=4, restaurant_id=9,
+        review="Extremely overpriced-$33 for fried chicken that tastes exactly like Popeyes. They automatically added an 18% gratuity had to ask them to change that due to customer service.",
+        rating=1
+    )
+    review25 = Review(
+        user_id=1, restaurant_id=10,
+        review="Maybe we ordered the wrong things but the seafood rice didnt hit as we thought it would, the flavors were oily and salty, feeling heavy.",
+        rating=3
+    )
+    review26 = Review(
+        user_id=2, restaurant_id=10,
+        review="I think there are better Cuban restaurants in Miami which is why I give 3 stars. My friends visiting had this on their list - I can see why, it is a heavy tourist spot and the wait was 1.5 hours.",
+        rating=3
+    )
+    review27 = Review(
+        user_id=3, restaurant_id=10,
+        review="The food was satisfactory, although it didn't match up to the finest Cuban cuisine I've experienced in Miami.",
+        rating=4
+    )
+    review28 = Review(
+        user_id=4, restaurant_id=10,
+        review="Worth the wait! Typically a wait to be seated and they don't take reservations. Plan to just get here early to put your name in.",
+        rating=4
+    )
+    review30 = Review(
+        user_id=4, restaurant_id=1,
+        review="The nancy's canes were decent, nothing too crazy, I was expecting the best thing since sliced bread but I was honestly underwhelmed. 3/5",
+        rating=3
+    )
+    review31 = Review(
+        user_id=5, restaurant_id=1,
+        review="Nancy's Hustle has an innovative and unique menu. Everything sounds delicious. I really wanted to like this place as much as most other reviews do.",
+        rating=4
+    )
+    review32 = Review(
+        user_id=4, restaurant_id=2,
+        review="Honestly, I think this place has let itself go compared to what it used to be. I did the Omakase last weekend and for what we spent, it was pretty mediocre.",
+        rating=3
+    )
+    review33 = Review(
+        user_id=5, restaurant_id=2,
+        review="What a yummy meal on my first ever visit to Uchi! I have been meaning to check this place out for a while, and was happy to try it out after receiving a gift certificate from my friends.",
+        rating=4
+    )
+    review34 = Review(
+        user_id=4, restaurant_id=3,
+        review="Service was great and so was the ambiance with lots of natural lighting and super clean. Food was good. Not great but not bad. I had the bun thit nuong and my bf had the bo luc lac.",
+        rating=3
+    )
+    review35 = Review(
+        user_id=5, restaurant_id=3,
+        review="I ordered egg rolls and wonton soup here based on popularity from UberEats. Egg rolls were missing major flavors like pepper, onions, mushrooms. Wonton soup was worst than the pre-packaged from Safeway.",
+        rating=2
+    )
+
+
 
 
     db.session.add_all([review1, review2, review3, review4, review5, review6, review7, review8, review9, review10, review11, review12, review13, review14, review15, review16,
-                        review17, review18, review19, review20])
+                        review17, review18, review19, review20, review21, review22, review23, review24, review25, review26, review27, review28, review30, review31, review32, review33,
+                        review34, review35])
     db.session.commit()
 
 
