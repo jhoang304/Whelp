@@ -61,9 +61,50 @@ def seed_reviews():
         review="Truly delicious. Definitely some of the best food we ate while spending a long weekend in Chicago. We ordered one thing from each category (small plate/sharing model) and most everything was amazing. ",
         rating=5
     )
+    review13 = Review(
+        user_id=1, restaurant_id=7,
+        review="Best cheeseburger on Earth!!! This is worth the hype! Wait as long as you must to experience. You want this!",
+        rating=5
+    )
+    review14 = Review(
+        user_id=2, restaurant_id=7,
+        review="Food was fantastic very shake-shack-ish. Service was from rude teens who and left much to be desired except from one young lady bagging to go orders she was very helpful.",
+        rating=4
+    )
+    review15 = Review(
+        user_id=3, restaurant_id=7,
+        review="Food is delicious, service is mediocre at best. Music was at ear bleed volume, maybe I'm just old.",
+        rating=4
+    )
+    review16 = Review(
+        user_id=5, restaurant_id=7,
+        review="Au Cheval has a long line outside for one simple reason: they're still the best burger in Chicago and the word is out.",
+        rating=4
+    )
+    review17 = Review(
+        user_id=1, restaurant_id=8,
+        review="The drinks were good, especially the frosés. Margherita pizza, shishito peppers, and crispy zucchinis were the best things we ordered. I wasn't really overly impressed by anything though.",
+        rating=3
+    )
+    review18 = Review(
+        user_id=2, restaurant_id=8,
+        review="Maybe I had an isolated experience but the food I've had from here was below subpar. I had the pork pasta and a Caesar salad and neither of them had flavor. Also kinda expensive for the portion size.",
+        rating=2
+    )
+    review19 = Review(
+        user_id=3, restaurant_id=8,
+        review="My new favorite spot! First off the Crescent Court is just beautiful. It's a little oasis in the middle of Dallas.",
+        rating=4
+    )
+    review20 = Review(
+        user_id=5, restaurant_id=8,
+        review="Stopped here for lunch on a recent business trip to Dallas. The dining space felt well lit with natural light. I had the Fig and Prosciutto pizza and my friend had the Margherita pizza. I'd definitely return.",
+        rating=4
+    )
 
 
-    db.session.add_all([review1, review2, review3, review4, review5, review6, review7, review8, review9, review10, review11, review12])
+    db.session.add_all([review1, review2, review3, review4, review5, review6, review7, review8, review9, review10, review11, review12, review13, review14, review15, review16,
+                        review17, review18, review19, review20])
     db.session.commit()
 
 

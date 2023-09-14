@@ -31,9 +31,19 @@ def seed_restaurants():
         state="IL", zipcode=60607, country="USA", phone_number="(312) 492-6262", website="https://www.girlandthegoat.com/",
         description="As one of the first restaurants on Chicago’s famed Restaurant Row in the West Loop, Stephanie Izard’s Girl & the Goat began in 2010 with a goal of serving bold, global flavors to our local community (and visitors!)."
     )
+    res7 = Restaurant(
+        user_id=4, name="Au Cheval", price="$$", address="800 W Randolph St", city="Chicago",
+        state="IL", zipcode=60607, country="USA", phone_number="(312) 929-4580", website="https://auchevaldiner.com/chicago/",
+        description="A diner-style bar and restaurant with a passion for eggs, Au Cheval elevates traditional diner fare. Guests can indulge in dishes ranging from chopped chicken liver and roasted bone marrow, to traditional sandwiches, egg-focused entrees, and the signature cheeseburger."
+    )
+    res8 = Restaurant(
+    user_id=4, name="Sixty Vines", price="$$", address="500 Crescent Ct Ste 160", city="Dallas",
+    state="TX", zipcode=75201, country="USA", phone_number="(214) 814-8463", website="https://www.sixtyvines.com/",
+    description="Welcome to Sixty Vines, where great food, wine, and company come together to create unforgettable moments! As 'the winemaker's restaurant,' we deliver wine country inspired-cuisine paired perfectly with 60 wines on our sustainable tap system."
+    )
 
 
-    db.session.add_all([res1, res2, res3, res4, res5, res6])
+    db.session.add_all([res1, res2, res3, res4, res5, res6, res7, res8])
     db.session.commit()
 
 def undo_restaurants():

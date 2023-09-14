@@ -145,6 +145,54 @@ def seed_restaurantImages():
     res6_image8 = RestaurantImage(
         restaurant_id=6, url="https://s3-media0.fl.yelpcdn.com/bphoto/tHx6VyAsI3_tDW04yr1sAA/348s.jpg", preview=False
     )
+    res7_image1 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/td7RDAytLoNuPMlCQ6IuMw/348s.jpg", preview=True
+    )
+    res7_image2 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/WVN08s_S1Lsa0GmAMec4uA/348s.jpg", preview=False
+    )
+    res7_image3 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/GSGpz2PTc4YD7rDzEMIz8Q/348s.jpg", preview=False
+    )
+    res7_image4 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/B9-b2TewB9RF0jreJYi28w/348s.jpg", preview=False
+    )
+    res7_image5 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/i0VxRaZxRH-ksizrztT54w/348s.jpg", preview=False
+    )
+    res7_image6 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/oQCSj0d_yJFNf_tRP9YgNw/348s.jpg", preview=False
+    )
+    res7_image7 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/l8abcE5iHcOQBp2tQt-MJg/348s.jpg", preview=False
+    )
+    res7_image8 = RestaurantImage(
+        restaurant_id=7, url="https://s3-media0.fl.yelpcdn.com/bphoto/LUj2Hbl0nQ4UWucIM08ZGA/348s.jpg", preview=False
+    )
+    res8_image1 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/bKKLJKauKJOtBMiIdSuLgw/348s.jpg", preview=True
+    )
+    res8_image2 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/W_orrQC2nsgaORncwYQXog/348s.jpg", preview=False
+    )
+    res8_image3 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/BSmCHrbDkcezZgqvA52NOg/348s.jpg", preview=False
+    )
+    res8_image4 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/3HZLePDQB07Vcz00UUzxvg/348s.jpg", preview=False
+    )
+    res8_image5 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/1jTzTFDkHvc9pNb64rz6QA/348s.jpg", preview=False
+    )
+    res8_image6 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/hQZ5V3K-KSadK-8udcSJhA/348s.jpg", preview=False
+    )
+    res8_image7 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/Pag7tXjALFvGEH9uXkMRXw/348s.jpg", preview=False
+    )
+    res8_image8 = RestaurantImage(
+        restaurant_id=8, url="https://s3-media0.fl.yelpcdn.com/bphoto/NqJ1QD16fmeZNYQPzbt2Cw/348s.jpg", preview=False
+    )
 
 
     db.session.add_all([res1_image1, res1_image2, res1_image3, res1_image4, res1_image5, res1_image6, res1_image7, res1_image8,
@@ -152,7 +200,9 @@ def seed_restaurantImages():
                         res3_image1, res3_image2, res3_image3, res3_image4, res3_image5, res3_image6, res3_image7, res3_image8,
                         res4_image1, res4_image2, res4_image3, res4_image4, res4_image5, res4_image6, res4_image7, res4_image8,
                         res5_image1, res5_image2, res5_image3, res5_image4, res5_image5, res5_image6, res5_image7, res5_image8,
-                        res6_image1, res6_image2, res6_image3, res6_image4, res6_image5, res6_image6, res6_image7, res6_image8])
+                        res6_image1, res6_image2, res6_image3, res6_image4, res6_image5, res6_image6, res6_image7, res6_image8,
+                        res7_image1, res7_image2, res7_image3, res7_image4, res7_image5, res7_image6, res7_image7, res7_image8,
+                        res8_image1, res8_image2, res8_image3, res8_image4, res8_image5, res8_image6, res8_image7, res8_image8])
     db.session.commit()
 
 
