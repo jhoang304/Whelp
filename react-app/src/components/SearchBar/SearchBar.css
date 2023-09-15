@@ -1,0 +1,131 @@
+a:visited { text-decoration: none; }
+
+
+a:link {
+    text-decoration: none;
+    display: flex;
+    padding: 10px;
+}
+
+.search-restaurants-container {
+    width: 1024px;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.search-restaurant-price-city {
+    color: 	rgb(136,136,136);
+    text-decoration: none!important;
+    font-family: Helvetica;
+    font-size: 15px;
+}
+
+.search-restaurant-name {
+    color: black;
+    text-decoration: none!important;
+    font-family: Helvetica;
+    font-size: 18px;
+}
+
+.search-restaurant-name:hover {
+    text-decoration: underline;
+}
+
+.prevImage {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 5px;
+    border-bottom: 1px solid rgb(211,211,211);
+}
+
+.search-cap {
+    font-size: 25px;
+    font-family: Helvetica;
+    margin-top: 30px;
+    margin-left: 330px;
+}
+
+.search-restaurant-body {
+    display: flex;
+    flex-direction: row;
+    align-items:center;
+    margin: 10px;
+    border-bottom: 1px solid rgb(211,211,211);
+    transition: 0.5s;
+}
+
+.search-restaurant-body:hover {
+    box-shadow: 0 0 10px #0000001a;
+}
+
+.restaurant-info {
+    padding-left: 40px
+}
+
+.restaurant-info1 {
+    color: black;
+    text-decoration: none!important;
+    font-family: Helvetica;
+}
+
+.restaurant-info2 {
+    color: rgb(136,136,136);
+    text-decoration: none!important;
+    font-family: Helvetica;
+    font-size: 15px;
+    flex-direction: flex;
+    justify-content: space-between;
+}
+
+.restaurant-info3 {
+    color: black;
+    text-decoration: none!important;
+    font-family: Helvetica;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    /* top: 50px; */
+}
+
+.search-captions {
+    margin: 10px;
+    font-family: Helvetica;
+}
+
+.fa-sharp {
+    color: green;
+}
+
+.fa-regular {
+    color: red;
+}
+
+.fa-people-roof {
+    color: red;
+}
+
+.fa-star {
+    color: rgb(255,113,73)
+}
+
+.waitlist {
+    color: rgb(136,136,136);
+    text-decoration: none!important;
+    font-family: Helvetica;
+    font-size: 15px;
+}
+
+
+.avgRating {
+    background: yellow;
+}
+
+a.searchBar-link {
+    width: 100%;
+}
+
+.fa-check {
+    margin-left: 5px;
+}

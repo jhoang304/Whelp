@@ -138,7 +138,7 @@ function SingleRestaurant() {
                                 </div>
                                 <div className="bottom-border phone-line"><span>{singleRestaurant.phone_number}</span>{phoneIcon}</div>
                                 <div className="map-direction">
-                                    <a className="map-link" href={getMap("https://www.google.com/maps/place/" + singleRestaurant.address + " " + singleRestaurant.city + " " + singleRestaurant.state + " " + singleRestaurant.zipcode)}>Get Direction</a>
+                                    <a className="map-link" href={getMap("https://www.google.com/maps/place/" + singleRestaurant.address + " " + singleRestaurant.city + " " + singleRestaurant.state + " " + singleRestaurant.zipcode)}>Get Directions</a>
                                     <div className="address-line">
                                         <div>
                                             <span>{singleRestaurant.address}, </span>

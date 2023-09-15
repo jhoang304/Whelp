@@ -15,6 +15,23 @@ export const getAllRestaurants = () => async dispatch => {
     }
 }
 
+//Search Restaurants
+export const SEARCH_RESTAURANTS = "restaurants/searchedRestaurants";
+const search = (restaurants) => ({
+    type: SEARCH_RESTAURANTS,
+    restaurants
+});
+
+export const search_restaurants = (keyword) => async (dispatch) =>{
+    const response = await fetch(`/api/restaurants/search/${keyword}`)
+
+    if (response.ok){
+      const data = await response.json()
+      dispatch(search(data))
+      return data
+    }
+}
+
 // Load a single restaurant
 const LOADSINGLE = "singleRestaurant/loadSingleRestaurant"
 export const loadSingleRestaurant = (detailObj) => ({
@@ -163,6 +180,13 @@ export default function restaurantsReducer(state = initialState, action) {
             delete deleteRestaurantState.singleRestaurant[action.id]
             return deleteRestaurantState
         }
+        case SEARCH_RESTAURANTS:
+            const newState = { ...state, searchedRestaurants: {} };
+            action.restaurants.Restaurants.forEach((restaurant) => {
+                newState.searchedRestaurants[restaurant.id] = restaurant;
+            });
+            return newState;
+
         default:
             return state;
     }

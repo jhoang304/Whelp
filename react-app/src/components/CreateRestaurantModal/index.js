@@ -45,6 +45,8 @@ function CreateRestaurantModal() {
         if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
         if (!/\.com$/.test(website)) validationErrors.push("Invalid website format.");
         if (url && !/^https?:\/\/.+/.test(url)) validationErrors.push("Invalid preview image URL format.");
+        if (!/^[()\-0-9]+$/.test(phone_number)) validationErrors.push("Phone Number must contain only digits, parentheses, and hyphens.");
+
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);

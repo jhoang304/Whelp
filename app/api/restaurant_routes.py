@@ -226,3 +226,37 @@ def delete_restaurant(restaurantId):
     db.session.delete(restaurant)
     db.session.commit()
     return {"message": ["Restaurant Successfully deleted"]},200
+
+
+# Search Restaurants
+@restaurant_routes.route("/search/<keyword>")
+def search_restaurant(keyword):
+    restaurant_images= RestaurantImage.query.all()
+
+    queried_restaurants = Restaurant.query.filter(Restaurant.name.ilike(f"%{keyword}%")).all()
+
+    for restaurant in queried_restaurants:
+        restaurant.preview= None
+        for image in restaurant_images:
+            if image.restaurant_id == restaurant.id and image.preview == True:
+                restaurant.preview=image.url
+
+    data={
+        "Restaurants":[ {
+            "id":restaurant.id,
+            "user_id": restaurant.user_id,
+            "name":restaurant.name,
+            "price":restaurant.price,
+            "address" : restaurant.address,
+            "city" : restaurant.city,
+            "state" :restaurant.state,
+            "zipcode": restaurant.zipcode,
+            "country":restaurant.country,
+            "phone_number" : restaurant.phone_number,
+            "description" : restaurant.description,
+            "website":restaurant.website,
+            "previewImage": restaurant.preview
+            } for restaurant in queried_restaurants],
+        }
+
+    return data

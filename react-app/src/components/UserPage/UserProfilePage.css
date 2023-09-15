@@ -24,7 +24,7 @@
 }
 
 .topmost {
-    margin-top: 50px;
+    /* margin-top: 50px; */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -154,6 +154,7 @@
     color: blue;
     font-size: 17px;
     font-weight: bold;
+    margin-left: -10px;
 }
 
 .amountstars {
