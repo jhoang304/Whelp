@@ -61,3 +61,6 @@ Running the frontend server:
 
 ## Business Page
 ![Business Page](https://cdn.discordapp.com/attachments/320286625521336341/1146593078908563496/whelp_1.png)
+
+## Profile Page
+![Profile Page](https://cdn.discordapp.com/attachments/320286625521336341/1161064891097043105/profile_page.png)
