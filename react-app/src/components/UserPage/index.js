@@ -71,7 +71,7 @@ export default function UserProfilePage() {
                     <div className="topmost">
                         <div className="userinfo">
                             <div className="portrait-and-info">
-                                <img className="user-portrait" src="https://cdn.discordapp.com/attachments/320286625521336341/1140514068965367848/profile_pic.png" alt="" />
+                                <img className="user-portrait" src="https://i.imgur.com/eiUEyDW.png" alt="" />
                                 <div className="stats">
                                     <div id="name">
                                         {user.user.username}

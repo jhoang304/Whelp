@@ -63,7 +63,7 @@ function GetAllReviews({ restaurantId }) {
         <div className="single-review-container" key={review.id}>
           <div className="single-review">
             <div className="review-user-data">
-              <img className="review-photo" src="https://cdn.discordapp.com/attachments/320286625521336341/1140514068965367848/profile_pic.png" alt="default-profile-pic" />
+              <img className="review-photo" src="https://i.imgur.com/eiUEyDW.png" alt="default-profile-pic" />
               <div className="review-right-section">
                 <NavLink
                   id="review-user-name"
