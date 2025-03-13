@@ -16,6 +16,9 @@ function Navigation() {
 					<div><NavLink to="/"><img className="logo-img" src="https://i.imgur.com/c7KuGow.png" alt="logo"></img></NavLink></div>
 					{/* <div><NavLink to="/">Logo</NavLink></div> */}
 				</div>
+				<div className='nav-links'>
+					<NavLink className='nav-link' exact to='/restaurants'>Restaurants</NavLink>
+				</div>
 				<SearchBar />
 				{(sessionUser === null) ?
 					<div className='navBar-right'>

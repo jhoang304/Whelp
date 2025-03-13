@@ -12,6 +12,7 @@ import UpdateReview from "./components/Reviews/UpdateReview";
 import UserProfilePage from "./components/UserPage";
 import Footer from "./components/Footer";
 import RestaurantBySearch from "./components/SearchBar";
+import HomePage from "./components/HomePage";
 
 function App() {
   const dispatch = useDispatch();
@@ -36,9 +37,12 @@ function App() {
               <SignupFormPage />
             </Route>
             <Route path="/search/:keyword" >
-            <RestaurantBySearch />
+              <RestaurantBySearch />
             </Route>
             <Route exact path="/">
+              <HomePage />
+            </Route>
+            <Route exact path="/restaurants">
               <RestaurantList />
             </Route>
             <Route exact path="/single/:restaurantId">
