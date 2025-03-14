@@ -6,7 +6,6 @@ import LoginFormModal from "../LoginFormModal";
 import SignupFormModal from "../SignupFormModal";
 import { useHistory } from "react-router-dom";
 
-
 function ProfileButton({ user }) {
   const dispatch = useDispatch();
   const history = useHistory();
@@ -46,27 +45,27 @@ function ProfileButton({ user }) {
     closeMenu()
   };
 
-
   const ulClassName = "profile-dropdown" + (showMenu ? "" : " hidden");
   const closeMenu = () => setShowMenu(false);
 
   return (
     <>
-      <button onClick={openMenu} className='profileButton'>
-        <i class="fa-solid fa-user"></i>
+      <button onClick={openMenu} className='profileButton' aria-label="User menu">
+        <i className="fa-solid fa-user"></i>
       </button>
       <ul className={ulClassName} ref={ulRef}>
         {user ? (
           <>
-            <p className='user-dropdown-username'>{user.username}</p>
-            <p className= 'user-dropdown-email'>{user.email}</p>
-            <li>
-              <button className="profdropdownbutt" onClick={loadProfile}>
-                My Profile</button>
-            </li>
-            <div className="log-out-div-button">
-              <button className='user-logout-button' onClick={handleLogout}><i class="fa-solid fa-arrow-right-from-bracket"></i> Log Out</button>
-            </div>
+            <div className='user-dropdown-username'>{user.username}</div>
+            <div className='user-dropdown-email'>{user.email}</div>
+            <button className="user-profile-button" onClick={loadProfile}>
+              <i className="fa-solid fa-user-circle"></i>
+              My Profile
+            </button>
+            <button className='user-logout-button' onClick={handleLogout}>
+              <i className="fa-solid fa-arrow-right-from-bracket"></i>
+              Log Out
+            </button>
           </>
         ) : (
           <>
