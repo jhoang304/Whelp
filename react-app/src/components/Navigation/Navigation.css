@@ -255,7 +255,7 @@
 .search-button {
   position: absolute;
   right: 5px;
-  top: 50%;
+  top: 39%;
   transform: translateY(-50%);
   background-color: #f00c13;
   color: white;
@@ -270,9 +270,19 @@
   transition: all 0.3s ease;
 }
 
+.search-button i {
+  position: relative;
+  top: -1px;
+  font-size: 16px;
+}
+
 .search-button:hover {
   background-color: #e00b12;
   transform: translateY(-50%) scale(1.05);
+}
+
+.search-button:hover i {
+  top: -1px;
 }
 
 @media (max-width: 992px) {
