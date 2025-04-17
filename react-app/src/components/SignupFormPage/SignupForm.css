@@ -1,19 +1,20 @@
 .signuptext{
     color:rgb(226, 13, 13);
-    font-size:25px;
-    font-weight:bold;
-    position: relative;
-    display: flex;
-    margin-left: 282px;
+    font-size: 25px;
+    font-weight: bold;
+    text-align: center;
+    margin-top: 40px;
+    margin-bottom: 20px;
 }
 
 .signup-error {
-    margin-left: 25px;
-    display: flex;
-    justify-content: flex-start;
     font-weight: bolder;
     font-size: large;
     color: red;
+    text-align: center;
+    width: 100%;
+    margin-bottom: 10px;
+    min-height: 20px;
 }
 
 .autharea{
@@ -21,6 +22,8 @@
     flex-direction: row;
     justify-content: center;
     align-items: center;
+    gap: 40px;
+    padding: 20px;
 }
 
 .authdeets-signup{
@@ -28,28 +31,38 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    width:40%
+    width: 100%;
+    max-width: 400px;
 }
 
 .autharea-items{
     display: flex;
     flex-direction: column;
+    width: 100%;
+    margin-bottom: 15px;
 }
 
 .autharea-items input {
-    width:110%
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
 }
 
 .sibutton{
-    padding: .55em;
-    border: .35px solid grey;
-    width: 65%;
+    padding: 12px;
+    border: none;
+    width: 100%;
+    max-width: 250px;
     border-radius: 4px;
-    margin-left:15%;
     background-color:rgb(226, 13, 13);
     font-size: medium;
     font-weight: bolder;
     color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
 }
 
 .sibutton:hover{
@@ -59,5 +72,4 @@
 .redcarpetpic{
     display: flex;
     align-items: flex-start;
-    margin-right: 1%;
 }

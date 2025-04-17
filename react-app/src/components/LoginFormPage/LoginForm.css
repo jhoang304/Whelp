@@ -2,10 +2,9 @@
     color:rgb(226, 13, 13);
     font-size: 35px;
     font-weight: bold;
-    position: relative;
-    display: flex;
-    margin-top: 90px;
-    margin-left: 195px;
+    text-align: center;
+    margin-top: 60px;
+    margin-bottom: 30px;
 }
 
 .errors {

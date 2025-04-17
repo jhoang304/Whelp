@@ -66,8 +66,8 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    max-width: 1200px;
-    margin: 0 auto;
+    /* max-width: 1200px; */
+    /* margin: 0 auto; */
     padding: 15px 0;
     position: relative;
 }
@@ -290,7 +290,7 @@
 }
 
 .search-input-values {
-    width: 100%;
+    width: 500px;
     height: 100%;
     padding: 0 60px 0 24px;
     border: none;

@@ -1,7 +1,7 @@
 body {
     font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
-    display: flex;
-    justify-content: center;
+    /* display: flex; Removed */
+    /* justify-content: center; Removed */
 }
 
 button {
