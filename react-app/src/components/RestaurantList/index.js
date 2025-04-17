@@ -37,9 +37,15 @@ function RestaurantList() {
                 </div>
                 <div className="restaurant-list">
                     {
-                        allRestaurants.map(restaurant => {
+                        allRestaurants.map((restaurant, index) => {
+                            const delay = index * 0.1; // Stagger delay by 0.1s per item
                             return (
-                                <Link className="restaurant-list" key={restaurant.id} to={`/single/${restaurant.id}`}>
+                                <Link
+                                    className="restaurant-list-item" // Changed class for clarity
+                                    key={restaurant.id}
+                                    to={`/single/${restaurant.id}`}
+                                    style={{ animationDelay: `${delay}s` }} // Apply inline style for delay
+                                >
                                     <Restaurant restaurant={restaurant} />
                                 </Link>
                             )

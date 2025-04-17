@@ -6,6 +6,17 @@
     margin-right: 20px;
 }
 
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .restaurant-card {
     display: flex;
     flex-direction: row;

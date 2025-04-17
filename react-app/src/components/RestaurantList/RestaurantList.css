@@ -23,3 +23,25 @@
     margin-left: auto;
     margin-right: auto;
 }
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.restaurant-list-item {
+    /* Animation properties */
+    display: block; /* Ensure link takes block space */
+    opacity: 0; /* Start hidden */
+    animation-name: fadeIn;
+    animation-duration: 0.6s; /* Adjust duration as needed */
+    animation-timing-function: ease-out;
+    animation-fill-mode: forwards; /* Stay visible after animation */
+    animation-delay: 0s; /* Default delay, will be overridden by inline style */
+}
