@@ -15,109 +15,117 @@ function SignupFormPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState([]);
 
-  const handleSubmit = async (e) => {
-		e.preventDefault();
-		if (password === confirmPassword) {
-			const data = await dispatch(signUp(username, email, first_name, last_name, password));
-			if (data) {
-				setErrors(data);
-			}
-		} else {
-			setErrors([
-				"Confirm Password field must be the same as the Password field",
-			]);
-		}
-	};
-
   if (sessionUser) return <Redirect to="/" />;
 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (password === confirmPassword) {
+      const data = await dispatch(signUp(username, email, first_name, last_name, password));
+      if (data) {
+        setErrors(data);
+      } else {
+        setErrors([]); // Clear errors on success
+      }
+    } else {
+      setErrors([
+        "Confirm Password field must be the same as the Password field",
+      ]);
+    }
+  };
 
   return (
-    <>
-      <h1 className="signuptext">Sign Up</h1>
-      <form onSubmit={handleSubmit}>
-        <div className="signup-errors">
-          {errors.map((error, idx) => (
-            <div className="signup-error" key={idx}>{error}</div>))}
-        </div>
-        <div className="autharea">
-          <div className="authdeets-signup">
-            <div className="autharea-items">
-              <span>First Name</span>
-              <input
-                className="inputdeet"
-                type="text"
-                name="first_name"
-                value={first_name}
-                onChange={(e) => setFirst_Name(e.target.value)}
-                required
-              />
+    <div className="signup-page-container">
+      <div className="signup-form-container">
+        <div className="signup-form-section">
+          <h1 className="signup-title">Create Your Account</h1>
+          <p className="signup-subtitle">Join the Whelp community</p>
+          <form onSubmit={handleSubmit} className="signup-form">
+            {errors.length > 0 && (
+              <div className="signup-errors-container">
+                {errors.map((error, idx) => (
+                  <div className="signup-error-message" key={idx}>{error}</div>
+                ))}
+              </div>
+            )}
+            <div className="name-inputs">
+              <div className="input-group">
+                <label htmlFor="first_name">First Name</label>
+                <input
+                  id="first_name"
+                  className="signup-input"
+                  type="text"
+                  value={first_name}
+                  onChange={(e) => setFirst_Name(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="input-group">
+                <label htmlFor="last_name">Last Name</label>
+                <input
+                  id="last_name"
+                  className="signup-input"
+                  type="text"
+                  value={last_name}
+                  onChange={(e) => setLast_Name(e.target.value)}
+                  required
+                />
+              </div>
             </div>
-
-            <div className="autharea-items">
-              <span>Last Name</span>
+            <div className="input-group">
+              <label htmlFor="email">Email Address</label>
               <input
-                className="inputdeet"
-                type="text"
-                name="last_name"
-                value={last_name}
-                onChange={(e) => setLast_Name(e.target.value)}
-                required
-              />
-            </div>
-            <div className="autharea-items">
-              <span>Email Address</span>
-              <input
-                className="inputdeet"
-                type="text"
-                name="email_address"
+                id="email"
+                className="signup-input"
+                type="email" // Changed to type email
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
-            <div className="autharea-items">
-              <span>Username</span>
+            <div className="input-group">
+              <label htmlFor="username">Username</label>
               <input
-                className="inputdeet"
+                id="username"
+                className="signup-input"
                 type="text"
-                name="username"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
               />
             </div>
-            <div className="autharea-items">
-              <span>Password</span>
+            <div className="input-group">
+              <label htmlFor="password">Password</label>
               <input
-                className="inputdeet"
+                id="password"
+                className="signup-input"
                 type="password"
-                name="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
             </div>
-            <div className="autharea-items">
-              <span>Confirm Password</span>
+            <div className="input-group">
+              <label htmlFor="confirmPassword">Confirm Password</label>
               <input
-                className="inputdeet"
+                id="confirmPassword"
+                className="signup-input"
                 type="password"
-                name="confirm password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
               />
             </div>
-
-            <button className="sibutton" type="submit">Sign Up</button>
-          </div>
-          <div className="redcarpetpic">
-            <img src="https://s3-media0.fl.yelpcdn.com/assets/2/www/img/7922e77f338d/signup/signup_illustration.png" alt="signup-pic"></img>
-          </div>
+            <button className="signup-submit-button" type="submit">Sign Up</button>
+          </form>
+          <p className="login-link">
+            Already have an account? <a href="/login">Log In</a>
+          </p>
         </div>
-      </form>
-    </>
+        <div className="signup-image-section">
+          <img src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1074&q=80" alt="Restaurant interior" />
+        </div>
+      </div>
+    </div>
   );
 };
 
