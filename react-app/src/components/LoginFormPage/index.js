@@ -1,17 +1,36 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { login } from "../../store/session";
 import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
 import './LoginForm.css';
 
 function LoginFormPage() {
+  // --- Hooks must be called first ---
   const dispatch = useDispatch();
   const sessionUser = useSelector((state) => state.session.user);
   const [email_address, setEmail_Address] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState([]);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
 
+  useEffect(() => {
+    if (errors.length > 0) {
+      setToastMessage(errors[0]); // Show the first error
+      setShowToast(true);
+      const timer = setTimeout(() => {
+        setShowToast(false);
+      }, 4000); // Hide after 4 seconds
+      return () => clearTimeout(timer); // Cleanup timer on unmount or error change
+    } else {
+      setShowToast(false);
+    }
+  }, [errors]);
+  // ----------------------------------
+
+  // --- Early return can happen AFTER hooks ---
   if (sessionUser) return <Redirect to="/" />;
+  // ------------------------------------------
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -33,8 +52,16 @@ function LoginFormPage() {
     });
   };
 
+  // --- Component Render ---
   return (
     <div className="login-page-container">
+      {/* --- Toast Notification --- */}
+      {showToast && (
+        <div className="toast-notification show">
+          {toastMessage}
+        </div>
+      )}
+      {/* ------------------------ */}
       <div className="login-form-container">
         <div className="login-image-section">
           <img src="https://images.unsplash.com/photo-1504674900247-0877df9cc836?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1170&q=80" alt="Restaurant food" />
@@ -43,13 +70,6 @@ function LoginFormPage() {
           <h1 className="login-title">Log In to Whelp</h1>
           <p className="login-subtitle">Access your account</p>
           <form onSubmit={handleSubmit} className="login-form">
-            {errors.length > 0 && (
-              <div className="login-errors-container">
-                {errors.map((error, idx) => (
-                  <div className="login-error-message" key={idx}>{error}</div>
-                ))}
-              </div>
-            )}
             <div className="input-group">
               <label htmlFor="email">Email Address</label>
               <input

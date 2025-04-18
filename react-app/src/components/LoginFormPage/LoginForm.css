@@ -38,6 +38,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-self: flex-start;
 }
 
 /* Title and Subtitle */
@@ -61,25 +62,9 @@
   width: 100%;
 }
 
-/* Error Messages */
-.login-errors-container {
-  background-color: rgba(240, 12, 19, 0.1);
-  border: 1px solid rgba(240, 12, 19, 0.3);
-  border-radius: 8px;
-  padding: 15px;
-  margin-bottom: 20px;
-}
-
-.login-error-message {
-  color: #c00;
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-bottom: 5px;
-}
-
-.login-error-message:last-child {
-  margin-bottom: 0;
-}
+/* Error Messages - Removed Inline Container Styles */
+/* .login-errors-container { ... } */
+/* .login-error-message { ... } */
 
 /* Input Groups */
 .input-group {
@@ -186,3 +171,42 @@
     padding: 70px 60px;
   }
 }
+
+/* --- Toast Notification Styles --- */
+@keyframes toastFadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toastFadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
+}
+
+.toast-notification {
+  position: fixed; /* Position relative to viewport */
+  top: 100px; /* Below the sticky nav */
+  /* left: 50%; Center horizontally */
+  transform: translateX(-50%); /* Adjust for own width */
+  background-color: #d9534f; /* Error color */
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  z-index: 1100; /* Above nav bar */
+  opacity: 0; /* Start hidden */
+  visibility: hidden; /* Hidden for accessibility */
+  transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
+}
+
+.toast-notification.show {
+  opacity: 1;
+  visibility: visible;
+  animation: toastFadeIn 0.5s ease forwards;
+}
+
+/* Optional: Add this if you want fade out animation */
+/* .toast-notification.hide {
+  animation: toastFadeOut 0.5s ease forwards;
+} */
+/* --- End Toast Styles --- */
