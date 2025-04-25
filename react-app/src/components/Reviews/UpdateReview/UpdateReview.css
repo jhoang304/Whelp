@@ -1,39 +1,102 @@
-.update-review-container{
-    width:550px;
+/* General container styling */
+.update-review-container {
+    width: 550px; /* Consider using max-width for responsiveness */
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: auto;
-  }
+    margin: 2em auto; /* Added more vertical margin */
+    padding: 1em; /* Added padding */
+    font-family: sans-serif; /* Basic font */
+}
 
-  .update-review-container label{
-    display: flex;
-    padding: 0.2em 0
-  }
+/* Style the heading */
+.update-review-container h2 {
+    color: #333;
+    margin-bottom: 1em;
+}
 
-  .update-review-container span{
-    width: 80px;
-    margin-left: 10px;
-  }
-
-  .update-review-container input{
-    width: 167px;
-  }
-
-  .update-review-container select{
-    width: 175px;
-  }
-
-  .update-new-review-form{
+/* Form specific styling */
+.update-new-review-form {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    border: 1px solid grey;
-    width:280px;
-    border-radius: 10px;
-  }
+    align-items: stretch; /* Stretch items to fill width */
+    border: 1px solid #ccc; /* Lighter grey */
+    border-radius: 8px; /* Slightly smaller radius */
+    width: 100%; /* Use percentage for flexibility */
+    max-width: 400px; /* Max width for the form */
+    padding: 2em; /* Increased padding */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1); /* Subtle shadow */
+    background-color: #fff; /* White background */
+}
 
+/* Styling for labels */
+.update-review-container label {
+    display: flex;
+    flex-direction: column; /* Stack span and input/select vertically */
+    margin-bottom: 1em; /* Space between labels */
+    font-weight: bold;
+    color: #555;
+}
 
-  .update-review-container button:hover {
-    background-color: lightgray;
-  }
+/* Styling for the text part of the label */
+.update-review-container label span {
+    margin-bottom: 0.5em; /* Space between text and input */
+}
+
+/* Common styling for input and select */
+.update-review-container input,
+.update-review-container select {
+    width: 100%; /* Make them fill the container */
+    padding: 0.8em; /* Add padding */
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box; /* Include padding and border in element's total width and height */
+    font-size: 1em; /* Consistent font size */
+}
+
+/* Specific styling for text input (if needed) */
+.update-review-container input[type="text"] {
+    /* Specific styles if different from select */
+}
+
+/* Specific styling for select */
+.update-review-container select {
+    background-color: white; /* Ensure select background is white */
+}
+
+/* Button styling */
+.update-review-container button {
+    padding: 0.8em 1.5em;
+    background-color: #007bff; /* Example blue color */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease; /* Smooth transition */
+    margin-top: 1em; /* Add space above the button */
+    align-self: center; /* Center button */
+}
+
+/* Button hover effect */
+.update-review-container button:hover {
+    background-color: #0056b3; /* Darker blue on hover */
+}
+
+/* Error message styling */
+.update-review-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1em 0; /* Space below errors */
+    color: #dc3545; /* Red color for errors */
+    font-size: 0.9em;
+}
+
+.update-review-container li {
+    margin-bottom: 0.5em;
+    padding: 0.5em;
+    background-color: #f8d7da; /* Light red background */
+    border: 1px solid #f5c6cb; /* Red border */
+    border-radius: 4px;
+}

@@ -1,38 +1,91 @@
 .create-review-container{
-    width:550px;
+    width: 550px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin: auto;
+    margin: 2em auto;
+    padding: 1em;
+    font-family: sans-serif;
+}
 
-  }
-  .create-review-container label{
-    display: flex;
-    padding: 0.2em 0
-  }
+.create-review-container h2 {
+    color: #333;
+    margin-bottom: 1em;
+}
 
-  .create-review-container span{
-    width: 80px;
-    margin-left: 10px;
-  }
-
-  .create-review-container input{
-    width: 167px;
-  }
-
-  .create-review-container select{
-    width: 175px;
-  }
-
-  .create-new-review-form{
+.create-new-review-form {
     display: flex;
     flex-direction: column;
-    justify-content: center;
-    border: 1px solid grey;
-    border-radius: 10px;
-    width:280px;
-  }
+    align-items: stretch;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    width: 100%;
+    max-width: 400px;
+    padding: 2em;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    background-color: #fff;
+}
 
-  .create-review-container button:hover {
-    background-color: lightgray;
-  }
+.create-review-container label {
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 1em;
+    font-weight: bold;
+    color: #555;
+}
+
+.create-review-container label span {
+    margin-bottom: 0.5em;
+}
+
+.create-review-container input,
+.create-review-container select {
+    width: 100%;
+    padding: 0.8em;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-size: 1em;
+}
+
+.create-review-container input[type="text"] {
+    /* Specific styles if different from select */
+}
+
+.create-review-container select {
+    background-color: white;
+}
+
+.create-review-container button {
+    padding: 0.8em 1.5em;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    font-weight: bold;
+    transition: background-color 0.2s ease;
+    margin-top: 1em;
+    align-self: center;
+}
+
+.create-review-container button:hover {
+    background-color: #0056b3;
+}
+
+.create-review-container ul {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1em 0;
+    color: #dc3545;
+    font-size: 0.9em;
+}
+
+.create-review-container li {
+    margin-bottom: 0.5em;
+    padding: 0.5em;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+}
