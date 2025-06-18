@@ -46,7 +46,9 @@ class User(db.Model, UserMixin):
         return {
             'id': self.id,
             'username': self.username,
-            'email': self.email_address,
+            # Use the actual email column; `email_address` does not exist on the
+            # model and would raise an AttributeError when accessed.
+            'email': self.email,
             'last_name': self.last_name,
             'first_name': self.first_name,
             'reviews': reviews
