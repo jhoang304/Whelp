@@ -17,20 +17,60 @@ export const getAllRestaurants = () => async dispatch => {
 
 //Search Restaurants
 export const SEARCH_RESTAURANTS = "restaurants/searchedRestaurants";
+export const SEARCH_RESTAURANTS_LOADING = "restaurants/searchLoading";
+export const SEARCH_RESTAURANTS_ERROR = "restaurants/searchError";
+export const CLEAR_SEARCH_RESULTS = "restaurants/clearSearchResults";
+
+const searchLoading = () => ({
+    type: SEARCH_RESTAURANTS_LOADING
+});
+
+const searchError = (error) => ({
+    type: SEARCH_RESTAURANTS_ERROR,
+    error
+});
+
 const search = (restaurants) => ({
     type: SEARCH_RESTAURANTS,
     restaurants
 });
 
-export const search_restaurants = (keyword) => async (dispatch) =>{
-    const response = await fetch(`/api/restaurants/search/${keyword}`)
+const clearSearchResults = () => ({
+    type: CLEAR_SEARCH_RESULTS
+});
 
-    if (response.ok){
-      const data = await response.json()
-      dispatch(search(data))
-      return data
+export const search_restaurants = (keyword) => async (dispatch) => {
+    if (!keyword || keyword.trim().length === 0) {
+        dispatch(searchError("Search keyword cannot be empty"));
+        return null;
     }
-}
+
+    dispatch(searchLoading());
+
+    try {
+        const response = await fetch(`/api/restaurants/search/${encodeURIComponent(keyword.trim())}`);
+        
+        if (response.ok) {
+            const data = await response.json();
+            dispatch(search(data));
+            return data;
+        } else if (response.status === 400) {
+            dispatch(searchError("Invalid search query"));
+            return null;
+        } else {
+            dispatch(searchError("Search failed. Please try again."));
+            return null;
+        }
+    } catch (error) {
+        console.error('Search request failed:', error);
+        dispatch(searchError("Network error. Please check your connection."));
+        return null;
+    }
+};
+
+export const clearSearch = () => (dispatch) => {
+    dispatch(clearSearchResults());
+};
 
 // Load a single restaurant
 const LOADSINGLE = "singleRestaurant/loadSingleRestaurant"
@@ -180,12 +220,37 @@ export default function restaurantsReducer(state = initialState, action) {
             delete deleteRestaurantState.singleRestaurant[action.id]
             return deleteRestaurantState
         }
+        case SEARCH_RESTAURANTS_LOADING:
+            return {
+                ...state,
+                searchLoading: true,
+                searchError: null
+            };
+        case SEARCH_RESTAURANTS_ERROR:
+            return {
+                ...state,
+                searchLoading: false,
+                searchError: action.error,
+                searchedRestaurants: {}
+            };
         case SEARCH_RESTAURANTS:
-            const newState = { ...state, searchedRestaurants: {} };
+            const newState = { 
+                ...state, 
+                searchedRestaurants: {},
+                searchLoading: false,
+                searchError: null
+            };
             action.restaurants.Restaurants.forEach((restaurant) => {
                 newState.searchedRestaurants[restaurant.id] = restaurant;
             });
             return newState;
+        case CLEAR_SEARCH_RESULTS:
+            return {
+                ...state,
+                searchedRestaurants: {},
+                searchLoading: false,
+                searchError: null
+            };
 
         default:
             return state;

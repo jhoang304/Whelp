@@ -1,25 +1,44 @@
 import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { useHistory, useParams } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { search_restaurants } from '../../store/restaurants';
 
 function SearchBar() {
-    const dispatch = useDispatch()
-    const history = useHistory()
-    const { params } = useParams()
+    const dispatch = useDispatch();
+    const history = useHistory();
     const [keyword, setKeyword] = useState("");
     const [isFocused, setIsFocused] = useState(false);
+    const [isSearching, setIsSearching] = useState(false);
 
     const handleSearch = async (e) => {
       e.preventDefault();
-      if (keyword.trim().length === 0) {
+      
+      const trimmedKeyword = keyword.trim();
+      if (trimmedKeyword.length === 0) {
         return;
       }
-      const response = await dispatch(search_restaurants(keyword));
-      if (response) {
-        history.push(`/search/${keyword}`);
+
+      setIsSearching(true);
+      
+      try {
+        const response = await dispatch(search_restaurants(trimmedKeyword));
+        if (response) {
+          history.push(`/search/${encodeURIComponent(trimmedKeyword)}`);
+        }
+        setKeyword("");
+      } catch (error) {
+        console.error('Search failed:', error);
+      } finally {
+        setIsSearching(false);
       }
-      setKeyword("");
+    };
+
+    const handleKeywordChange = (e) => {
+      const value = e.target.value;
+      // Prevent special characters that could cause issues
+      if (value.length <= 100) {
+        setKeyword(value);
+      }
     };
 
     return (
@@ -28,15 +47,25 @@ function SearchBar() {
           <form onSubmit={handleSearch} className="search-bar-form">
             <input
               className='search-input-values'
-              placeholder="Search for restaurants..."
+              placeholder="Search restaurants, cuisine, location..."
               value={keyword}
-              onChange={(e) => setKeyword(e.target.value)}
+              onChange={handleKeywordChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               maxLength="100"
+              disabled={isSearching}
             />
-            <button type="submit" className="search-button" aria-label="Search">
-              <i className="fa-solid fa-magnifying-glass"></i>
+            <button 
+              type="submit" 
+              className="search-button" 
+              aria-label="Search"
+              disabled={isSearching || keyword.trim().length === 0}
+            >
+              {isSearching ? (
+                <i className="fa-solid fa-spinner fa-spin"></i>
+              ) : (
+                <i className="fa-solid fa-magnifying-glass"></i>
+              )}
             </button>
           </form>
         </div>

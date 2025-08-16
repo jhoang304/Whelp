@@ -1,73 +1,113 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { NavLink, useParams } from "react-router-dom";
+import { Link, useParams, useHistory } from "react-router-dom";
 import { search_restaurants } from '../../store/restaurants';
+import Restaurant from '../Restaurant';
 
 import './SearchBar.css';
 
 function RestaurantBySearch() {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch();
+    const history = useHistory();
     const { keyword } = useParams();
-
+    const [isLoading, setIsLoading] = useState(false);
+    const [error, setError] = useState(null);
 
     useEffect(() => {
-        dispatch(search_restaurants(keyword))
-    }, [dispatch, keyword])
+        const performSearch = async () => {
+            if (!keyword || keyword.trim().length === 0) {
+                history.push('/restaurants');
+                return;
+            }
 
+            setIsLoading(true);
+            setError(null);
 
-    const singleRestaurant = useSelector((state) => {
-        return state.Restaurants.singleRestaurant
-    })
-    const restaurant = useSelector(state => state.Restaurants.searchedRestaurants)
-    const restaurantArr = Object.values(restaurant)
+            try {
+                await dispatch(search_restaurants(decodeURIComponent(keyword)));
+            } catch (err) {
+                setError('Search failed. Please try again.');
+                console.error('Search error:', err);
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
+        performSearch();
+    }, [dispatch, keyword, history]);
 
+    const restaurant = useSelector(state => state.Restaurants.searchedRestaurants || {});
+    const restaurantArr = Object.values(restaurant);
 
-    return restaurantArr &&(
+    if (isLoading) {
+        return (
+            <div className='search-restaurants-container'>
+                <div className='search-loading'>
+                    <i className="fa-solid fa-spinner fa-spin"></i>
+                    <p>Searching restaurants...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className='search-restaurants-container'>
+                <div className='search-error'>
+                    <p>{error}</p>
+                    <button onClick={() => window.location.reload()}>Try Again</button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
         <div className='search-restaurants-container'>
             <div className='search-captions-container'>
                 <div className='search-captions'>
-                {restaurantArr?.length > 0 ?
-                    <><div className='search-cap'> {restaurantArr?.length} search results for "{keyword}"</div><span className='search-cap'></span></>
-                    :
-                    <><div className='search-cap'> We couldn't find any results for "{keyword}"</div></>
-                }
+                    {restaurantArr?.length > 0 ? (
+                        <div className='search-cap'>
+                            {restaurantArr.length} search result{restaurantArr.length !== 1 ? 's' : ''} for "{decodeURIComponent(keyword)}"
+                        </div>
+                    ) : (
+                        <div className='search-cap'>
+                            We couldn't find any results for "{decodeURIComponent(keyword)}"
+                        </div>
+                    )}
                 </div>
             </div>
-            <div className='search-box'>
-                <div className='search-restaurant-box'>
-
-                {restaurantArr?.map((el, i) => {
+            
+            <div className='search-restaurant-list'>
+                {restaurantArr?.map((restaurant, index) => {
+                    const delay = index * 0.1; // Stagger delay by 0.1s per item
                     return (
-                    <div className='search-restaurant-body'>
-                        <NavLink to={`/single/${el?.id}`}  key={i} className="searchBar-link">
-                                <img src={el?.previewImage} className='prevImage' alt='images'></img>
-                            <div className='restaurant-info'>
-                                <div className='restaurant-info1'>
-                                    <div className='search-restaurant-name'><strong>{el.name}</strong></div>
-
-                                    <div className='search-restaurant-price-city'>{el.price} · {el.city}</div>
-                                </div>
-                                <div className='restaurant-info2'>
-                                    <p className='owned_operated'><i class="fa-regular fa-map"></i> Locally owned & operated</p>
-                                <div className='waitlist-div'>
-                                    <p><i class="fa-regular fa-clock"></i> Waitlist opens at 2pm</p>
-                                </div>
-                                </div>
-                                <div className='restaurant-info3'>
-                                    <p><i className='checkmark' class="fa-sharp fa-solid fa-check"></i>Outdoor Seating </p>
-                                    <p> <i className='checkmark' class="fa-sharp fa-solid fa-check"></i> Delivery </p>
-                                    <p> <i className='checkmark' class="fa-sharp fa-solid fa-check"></i> Takeout</p>
-                                </div>
-                            </div>
-                        </NavLink>
+                        <Link
+                            className="search-restaurant-list-item"
+                            key={restaurant.id}
+                            to={`/single/${restaurant.id}`}
+                            style={{ animationDelay: `${delay}s` }}
+                        >
+                            <Restaurant restaurant={restaurant} />
+                        </Link>
+                    );
+                })}
+                
+                {restaurantArr?.length === 0 && (
+                    <div className='no-results-suggestions'>
+                        <h3>Try searching for:</h3>
+                        <ul>
+                            <li>Restaurant names (e.g., "Pizza Palace")</li>
+                            <li>Cuisine types (e.g., "Italian", "Mexican")</li>
+                            <li>Cities or locations (e.g., "San Francisco")</li>
+                        </ul>
+                        <Link to="/restaurants" className="view-all-link">
+                            View All Restaurants
+                        </Link>
                     </div>
-                    )
-                    })}
-                </div>
+                )}
             </div>
-    </div>
-  )
+        </div>
+    );
 }
 
 export default RestaurantBySearch

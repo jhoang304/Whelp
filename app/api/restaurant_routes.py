@@ -231,32 +231,86 @@ def delete_restaurant(restaurantId):
 # Search Restaurants
 @restaurant_routes.route("/search/<keyword>")
 def search_restaurant(keyword):
-    restaurant_images= RestaurantImage.query.all()
+    if not keyword or len(keyword.strip()) == 0:
+        return {"Restaurants": []}, 400
+    
+    # Sanitize keyword to prevent SQL injection
+    sanitized_keyword = keyword.strip()
+    
+    restaurant_images = RestaurantImage.query.all()
+    reviews = Review.query.all()
 
-    queried_restaurants = Restaurant.query.filter(Restaurant.name.ilike(f"%{keyword}%")).all()
+    # Improved search strategy with prioritization
+    if len(sanitized_keyword) < 3:
+        # For short keywords (1-2 characters), only search name and city
+        queried_restaurants = Restaurant.query.filter(
+            db.or_(
+                Restaurant.name.ilike(f"%{sanitized_keyword}%"),
+                Restaurant.city.ilike(f"%{sanitized_keyword}%")
+            )
+        ).all()
+    else:
+        # For longer keywords, search all fields but prioritize exact matches
+        # First get exact name matches
+        exact_name_matches = Restaurant.query.filter(
+            Restaurant.name.ilike(f"%{sanitized_keyword}%")
+        ).all()
+        
+        # Then get other matches
+        other_matches = Restaurant.query.filter(
+            db.and_(
+                ~Restaurant.name.ilike(f"%{sanitized_keyword}%"),  # Exclude exact name matches
+                db.or_(
+                    Restaurant.city.ilike(f"%{sanitized_keyword}%"),
+                    Restaurant.description.ilike(f"%{sanitized_keyword}%"),
+                    Restaurant.state.ilike(f"%{sanitized_keyword}%")
+                )
+            )
+        ).all()
+        
+        # Combine results with name matches first
+        queried_restaurants = exact_name_matches + other_matches
 
+    # Calculate average ratings and add preview images
     for restaurant in queried_restaurants:
-        restaurant.preview= None
+        # Add preview image
+        restaurant.preview = None
         for image in restaurant_images:
             if image.restaurant_id == restaurant.id and image.preview == True:
-                restaurant.preview=image.url
+                restaurant.preview = image.url
 
-    data={
-        "Restaurants":[ {
-            "id":restaurant.id,
+        # Calculate average rating
+        restaurant_reviews = [review for review in reviews if review.restaurant_id == restaurant.id]
+        if len(restaurant_reviews) == 0:
+            restaurant.aveRating = 0
+            restaurant.numReviews = 0
+        else:
+            total_rating = sum(review.rating for review in restaurant_reviews)
+            restaurant.aveRating = total_rating / len(restaurant_reviews)
+            restaurant.numReviews = len(restaurant_reviews)
+
+        # Add one sample review
+        restaurant.oneReview = restaurant_reviews[0].review if restaurant_reviews else None
+
+    data = {
+        "Restaurants": [{
+            "id": restaurant.id,
             "user_id": restaurant.user_id,
-            "name":restaurant.name,
-            "price":restaurant.price,
-            "address" : restaurant.address,
-            "city" : restaurant.city,
-            "state" :restaurant.state,
+            "name": restaurant.name,
+            "price": restaurant.price,
+            "address": restaurant.address,
+            "city": restaurant.city,
+            "state": restaurant.state,
             "zipcode": restaurant.zipcode,
-            "country":restaurant.country,
-            "phone_number" : restaurant.phone_number,
-            "description" : restaurant.description,
-            "website":restaurant.website,
-            "previewImage": restaurant.preview
-            } for restaurant in queried_restaurants],
-        }
+            "country": restaurant.country,
+            "phone_number": restaurant.phone_number,
+            "description": restaurant.description,
+            "website": restaurant.website,
+            "avgRating": round(restaurant.aveRating, 2),
+            "numReviews": restaurant.numReviews,
+            "previewImage": restaurant.preview,
+            "oneReview": restaurant.oneReview
+        } for restaurant in queried_restaurants],
+    }
 
     return data
