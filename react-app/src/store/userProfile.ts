@@ -52,7 +52,7 @@ export const editProfileThunk = (user, userId) => async (dispatch) => {
 
 const initialState = {};
 
-export default function userProfileReducer(state = initialState, action){
+export default function userProfileReducer(state: any = initialState, action: any): any {
     let newState;
     switch (action.type){
         case GetUserProfile:

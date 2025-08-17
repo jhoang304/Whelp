@@ -1,0 +1,64 @@
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom"
+import { useDispatch, useSelector } from "react-redux";
+import "./RestaurantList.css"
+import Restaurant from "../Restaurant"
+import { getAllRestaurants } from "../../store/restaurants";
+import OpenModalButton from "../OpenModalButton";
+import CreateRestaurantModal from "../CreateRestaurantModal";
+import { RootState } from "../../types";
+import { AppDispatch } from "../../store";
+
+function RestaurantList(): React.JSX.Element {
+    const sessionUser = useSelector((state: RootState) => state.session.user);
+
+    const allRestaurantObj = useSelector((state: RootState) => {
+        return state.Restaurants.allRestaurants
+    });
+
+    const allRestaurants = allRestaurantObj ? Object.values(allRestaurantObj) : [];
+
+    const [isLoaded, setIsLoaded] = useState<boolean>(false);
+    const dispatch = useDispatch<AppDispatch>();
+    
+    useEffect(() => {
+        dispatch(getAllRestaurants() as any).then(() => setIsLoaded(true));
+    }, [dispatch]);
+
+    if (!isLoaded) {
+        return <div>Loading...</div>;
+    }
+
+    return (
+        <>
+            <div className="add-restaurant-button">
+                {sessionUser && (
+                    <OpenModalButton
+                        buttonText="Add Restaurant"
+                        modalComponent={<CreateRestaurantModal />}
+                    />
+                )}
+            </div>
+            <div className="restaurant-list">
+                {
+                    allRestaurants.map((restaurant, index) => {
+                        const delay = index * 0.1; // Stagger delay by 0.1s per item
+                        return (
+                            <Link
+                                className="restaurant-list-item" // Changed class for clarity
+                                key={restaurant.id}
+                                to={`/single/${restaurant.id}`}
+                                style={{ animationDelay: `${delay}s` }} // Apply inline style for delay
+                            >
+                                <Restaurant restaurant={restaurant} />
+                            </Link>
+                        )
+                    })
+                }
+            </div>
+        </>
+    )
+}
+
+
+export default RestaurantList

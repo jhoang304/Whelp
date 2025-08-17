@@ -1,7 +1,9 @@
+import React from "react";
 import "./Restaurant.css"
 import RatingStar from "../RatingStar"
+import { RestaurantProps } from "../../types";
 
-function Restaurant({ restaurant }) {
+function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
     const tick = (
         <svg width="16" height="16" className="tick">
             <path d="M6.308 11.763a.748.748 0 01-.53-.22l-2.641-2.64a.75.75 0 011.06-1.061l2.11 2.11 5.496-5.495a.75.75 0 111.06 1.06l-6.025 6.026a.748.748 0 01-.53.22z" />

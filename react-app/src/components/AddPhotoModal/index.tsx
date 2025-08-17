@@ -2,13 +2,18 @@ import "./AddPhoto.css"
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
 import { useModal } from "../../context/Modal";
-import { addPhoto } from "../../store/restaurantPhoto";
+import { addRestaurantImage } from "../../store/restaurantPhoto";
+import { AppDispatch } from "../../store";
 
-function AddPhotoModal({ restaurantId }) {
-    const dispatch = useDispatch();
-    const [url, setUrl] = useState("");
-    const [preview, setPreview] = useState(false);
-    const [errors, setErrors] = useState([]);
+interface AddPhotoModalProps {
+    restaurantId: string | number;
+}
+
+function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element {
+    const dispatch = useDispatch<AppDispatch>();
+    const [url, setUrl] = useState<string>("");
+    const [preview, setPreview] = useState<boolean>(false);
+    const [errors, setErrors] = useState<string[]>([]);
     const { closeModal } = useModal()
 
     const newPhoto = {
@@ -16,9 +21,9 @@ function AddPhotoModal({ restaurantId }) {
         url
     }
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
-        const data = await dispatch(addPhoto(newPhoto, restaurantId));
+        const data = await dispatch(addRestaurantImage(newPhoto, restaurantId) as any);
         if (data) {
             setErrors(data);
         } else {

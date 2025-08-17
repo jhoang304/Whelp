@@ -21,12 +21,12 @@ function CreateRestaurantModal() {
     const [description, setDescription] = useState("")
     const [website, setWebsite] = useState("")
     const [url, setUrl] = useState("")
-    const [errors, setErrors] = useState([]);
+    const [errors, setErrors] = useState<any[]>([]);
     const { closeModal } = useModal();
-    const sessionUser = useSelector(state => state.session.user)
+    const sessionUser = useSelector((state: any) => state.session.user)
 
 
-    const handleSubmit = (e) => {
+    const handleSubmit = (e: any) => {
         e.preventDefault();
 
         // Perform client-side validation
@@ -68,13 +68,13 @@ function CreateRestaurantModal() {
         url,
       };
 
-      return dispatch(addRestaurantThunk(newRestaurant))
-        .then((createdRestaurantId) => {
+      return (dispatch as any)(addRestaurantThunk(newRestaurant))
+        .then((createdRestaurantId: any) => {
           history.push(`/single/${createdRestaurantId}`);
           alert("restaurant has been created")
           closeModal();
         })
-        .catch(async (res) => {
+        .catch(async (res: any) => {
           const data = await res.json();
           if (data && data.errors) setErrors(data.errors);
         });

@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useHistory } from "react-router-dom";
 import { search_restaurants } from '../../store/restaurants';
+import { AppDispatch } from '../../store';
 
-function SearchBar() {
-    const dispatch = useDispatch();
+function SearchBar(): React.JSX.Element {
+    const dispatch = useDispatch<AppDispatch>();
     const history = useHistory();
-    const [keyword, setKeyword] = useState("");
-    const [isFocused, setIsFocused] = useState(false);
-    const [isSearching, setIsSearching] = useState(false);
+    const [keyword, setKeyword] = useState<string>("");
+    const [isFocused, setIsFocused] = useState<boolean>(false);
+    const [isSearching, setIsSearching] = useState<boolean>(false);
 
-    const handleSearch = async (e) => {
+    const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
       
       const trimmedKeyword = keyword.trim();
@@ -21,7 +22,7 @@ function SearchBar() {
       setIsSearching(true);
       
       try {
-        const response = await dispatch(search_restaurants(trimmedKeyword));
+        const response = await dispatch(search_restaurants(trimmedKeyword) as any);
         if (response) {
           history.push(`/search/${encodeURIComponent(trimmedKeyword)}`);
         }
@@ -33,7 +34,7 @@ function SearchBar() {
       }
     };
 
-    const handleKeywordChange = (e) => {
+    const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       // Prevent special characters that could cause issues
       if (value.length <= 100) {
@@ -52,7 +53,7 @@ function SearchBar() {
               onChange={handleKeywordChange}
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
-              maxLength="100"
+              maxLength={100}
               disabled={isSearching}
             />
             <button 

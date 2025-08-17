@@ -5,13 +5,19 @@ import OpenModalButton from "../OpenModalButton";
 import LoginFormModal from "../LoginFormModal";
 import SignupFormModal from "../SignupFormModal";
 import { useHistory } from "react-router-dom";
+import { AppDispatch } from "../../store";
+import { User } from "../../types";
 
-function ProfileButton({ user }) {
-  const dispatch = useDispatch();
+interface ProfileButtonProps {
+  user: User | null;
+}
+
+function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
   const history = useHistory();
 
-  const [showMenu, setShowMenu] = useState(false);
-  const ulRef = useRef();
+  const [showMenu, setShowMenu] = useState<boolean>(false);
+  const ulRef = useRef<HTMLUListElement>(null);
 
   const openMenu = () => {
     if (showMenu) return;
@@ -21,8 +27,8 @@ function ProfileButton({ user }) {
   useEffect(() => {
     if (!showMenu) return;
 
-    const closeMenu = (e) => {
-      if (!ulRef.current.contains(e.target)) {
+    const closeMenu = (e: MouseEvent) => {
+      if (ulRef.current && !ulRef.current.contains(e.target as Node)) {
         setShowMenu(false);
       }
     };
@@ -32,17 +38,19 @@ function ProfileButton({ user }) {
     return () => document.removeEventListener("click", closeMenu);
   }, [showMenu]);
 
-  const handleLogout = (e) => {
+  const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    dispatch(logout());
-    history.push('/')
-    closeMenu()
+    dispatch(logout() as any);
+    history.push('/');
+    closeMenu();
   };
 
-  const loadProfile = (e) => {
+  const loadProfile = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    history.push(`/users/get/${user.id}`);
-    closeMenu()
+    if (user) {
+      history.push(`/users/get/${user.id}`);
+    }
+    closeMenu();
   };
 
   const ulClassName = "profile-dropdown" + (showMenu ? "" : " hidden");
@@ -71,12 +79,12 @@ function ProfileButton({ user }) {
           <>
             <OpenModalButton
               buttonText="Log In"
-              onItemClick={closeMenu}
+              onModalClose={closeMenu}
               modalComponent={<LoginFormModal />}
             />
             <OpenModalButton
               buttonText="Sign Up"
-              onItemClick={closeMenu}
+              onModalClose={closeMenu}
               modalComponent={<SignupFormModal />}
             />
           </>

@@ -2,25 +2,27 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
 import { signUp } from "../../store/session";
+import { RootState } from "../../types";
+import { AppDispatch } from "../../store";
 import './SignupForm.css';
 
-function SignupFormPage() {
-  const dispatch = useDispatch();
-  const sessionUser = useSelector((state) => state.session.user);
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [first_name, setFirst_Name] = useState("");
-  const [last_name, setLast_Name] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [errors, setErrors] = useState([]);
+function SignupFormPage(): React.JSX.Element {
+  const dispatch = useDispatch<AppDispatch>();
+  const sessionUser = useSelector((state: RootState) => state.session.user);
+  const [email, setEmail] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [first_name, setFirst_Name] = useState<string>("");
+  const [last_name, setLast_Name] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassword] = useState<string>("");
+  const [errors, setErrors] = useState<string[]>([]);
 
   if (sessionUser) return <Redirect to="/" />;
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (password === confirmPassword) {
-      const data = await dispatch(signUp(username, email, first_name, last_name, password));
+      const data = await dispatch(signUp(username, email, first_name, last_name, password) as any);
       if (data) {
         setErrors(data);
       } else {

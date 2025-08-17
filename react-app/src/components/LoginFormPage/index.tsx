@@ -2,17 +2,19 @@ import React, { useState, useEffect } from "react";
 import { login } from "../../store/session";
 import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
+import { RootState } from "../../types";
+import { AppDispatch } from "../../store";
 import './LoginForm.css';
 
-function LoginFormPage() {
+function LoginFormPage(): React.JSX.Element {
   // --- Hooks must be called first ---
-  const dispatch = useDispatch();
-  const sessionUser = useSelector((state) => state.session.user);
-  const [email_address, setEmail_Address] = useState("");
-  const [password, setPassword] = useState("");
-  const [errors, setErrors] = useState([]);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  const dispatch = useDispatch<AppDispatch>();
+  const sessionUser = useSelector((state: RootState) => state.session.user);
+  const [email_address, setEmail_Address] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [errors, setErrors] = useState<string[]>([]);
+  const [showToast, setShowToast] = useState<boolean>(false);
+  const [toastMessage, setToastMessage] = useState<string>("");
 
   useEffect(() => {
     if (errors.length > 0) {
@@ -24,6 +26,7 @@ function LoginFormPage() {
       return () => clearTimeout(timer); // Cleanup timer on unmount or error change
     } else {
       setShowToast(false);
+      return undefined;
     }
   }, [errors]);
   // ----------------------------------
@@ -32,9 +35,9 @@ function LoginFormPage() {
   if (sessionUser) return <Redirect to="/" />;
   // ------------------------------------------
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = await dispatch(login(email_address, password));
+    const data = await dispatch(login(email_address, password) as any);
     if (data) {
       setErrors(data);
     } else {
@@ -43,7 +46,7 @@ function LoginFormPage() {
   };
 
   const handleDemoLogin = () => {
-    dispatch(login('demo@aa.io', 'password')).then((data) => {
+    dispatch(login('demo@aa.io', 'password') as any).then((data: string[] | null) => {
       if (data) {
         setErrors(data);
       } else {

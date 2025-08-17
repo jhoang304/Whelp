@@ -2,7 +2,7 @@
 const SET_USER = "session/SET_USER";
 const REMOVE_USER = "session/REMOVE_USER";
 
-const setUser = (user) => ({
+const setUser = (user: any) => ({
 	type: SET_USER,
 	payload: user,
 });
@@ -13,7 +13,7 @@ const removeUser = () => ({
 
 const initialState = { user: null };
 
-export const authenticate = () => async (dispatch) => {
+export const authenticate = () => async (dispatch: any) => {
 	const response = await fetch("/api/auth/", {
 		headers: {
 			"Content-Type": "application/json",
@@ -29,7 +29,7 @@ export const authenticate = () => async (dispatch) => {
 	}
 };
 
-export const login = (email, password) => async (dispatch) => {
+export const login = (email: any, password: any) => async (dispatch: any) => {
 	const response = await fetch("/api/auth/login", {
 		method: "POST",
 		headers: {
@@ -55,7 +55,7 @@ export const login = (email, password) => async (dispatch) => {
 	}
 };
 
-export const logout = () => async (dispatch) => {
+export const logout = () => async (dispatch: any) => {
 	const response = await fetch("/api/auth/logout", {
 		headers: {
 			"Content-Type": "application/json",
@@ -68,7 +68,7 @@ export const logout = () => async (dispatch) => {
 };
 
 
-export const signUp = (username, email, first_name, last_name, password) => async (dispatch) => {
+export const signUp = (username: any, email: any, first_name: any, last_name: any, password: any) => async (dispatch: any) => {
 	const response = await fetch("/api/auth/signup", {
 	  method: "POST",
 	  headers: {
@@ -97,9 +97,9 @@ export const signUp = (username, email, first_name, last_name, password) => asyn
 		  last_name: "Last Name"
 		};
 
-		const formattedErrors = data.errors.map(error => {
+		const formattedErrors = data.errors.map((error: any) => {
 		  const [fieldName, errorMessage] = error.split(" : ");
-		  const formattedFieldName = fieldErrorMap[fieldName] || fieldName;
+		  const formattedFieldName = (fieldErrorMap as any)[fieldName] || fieldName;
 		  return `${formattedFieldName} ${errorMessage.replace("Field ", "")}`;
 		});
 
@@ -110,7 +110,7 @@ export const signUp = (username, email, first_name, last_name, password) => asyn
 	}
   };
 
-export default function reducer(state = initialState, action) {
+export default function reducer(state: any = initialState, action: any) {
 	switch (action.type) {
 		case SET_USER:
 			return { user: action.payload };

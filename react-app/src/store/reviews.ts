@@ -1,13 +1,13 @@
 // Load all reviews by restaurantId
 const LOAD_ALL_REVIEWS_BY_RESTAURANTID = 'reviews/LOAD_ALL_REVIEWS'
-const  loadAllReviewsByRestaurantId = (reviews) => {
+const  loadAllReviewsByRestaurantId = (reviews: any) => {
     return {
         type:LOAD_ALL_REVIEWS_BY_RESTAURANTID,
         reviews
     }
 }
 
-export const fetchAllReviewsByRestaurantId = (restaurantId) => async(dispatch) => {
+export const fetchAllReviewsByRestaurantId = (restaurantId: any) => async(dispatch: any) => {
     const res = await fetch(`/api/restaurants/${restaurantId}/reviews`)
     if(res.ok){
         const reviews = await res.json();
@@ -19,12 +19,12 @@ export const fetchAllReviewsByRestaurantId = (restaurantId) => async(dispatch) =
 
 const LoadUserReviews = 'reviews/LoadUserReviews'
 
-const loadUserIdRev = (reviews) => ({
+const loadUserIdRev = (reviews: any) => ({
   type: LoadUserReviews,
   reviews
 })
 
-export const getAllReviewsByUserId = (user_id) => async(dispatch) => {
+export const getAllReviewsByUserId = (user_id: any) => async(dispatch: any) => {
   const response = await fetch(`/api/reviews/${user_id}`)
   if(response.ok){
     const data = await response.json()
@@ -36,14 +36,14 @@ export const getAllReviewsByUserId = (user_id) => async(dispatch) => {
 
 // Delete a review
 const DELETE_REVIEW = 'reviews/DELETE_REVIEW'
-const deleteReview = (reviewId) => {
+const deleteReview = (reviewId: any) => {
     return {
         type:DELETE_REVIEW,
         reviewId
     }
 }
 
-export const deleteReviewById = (reviewId) => async (dispatch) => {
+export const deleteReviewById = (reviewId: any) => async (dispatch: any) => {
     const res = await fetch(`/api/reviews/${reviewId}`, {
         method:"DELETE"
     })
@@ -54,13 +54,13 @@ export const deleteReviewById = (reviewId) => async (dispatch) => {
 
 // Create a review
 const CREATE_REVIEW = 'reviews/CREATE_REVIEW'
-const createReview = (review) => {
+const createReview = (review: any) => {
     return {
         type:CREATE_REVIEW,
         review
     }
 }
-export const createOneReview = (newReview,restaurantId) => async (dispatch) => {
+export const createOneReview = (newReview: any, restaurantId: any) => async (dispatch: any) => {
     const res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
         method:"POST",
         headers: {"Content-Type":"application/json"},
@@ -75,13 +75,13 @@ export const createOneReview = (newReview,restaurantId) => async (dispatch) => {
 
 //update a review
 const UPDATE_REVIEW = 'reviews/UPDATE_REVIEW'
-const updateReview = (review) => {
+const updateReview = (review: any) => {
     return {
         type:UPDATE_REVIEW,
         review
     }
 }
-export const updateOneReview = (newReview, reviewId) => async (dispatch) => {
+export const updateOneReview = (newReview: any, reviewId: any) => async (dispatch: any) => {
     const res = await fetch(`/api/reviews/${reviewId}`, {
         method: "PUT",
         headers: {"Content-Type":"application/json"},
@@ -95,20 +95,20 @@ export const updateOneReview = (newReview, reviewId) => async (dispatch) => {
 }
 
 const initialState = {}
-const reviewReducer = (state = initialState, action) => {
-    let newState
+const reviewReducer = (state: any = initialState, action: any) => {
+    let newState: any
     switch (action.type) {
         case LOAD_ALL_REVIEWS_BY_RESTAURANTID:
             newState = {};
             const allReviews = action.reviews
-            allReviews.forEach(review =>{
+            allReviews.forEach((review: any) =>{
                 newState[review["id"]] = review
             })
             return newState
 
         case LoadUserReviews:
             newState = {};
-            action.reviews.forEach(review => {
+            action.reviews.forEach((review: any) => {
                 newState[review.id] = review
                 })
             return newState

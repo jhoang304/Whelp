@@ -3,15 +3,21 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Link, useParams, useHistory } from "react-router-dom";
 import { search_restaurants } from '../../store/restaurants';
 import Restaurant from '../Restaurant';
+import { RootState } from '../../types';
+import { AppDispatch } from '../../store';
 
 import './SearchBar.css';
 
-function RestaurantBySearch() {
-    const dispatch = useDispatch();
+interface SearchParams {
+    keyword: string;
+}
+
+function RestaurantBySearch(): React.JSX.Element {
+    const dispatch = useDispatch<AppDispatch>();
     const history = useHistory();
-    const { keyword } = useParams();
-    const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState(null);
+    const { keyword } = useParams<SearchParams>();
+    const [isLoading, setIsLoading] = useState<boolean>(false);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const performSearch = async () => {
@@ -36,7 +42,9 @@ function RestaurantBySearch() {
         performSearch();
     }, [dispatch, keyword, history]);
 
-    const restaurant = useSelector(state => state.Restaurants.searchedRestaurants || {});
+    const restaurant = useSelector((state: RootState) => 
+        state.Restaurants.searchedRestaurants || {}
+    );
     const restaurantArr = Object.values(restaurant);
 
     if (isLoading) {

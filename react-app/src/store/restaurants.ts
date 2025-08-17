@@ -1,19 +1,28 @@
 
+import { 
+    RestaurantsState, 
+    RestaurantActionTypes, 
+    Restaurant, 
+    RestaurantsResponse
+} from '../types';
+import { AppDispatch } from './index';
+
 //Load all restaurants
-const LOAD = "restaurants/loadRestaurants"
-export const loadRestaurants = (list) => ({
+const LOAD = "restaurants/loadRestaurants";
+
+export const loadRestaurants = (list: Restaurant[]) => ({
     type: LOAD,
     allRestaurants: list
-})
+});
 
-export const getAllRestaurants = () => async dispatch => {
-    const response = await fetch(`/api/restaurants`)
+export const getAllRestaurants = () => async (dispatch: AppDispatch) => {
+    const response = await fetch(`/api/restaurants`);
     if (response.ok) {
-        const listObj = await response.json()
-        const list = listObj.Restaurants
-        dispatch(loadRestaurants(list))
+        const listObj: RestaurantsResponse = await response.json();
+        const list = listObj.Restaurants;
+        dispatch(loadRestaurants(list));
     }
-}
+};
 
 //Search Restaurants
 export const SEARCH_RESTAURANTS = "restaurants/searchedRestaurants";
@@ -25,12 +34,12 @@ const searchLoading = () => ({
     type: SEARCH_RESTAURANTS_LOADING
 });
 
-const searchError = (error) => ({
+const searchError = (error: string) => ({
     type: SEARCH_RESTAURANTS_ERROR,
     error
 });
 
-const search = (restaurants) => ({
+const search = (restaurants: RestaurantsResponse) => ({
     type: SEARCH_RESTAURANTS,
     restaurants
 });
@@ -39,7 +48,7 @@ const clearSearchResults = () => ({
     type: CLEAR_SEARCH_RESULTS
 });
 
-export const search_restaurants = (keyword) => async (dispatch) => {
+export const search_restaurants = (keyword: string) => async (dispatch: AppDispatch) => {
     if (!keyword || keyword.trim().length === 0) {
         dispatch(searchError("Search keyword cannot be empty"));
         return null;
@@ -68,18 +77,18 @@ export const search_restaurants = (keyword) => async (dispatch) => {
     }
 };
 
-export const clearSearch = () => (dispatch) => {
+export const clearSearch = () => (dispatch: AppDispatch) => {
     dispatch(clearSearchResults());
 };
 
 // Load a single restaurant
 const LOADSINGLE = "singleRestaurant/loadSingleRestaurant"
-export const loadSingleRestaurant = (detailObj) => ({
+export const loadSingleRestaurant = (detailObj: any) => ({
     type: LOADSINGLE,
     singleRestaurant: detailObj
 })
 
-export const getSingleRestaurant = (restaurantId) => async dispatch => {
+export const getSingleRestaurant = (restaurantId: number) => async (dispatch: any) => {
     const response = await fetch(`/api/restaurants/${restaurantId}`)
     if (response.ok) {
 
@@ -93,12 +102,12 @@ export const getSingleRestaurant = (restaurantId) => async dispatch => {
 //Create a restaurant
 const ADD_RESTAURANT ="restaurants/addRestaurants"
 
-export const createRestaurant=(newRestaurant)=>({
+export const createRestaurant=(newRestaurant: any)=>({
     type: ADD_RESTAURANT,
     newRestaurant
 })
 
-export const addRestaurantThunk = (newRestaurant) => async dispatch => {
+export const addRestaurantThunk = (newRestaurant: any) => async (dispatch: any) => {
     let createdRestaurantId;
     const response = await fetch("/api/restaurants/", {
         method: "POST",
@@ -139,12 +148,12 @@ export const addRestaurantThunk = (newRestaurant) => async dispatch => {
 
 //Edit a restaurant
 const UPDATE_RESTAURANT = "restaurants/updateRestaurant"
-export const updateSingleRestaurant = (restaurant) => ({
+export const updateSingleRestaurant = (restaurant: any) => ({
     type: UPDATE_RESTAURANT,
     restaurant
 })
 
-export const updateRestaurantThunk = (restaurant, user_id) => async dispatch => {
+export const updateRestaurantThunk = (restaurant: any, user_id: any) => async (dispatch: any) => {
     const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website } = restaurant
     const res = await fetch(`/api/restaurants/${+id}`, {
         method: "PUT",
@@ -167,12 +176,12 @@ export const updateRestaurantThunk = (restaurant, user_id) => async dispatch => 
 
 //Delete a restaurant
 const DELETE_RESTAURANT = "restaurants/deleteRestaurant"
-export const deleteRestaurant = (id) => ({
+export const deleteRestaurant = (id: number) => ({
     type: DELETE_RESTAURANT,
     id
 })
 
-export const deleteRestaurantThunk = (id) => async dispatch => {
+export const deleteRestaurantThunk = (id: number) => async (dispatch: any) => {
 
     const res = await fetch(`/api/restaurants/${id}`, {
         method: "DELETE"
@@ -186,14 +195,18 @@ export const deleteRestaurantThunk = (id) => async dispatch => {
 
 
 
-const initialState = {};
-export default function restaurantsReducer(state = initialState, action) {
+const initialState: RestaurantsState = {};
+
+export default function restaurantsReducer(
+    state: RestaurantsState = initialState, 
+    action: RestaurantActionTypes
+): RestaurantsState {
     switch (action.type) {
         case LOAD:
-            const newAllRestaurants = {}
+            const newAllRestaurants: { [key: number]: Restaurant } = {};
             action.allRestaurants.forEach(restaurant => {
-                newAllRestaurants[restaurant.id] = restaurant
-            })
+                newAllRestaurants[restaurant.id] = restaurant;
+            });
             return {
                 ...state,
                 allRestaurants: {
@@ -212,12 +225,16 @@ export default function restaurantsReducer(state = initialState, action) {
         }
         case UPDATE_RESTAURANT: {
             const updateRestaurantState = { ...state }
-            updateRestaurantState.singleRestaurant[action.restaurant.id] = action.restaurant
+            if (updateRestaurantState.singleRestaurant) {
+                (updateRestaurantState.singleRestaurant as any)[action.restaurant.id] = action.restaurant
+            }
             return updateRestaurantState
         }
         case DELETE_RESTAURANT: {
             const deleteRestaurantState = { ...state }
-            delete deleteRestaurantState.singleRestaurant[action.id]
+            if (deleteRestaurantState.singleRestaurant) {
+                delete (deleteRestaurantState.singleRestaurant as any)[action.id]
+            }
             return deleteRestaurantState
         }
         case SEARCH_RESTAURANTS_LOADING:
@@ -241,7 +258,7 @@ export default function restaurantsReducer(state = initialState, action) {
                 searchError: null
             };
             action.restaurants.Restaurants.forEach((restaurant) => {
-                newState.searchedRestaurants[restaurant.id] = restaurant;
+                (newState.searchedRestaurants as any)[restaurant.id] = restaurant;
             });
             return newState;
         case CLEAR_SEARCH_RESULTS:
