@@ -1,17 +1,17 @@
 const GetUserProfile = 'session/GetUserProfile';
 const EditProfile = 'session/EditProfile';
 
-const getProfile = (userInfo) => ({
+const getProfile = (userInfo: any) => ({
     type: GetUserProfile,
     userInfo
 });
 
-const editProf = (user) => ({
+const editProf = (user: any) => ({
     type: EditProfile,
     payload: user
 });
 
-export const getProfileThunk = (userId) => async (dispatch) => {
+export const getProfileThunk = (userId: any) => async (dispatch: any) => {
     const response = await fetch(`/api/users/get/${userId}`, {
         headers: {
             'Content-Type': 'application/json',
@@ -21,7 +21,7 @@ export const getProfileThunk = (userId) => async (dispatch) => {
     if(response.ok && reviewsResult.ok){
         const userInfo = await response.json()
         const reviews = await reviewsResult.json()
-        let result = {}
+        let result: any = {}
         result["id"] = userInfo.id
         result["reviews"] = reviews
         result["first_name"] = userInfo.first_name
@@ -33,7 +33,7 @@ export const getProfileThunk = (userId) => async (dispatch) => {
     return null
 };
 
-export const editProfileThunk = (user, userId) => async (dispatch) => {
+export const editProfileThunk = (user: any, userId: any) => async (dispatch: any) => {
     const response = await fetch(`/api/users/${userId}/edit`, {
         method: 'PUT',
         headers: {

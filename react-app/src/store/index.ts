@@ -17,6 +17,7 @@ const rootReducer = combineReducers({
 
 // Define types for dispatch
 export type AppDispatch = ThunkDispatch<RootState, unknown, any>;
+export type { RootState };
 
 // Enhance the window object for Redux DevTools
 declare global {
@@ -25,7 +26,7 @@ declare global {
   }
 }
 
-let enhancer;
+let enhancer: any;
 
 if (process.env.NODE_ENV === 'production') {
   enhancer = applyMiddleware(thunk);
