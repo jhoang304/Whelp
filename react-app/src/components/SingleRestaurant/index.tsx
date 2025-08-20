@@ -4,11 +4,11 @@ import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { useParams } from 'react-router-dom';
-import { getSingleRestaurant } from "../../store/restaurants"
+import { getSingleRestaurant, deleteRestaurantThunk, getAllRestaurants } from "../../store/restaurants"
 import AddPhotoModal from "../AddPhotoModal";
 import OpenModalButton from "../OpenModalButton";
 import EditRestaurant from "../EditRestaurantModal";
-import DeleteRestaurant from "../DeleteRestaurant";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
 import DisplayPhotos from "../DisplayPhotos";
@@ -40,9 +40,16 @@ function SingleRestaurant(): React.JSX.Element {
     }, [dispatch, restaurantId])
 
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
-    const [showDeleteEdit, setShowDeleteEdit] = useState<boolean>(false)
 
     const sessionUser = useSelector((state: RootState) => state.session.user);
+
+    const handleDelete = () => {
+        if (restaurantId) {
+            dispatch(deleteRestaurantThunk(+restaurantId) as any)
+                .then(() => dispatch(getAllRestaurants() as any))
+                .then(() => history.push("/"));
+        }
+    };
 
     const takeoutIcon = (<svg width="24" height="24" className="icon_svg"><path d="M22 7h-5.177l-1.16-4.33a1 1 0 10-1.931.518L14.752 7H9.228l1.021-3.812a1.002 1.002 0 00-1.096-1.254 1 1 0 00-.836.737L7.157 7H2a1 1 0 00-1 1v4a1 1 0 001 1h.88l1.318 6.588A3.006 3.006 0 007.14 22h9.72a3.006 3.006 0 002.942-2.411L21.12 13H22a1 1 0 001-1V8a.998.998 0 00-1-1zm-4.16 12.197a1.001 1.001 0 01-.98.803H7.14a1.001 1.001 0 01-.98-.804L4.92 13h14.16l-1.24 6.197zM21 11H3V9h3.621l-.056.209a1 1 0 101.932.518L8.692 9h6.596l.215.8a1 1 0 001.932-.517L17.359 9H21v2z"></path></svg>)
     const deliveryIcon = (<svg width="24" height="24" className="icon_svg"><path d="M23.596 17a4.97 4.97 0 00-1.836-3.839L17.753 4.77a1.114 1.114 0 00-.464-.53.983.983 0 00-.432-.124c-.013 0-.023-.008-.036-.008h-4.843a1 1 0 000 2h1.656a3.534 3.534 0 00-.09 3.006l1.817 4.107A5.018 5.018 0 0013.703 16H9.748a2.537 2.537 0 01-1.488-2.107c0-1.486 1.971-1.895 2.05-1.91a1 1 0 00.815-.983V9a.998.998 0 00-1-1h-2.03V5a3.003 3.003 0 00-3-3H1.38a1 1 0 00-1 1v8a1 1 0 001 1h.28a6.56 6.56 0 00-1.115 5.203.99.99 0 00.807.77c0 .01-.005.017-.005.027a4.056 4.056 0 108.11 0h5.06a4.055 4.055 0 108.109 0l-.001-.006a.996.996 0 00.97-.994zM9.125 10v.249a3.987 3.987 0 00-2.865 3.644A3.909 3.909 0 006.86 16H2.405a4.571 4.571 0 011.621-3.646 1 1 0 00-.079-1.587L2.832 10h6.293zM2.38 4h2.715a1 1 0 011 1v3H2.832c-.153.007-.305.03-.452.072V4zM5.4 20.056A2.058 2.058 0 013.347 18h4.11a2.058 2.058 0 01-2.056 2.056zM21.425 16h-5.658a3.001 3.001 0 015.658 0zm-5.93-9.182c.175-.273.431-.484.732-.603l2.783 5.827c-.14-.012-.272-.042-.414-.042-.502.007-1 .09-1.477.248l-1.744-3.943a1.54 1.54 0 01.12-1.487zm3.076 13.238A2.058 2.058 0 0116.517 18h4.109a2.058 2.058 0 01-2.055 2.056z"></path></svg>)
@@ -54,7 +61,19 @@ function SingleRestaurant(): React.JSX.Element {
     const addressIcon = (<svg width="24" height="24" viewBox="0 0 22 22" className="address-icon_svg"><path d="M11 22a3 3 0 01-2.12-.88l-8-8a3 3 0 010-4.24l8-8a3 3 0 014.24 0l8 8a3 3 0 010 4.24l-8 8A3 3 0 0111 22zm0-20a1 1 0 00-.71.29l-8 8a1 1 0 000 1.42l8 8a1 1 0 001.42 0l8-8a1 1 0 000-1.42l-8-8A1 1 0 0011 2zm4.85 8.15a.48.48 0 010 .66l-3 3a.47.47 0 01-.35.15.43.43 0 01-.19 0 .5.5 0 01-.31-.46v-2.05a1 1 0 01-.25.05h-2a1 1 0 00-1 1v1a1 1 0 11-2 0v-1a3 3 0 013-3h2a1 1 0 01.25.05V7.5a.5.5 0 01.31-.5.47.47 0 01.54.15l3 3z"></path></svg>)
 
     if (!isLoaded || !singleRestaurant) {
-        return <div>Loading...</div>;
+        return (
+            <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <div className="loading-text">
+                    <span className="loading-word">Loading</span>
+                    <span className="loading-dots">
+                        <span>.</span>
+                        <span>.</span>
+                        <span>.</span>
+                    </span>
+                </div>
+            </div>
+        );
     }
 
     return (
@@ -102,20 +121,15 @@ function SingleRestaurant(): React.JSX.Element {
                                                 buttonText="Edit Restaurant"
                                                 modalComponent={<EditRestaurant singleRestaurant={singleRestaurant} />}
                                             />
-                                            <button
-                                                onClick={() => setShowDeleteEdit(!showDeleteEdit)}
-                                            >Delete Restaurant</button>
-                                            {showDeleteEdit && (
-                                                <DeleteRestaurant
-                                                    singleRestaurant={singleRestaurant}
-                                                    sessionUser={sessionUser}
-                                                    dispatch={dispatch}
-                                                    history={history}
-                                                    restaurantId={restaurantId}
-                                                    setShowDeleteEdit={setShowDeleteEdit}
-
-                                                />
-                                            )}
+                                            <OpenModalButton
+                                                buttonText="Delete Restaurant"
+                                                modalComponent={
+                                                    <ConfirmDeleteModal 
+                                                        restaurantName={singleRestaurant.name}
+                                                        onConfirm={handleDelete}
+                                                    />
+                                                }
+                                            />
                                         </>
                                     )}
                                 </div>
