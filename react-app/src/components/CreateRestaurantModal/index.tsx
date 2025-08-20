@@ -21,36 +21,50 @@ function CreateRestaurantModal() {
     const [description, setDescription] = useState("")
     const [website, setWebsite] = useState("")
     const [url, setUrl] = useState("")
-    const [errors, setErrors] = useState<any[]>([]);
+    const [errors, setErrors] = useState<string[]>([]);
+    const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
     const sessionUser = useSelector((state: any) => state.session.user)
 
 
-    const handleSubmit = (e: any) => {
+    const handleSubmit = async (e: any) => {
         e.preventDefault();
+        setIsSubmitting(true);
+        setErrors([]); // Clear previous errors
 
         // Perform client-side validation
-        const validationErrors = [];
+        const validationErrors: string[] = [];
 
-        if (!name) validationErrors.push("Name is required.");
-        if (name.length < 1 || name.length > 100) validationErrors.push("Name must be between 1 and 50 characters.");
-        if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 50 characters.");
-        if (city.length < 1 || city.length > 100) validationErrors.push("City must be between 1 and 85 characters.");
-        if (state.length !== 2) validationErrors.push("State must be 2 characters");
-        if (zipcode.length !== 5) validationErrors.push("Zipcode must be 5 characters.");
-        if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
-        if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
-        if (website.length < 1 || website.length > 70) validationErrors.push("Website must be between 1 and 70 characters.");
-        if (description.length < 1 || description.length > 500) validationErrors.push("Description must be between 1 and 500 characters.");
-        if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
-        if (!/\.com$/.test(website)) validationErrors.push("Invalid website format.");
-        if (url && !/^https?:\/\/.+/.test(url)) validationErrors.push("Invalid preview image URL format.");
-        if (!/^[()\-0-9]+$/.test(phone_number)) validationErrors.push("Phone Number must contain only digits, parentheses, and hyphens.");
+        // Required field validation
+        if (!name.trim()) validationErrors.push("Restaurant name is required");
+        if (!address.trim()) validationErrors.push("Address is required");
+        if (!city.trim()) validationErrors.push("City is required");
+        if (!state.trim()) validationErrors.push("State is required");
+        if (!zipcode.trim()) validationErrors.push("Zip code is required");
+        if (!country.trim()) validationErrors.push("Country is required");
+        if (!phone_number.trim()) validationErrors.push("Phone number is required");
+        if (!website.trim()) validationErrors.push("Website is required");
+        if (!description.trim()) validationErrors.push("Description is required");
 
+        // Length validation
+        if (name.length > 100) validationErrors.push("Restaurant name must be 100 characters or less");
+        if (address.length > 100) validationErrors.push("Address must be 100 characters or less");
+        if (city.length > 85) validationErrors.push("City must be 85 characters or less");
+        if (country.length > 56) validationErrors.push("Country must be 56 characters or less");
+        if (description.length > 500) validationErrors.push("Description must be 500 characters or less");
+        if (website.length > 70) validationErrors.push("Website must be 70 characters or less");
+
+        // Format validation
+        if (state && state.length !== 2) validationErrors.push("State must be exactly 2 characters (e.g., CA, NY)");
+        if (zipcode && !/^\d{5}$/.test(zipcode)) validationErrors.push("Zip code must be exactly 5 digits");
+        if (phone_number && !/^[\d\s\-\(\)]+$/.test(phone_number)) validationErrors.push("Phone number can only contain digits, spaces, hyphens, and parentheses");
+        if (website && !website.includes('.')) validationErrors.push("Please enter a valid website URL (e.g., example.com)");
+        if (url && url.trim() && !/^https?:\/\/.+/.test(url)) validationErrors.push("Image URL must start with http:// or https://");
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
-            return; // Exit if there are validation errors
+            setIsSubmitting(false);
+            return;
         }
 
       const newRestaurant = {
@@ -68,27 +82,54 @@ function CreateRestaurantModal() {
         url,
       };
 
-      return (dispatch as any)(addRestaurantThunk(newRestaurant))
-        .then((createdRestaurantId: any) => {
-          history.push(`/single/${createdRestaurantId}`);
-          alert("restaurant has been created")
-          closeModal();
-        })
-        .catch(async (res: any) => {
-          const data = await res.json();
-          if (data && data.errors) setErrors(data.errors);
-        });
+        try {
+            const createdRestaurantId = await (dispatch as any)(addRestaurantThunk(newRestaurant));
+            closeModal();
+            history.push(`/single/${createdRestaurantId}`);
+        } catch (res: any) {
+            try {
+                const data = await res.json();
+                if (data && data.errors) {
+                    // Handle different error formats
+                    if (Array.isArray(data.errors)) {
+                        setErrors(data.errors);
+                    } else if (typeof data.errors === 'object') {
+                        // Convert object errors to array
+                        const errorMessages = Object.values(data.errors).flat() as string[];
+                        setErrors(errorMessages);
+                    } else {
+                        setErrors([data.errors]);
+                    }
+                } else if (data.message) {
+                    setErrors([data.message]);
+                } else {
+                    setErrors(["An error occurred while creating the restaurant. Please try again."]);
+                }
+            } catch (parseError) {
+                setErrors(["Network error. Please check your connection and try again."]);
+            }
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     return (
         <>
             <h2 className="add-restaurant-text">Add Restaurant</h2>
             <form className="add-restaurant-form" onSubmit={handleSubmit}>
-                <ul>
-                    {errors.map((error, idx) => (
-                        <li key={idx}>{error}</li>
-                    ))}
-                </ul>
+                {errors.length > 0 && (
+                    <div className="error-container">
+                        <div className="error-header">
+                            <i className="fa-solid fa-triangle-exclamation"></i>
+                            Please fix the following errors:
+                        </div>
+                        <ul className="error-list">
+                            {errors.map((error, idx) => (
+                                <li key={idx} className="error-item">{error}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
                     <input
                         type="text"
                         value={name}
@@ -178,7 +219,20 @@ function CreateRestaurantModal() {
                         required
 
                     />
-                <button className="add-business-button" type="submit">Create Restaurant</button>
+                <button 
+                    className="add-business-button" 
+                    type="submit" 
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? (
+                        <>
+                            <i className="fa-solid fa-spinner fa-spin"></i>
+                            Creating Restaurant...
+                        </>
+                    ) : (
+                        'Create Restaurant'
+                    )}
+                </button>
             </form>
         </>
     )

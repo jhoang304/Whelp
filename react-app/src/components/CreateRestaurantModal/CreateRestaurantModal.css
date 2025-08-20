@@ -53,6 +53,68 @@ button.add-business-button {
     margin-bottom: 45px;
 }
 
-li {
-    color: red;
+/* Error styling */
+.error-container {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.error-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #dc2626;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+}
+
+.error-header i {
+    font-size: 16px;
+}
+
+.error-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.error-item {
+    color: #b91c1c;
+    font-size: 14px;
+    padding: 4px 0;
+    border-left: 3px solid #dc2626;
+    padding-left: 12px;
+    margin-bottom: 8px;
+}
+
+.error-item:last-child {
+    margin-bottom: 0;
+}
+
+/* Button loading state */
+.add-business-button:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.add-business-button i {
+    margin-right: 8px;
+}
+
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }
