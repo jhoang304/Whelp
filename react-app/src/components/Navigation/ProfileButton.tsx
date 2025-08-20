@@ -4,6 +4,7 @@ import { logout } from "../../store/session";
 import OpenModalButton from "../OpenModalButton";
 import LoginFormModal from "../LoginFormModal";
 import SignupFormModal from "../SignupFormModal";
+import CreateRestaurantModal from "../CreateRestaurantModal";
 import { useHistory } from "react-router-dom";
 import { AppDispatch } from "../../store";
 import { User } from "../../types";
@@ -70,6 +71,18 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
               <i className="fa-solid fa-user-circle"></i>
               My Profile
             </button>
+            <div className="add-restaurant-dropdown-button">
+              <OpenModalButton
+                buttonText={
+                  <>
+                    <i className="fa-solid fa-plus"></i>
+                    Add Restaurant
+                  </>
+                }
+                onModalClose={closeMenu}
+                modalComponent={<CreateRestaurantModal />}
+              />
+            </div>
             <button className='user-logout-button' onClick={handleLogout}>
               <i className="fa-solid fa-arrow-right-from-bracket"></i>
               Log Out

@@ -4,14 +4,10 @@ import { useDispatch, useSelector } from "react-redux";
 import "./RestaurantList.css"
 import Restaurant from "../Restaurant"
 import { getAllRestaurants } from "../../store/restaurants";
-import OpenModalButton from "../OpenModalButton";
-import CreateRestaurantModal from "../CreateRestaurantModal";
 import { RootState } from "../../types";
 import { AppDispatch } from "../../store";
 
 function RestaurantList(): React.JSX.Element {
-    const sessionUser = useSelector((state: RootState) => state.session.user);
-
     const allRestaurantObj = useSelector((state: RootState) => {
         return state.Restaurants.allRestaurants
     });
@@ -43,14 +39,6 @@ function RestaurantList(): React.JSX.Element {
 
     return (
         <>
-            <div className="add-restaurant-button">
-                {sessionUser && (
-                    <OpenModalButton
-                        buttonText="Add Restaurant"
-                        modalComponent={<CreateRestaurantModal />}
-                    />
-                )}
-            </div>
             <div className="restaurant-list">
                 {
                     allRestaurants.map((restaurant, index) => {
