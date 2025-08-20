@@ -26,7 +26,19 @@ function RestaurantList(): React.JSX.Element {
     }, [dispatch]);
 
     if (!isLoaded) {
-        return <div>Loading...</div>;
+        return (
+            <div className="loading-container">
+                <div className="loading-spinner"></div>
+                <div className="loading-text">
+                    <span className="loading-word">Loading</span>
+                    <span className="loading-dots">
+                        <span>.</span>
+                        <span>.</span>
+                        <span>.</span>
+                    </span>
+                </div>
+            </div>
+        );
     }
 
     return (
