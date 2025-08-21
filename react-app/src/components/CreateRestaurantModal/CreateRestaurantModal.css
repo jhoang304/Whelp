@@ -1,79 +1,103 @@
 .add-restaurant-form {
-    display:flex;
+    display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: var(--space-5);
 }
 
 .add-restaurant-form input {
     width: 500px;
     height: 40px;
-    border-radius: 5px;
-    text-overflow: ellipsis;
-    margin: 0px 80px;
-    border: rgb(200, 200, 200) 1px solid;
-    text-overflow: ellipsis;
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    margin: 0px var(--space-20);
+    border: 1px solid var(--color-gray-300);
+    font-size: var(--text-base);
+    color: var(--color-gray-700);
+    transition: border-color 0.3s ease;
+}
+
+.add-restaurant-form input:focus {
+    outline: none;
+    border-color: var(--color-primary);
 }
 
 .add-restaurant-form select {
     width: 500px;
     height: 40px;
-    border-radius: 5px;
-    text-overflow: ellipsis;
-    margin: 0px 80px;
-    border: rgb(200, 200, 200) 1px solid;
-    color: rgb(45, 46, 47);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    margin: 0px var(--space-20);
+    border: 1px solid var(--color-gray-300);
+    color: var(--color-gray-700);
+    font-size: var(--text-base);
+    transition: border-color 0.3s ease;
+}
 
+.add-restaurant-form select:focus {
+    outline: none;
+    border-color: var(--color-primary);
 }
 
 .add-restaurant-form span {
     display: inline-block;
     width: 125px;
-    font-size: 14px;
+    font-size: var(--text-sm);
 }
 
 .add-restaurant-text {
-    margin-top: 50px;
+    margin-top: var(--space-12);
     display: flex;
     justify-content: center;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-700);
 }
 
 button.add-business-button {
-    margin-top: 20px;
-    background-color: rgb(244, 13, 21);
+    margin-top: var(--space-5);
+    background-color: var(--color-primary);
     color: white;
-    font-weight: 600;
-    font-size: 16px;
+    font-weight: var(--font-semibold);
+    font-size: var(--text-base);
     width: 240px;
     height: 56px;
-    padding: 10px 16px;
-    border-radius: 4px;
-   display: block;
+    padding: var(--space-2) var(--space-4);
+    border-radius: var(--radius-sm);
+    border: none;
+    display: block;
     margin-left: auto;
     margin-right: auto;
-    margin-bottom: 45px;
+    margin-bottom: var(--space-12);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+button.add-business-button:hover {
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
 }
 
 /* Error styling */
 .error-container {
     background: #fef2f2;
     border: 1px solid #fecaca;
-    border-radius: 8px;
-    padding: 16px;
-    margin-bottom: 20px;
+    border-radius: var(--radius-base);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
 }
 
 .error-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    color: #dc2626;
-    font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 12px;
+    gap: var(--space-2);
+    color: var(--color-error);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
 }
 
 .error-header i {
-    font-size: 16px;
+    font-size: var(--text-base);
 }
 
 .error-list {
@@ -84,11 +108,11 @@ button.add-business-button {
 
 .error-item {
     color: #b91c1c;
-    font-size: 14px;
-    padding: 4px 0;
-    border-left: 3px solid #dc2626;
-    padding-left: 12px;
-    margin-bottom: 8px;
+    font-size: var(--text-sm);
+    padding: var(--space-1) 0;
+    border-left: 3px solid var(--color-error);
+    padding-left: var(--space-3);
+    margin-bottom: var(--space-2);
 }
 
 .error-item:last-child {
@@ -97,13 +121,13 @@ button.add-business-button {
 
 /* Button loading state */
 .add-business-button:disabled {
-    background-color: #ccc;
+    background-color: var(--color-gray-400);
     cursor: not-allowed;
     opacity: 0.7;
 }
 
 .add-business-button i {
-    margin-right: 8px;
+    margin-right: var(--space-2);
 }
 
 .fa-spin {

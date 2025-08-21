@@ -1,0 +1,135 @@
+/* Whelp Design System - Design Tokens */
+
+:root {
+  /* === SPACING SCALE === */
+  /* Based on 8px grid system for consistent spacing */
+  --space-0: 0;
+  --space-1: 4px;   /* 0.25rem - Tiny gaps */
+  --space-2: 8px;   /* 0.5rem - Small gaps */
+  --space-3: 12px;  /* 0.75rem - Form element spacing */
+  --space-4: 16px;  /* 1rem - Base spacing unit */
+  --space-5: 20px;  /* 1.25rem - Card padding */
+  --space-6: 24px;  /* 1.5rem - Section spacing */
+  --space-8: 32px;  /* 2rem - Large component gaps */
+  --space-10: 40px; /* 2.5rem - Layout spacing */
+  --space-12: 48px; /* 3rem - Major sections */
+  --space-16: 64px; /* 4rem - Page sections */
+  --space-20: 80px; /* 5rem - Hero sections */
+
+  /* === TYPOGRAPHY SCALE === */
+  /* Modular scale based on 16px with 1.25 ratio */
+  --text-xs: 12px;   /* 0.75rem - Fine print, captions */
+  --text-sm: 14px;   /* 0.875rem - Small text, labels */
+  --text-base: 16px; /* 1rem - Body text, buttons */
+  --text-lg: 18px;   /* 1.125rem - Large body text */
+  --text-xl: 20px;   /* 1.25rem - Small headings, lead text */
+  --text-2xl: 24px;  /* 1.5rem - Card titles, H4 */
+  --text-3xl: 30px;  /* 1.875rem - Section headings, H3 */
+  --text-4xl: 36px;  /* 2.25rem - Page headings, H2 */
+  --text-5xl: 48px;  /* 3rem - Hero headings, H1 */
+  --text-6xl: 60px;  /* 3.75rem - Display text */
+
+  /* === FONT WEIGHTS === */
+  --font-light: 300;
+  --font-normal: 400;
+  --font-medium: 500;
+  --font-semibold: 600;
+  --font-bold: 700;
+  --font-extrabold: 800;
+
+  /* === LINE HEIGHTS === */
+  --leading-none: 1;
+  --leading-tight: 1.25;
+  --leading-snug: 1.375;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.625;
+  --leading-loose: 2;
+
+  /* === COLORS === */
+  /* Whelp brand colors */
+  --color-primary: #f00c13;    /* Whelp red */
+  --color-primary-light: #ff6b6b;
+  --color-primary-dark: #d60b12;
+  
+  /* Neutral colors */
+  --color-gray-50: #fafafa;
+  --color-gray-100: #f5f5f5;
+  --color-gray-200: #e6e6e6;
+  --color-gray-300: #d3d3d3;
+  --color-gray-400: #bbb;
+  --color-gray-500: #999;
+  --color-gray-600: #666;
+  --color-gray-700: #333;
+  --color-gray-800: #2d2e2f;
+  --color-gray-900: #1a1a1a;
+
+  /* Semantic colors */
+  --color-success: #4ade80;
+  --color-warning: #fbbf24;
+  --color-error: #ef4444;
+  --color-info: #3b82f6;
+
+  /* === BORDER RADIUS === */
+  --radius-none: 0;
+  --radius-sm: 4px;
+  --radius-base: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-full: 50%;
+
+  /* === SHADOWS === */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-base: 0 4px 12px rgba(0, 0, 0, 0.1);
+  --shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.15);
+  --shadow-xl: 0 20px 40px rgba(0, 0, 0, 0.2);
+}
+
+/* === UTILITY CLASSES === */
+
+/* Typography utilities */
+.text-xs { font-size: var(--text-xs); }
+.text-sm { font-size: var(--text-sm); }
+.text-base { font-size: var(--text-base); }
+.text-lg { font-size: var(--text-lg); }
+.text-xl { font-size: var(--text-xl); }
+.text-2xl { font-size: var(--text-2xl); }
+.text-3xl { font-size: var(--text-3xl); }
+.text-4xl { font-size: var(--text-4xl); }
+.text-5xl { font-size: var(--text-5xl); }
+
+.font-light { font-weight: var(--font-light); }
+.font-normal { font-weight: var(--font-normal); }
+.font-medium { font-weight: var(--font-medium); }
+.font-semibold { font-weight: var(--font-semibold); }
+.font-bold { font-weight: var(--font-bold); }
+
+.leading-tight { line-height: var(--leading-tight); }
+.leading-normal { line-height: var(--leading-normal); }
+.leading-relaxed { line-height: var(--leading-relaxed); }
+
+/* Spacing utilities */
+.p-0 { padding: var(--space-0); }
+.p-1 { padding: var(--space-1); }
+.p-2 { padding: var(--space-2); }
+.p-3 { padding: var(--space-3); }
+.p-4 { padding: var(--space-4); }
+.p-5 { padding: var(--space-5); }
+.p-6 { padding: var(--space-6); }
+.p-8 { padding: var(--space-8); }
+
+.m-0 { margin: var(--space-0); }
+.m-1 { margin: var(--space-1); }
+.m-2 { margin: var(--space-2); }
+.m-3 { margin: var(--space-3); }
+.m-4 { margin: var(--space-4); }
+.m-5 { margin: var(--space-5); }
+.m-6 { margin: var(--space-6); }
+.m-8 { margin: var(--space-8); }
+
+/* Gap utilities for flexbox/grid */
+.gap-1 { gap: var(--space-1); }
+.gap-2 { gap: var(--space-2); }
+.gap-3 { gap: var(--space-3); }
+.gap-4 { gap: var(--space-4); }
+.gap-5 { gap: var(--space-5); }
+.gap-6 { gap: var(--space-6); }

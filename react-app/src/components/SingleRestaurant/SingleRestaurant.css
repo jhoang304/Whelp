@@ -10,11 +10,11 @@
 }
 
 .summary-line span {
-    margin: 5px
+    margin: var(--space-1);
 }
 
 .only-for-owner button {
-    margin: 5px
+    margin: var(--space-1);
 }
 
 .photos {
@@ -32,10 +32,10 @@
 
 .summary-line {
     position: absolute;
-    font-weight: 700;
+    font-weight: var(--font-bold);
     color: white;
     top: 150px;
-    margin: 50px;
+    margin: var(--space-12);
 }
 
 .see-all-photos button {
@@ -62,8 +62,8 @@
 }
 
 h1 {
-    font-size: 48px;
-    margin: 10px;
+    font-size: var(--text-5xl);
+    margin: var(--space-2);
     white-space: nowrap;
 }
 
@@ -73,75 +73,75 @@ h1 {
 }
 
 .price {
-    margin: 10px;
+    margin: var(--space-2);
 }
 
 .single-green-word {
-    color: rgb(4, 197, 133);
+    color: var(--color-success);
 }
 
 .buttons {
-    margin: 20px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid rgb(211, 211, 211);
+    margin: var(--space-5);
+    padding-bottom: var(--space-5);
+    border-bottom: 1px solid var(--color-gray-300);
 }
 
 .buttons button {
-    color: #2d2e2f;
+    color: var(--color-gray-800);
     background-color: initial;
-    border: 1px solid #d3d3d3;
-    border-radius: 5px;
-    font-weight: 700;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-bold);
     text-align: center;
-    font-size: 16px;
-    transition: 0.5s;
+    font-size: var(--text-base);
+    transition: all 0.3s ease;
 }
 
 .buttons button:hover {
     cursor: pointer;
-    background-color: #e6e6e6;
+    background-color: var(--color-gray-200);
 }
 
 .bottom-section {
     width: 70%;
     display: flex;
     justify-content: center;
-    gap: 50px;
+    gap: var(--space-12);
 }
 
 .bottom-left-section {
-    margin-right: 20px;
+    margin-right: var(--space-5);
 }
 
 .side-bar {
-    border: 1px solid rgb(211, 211, 211);
-    border-radius: 4px;
-    padding: 10px;
-    margin-top: 20px;
-    font-weight: 600;
-    color: rgb(110, 112, 114);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    padding: var(--space-2);
+    margin-top: var(--space-5);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-600);
     max-width: 365px;
 }
 
 .bottom-border {
-    padding: 20px;
+    padding: var(--space-5);
 }
 
 .website-link {
-    padding-left: 10px;
+    padding-left: var(--space-2);
 }
 
 a {
-    color: rgb(0, 0, 0);
-    font-weight: 700;
-    font-size: 16px;
+    color: var(--color-gray-700);
+    font-weight: var(--font-bold);
+    font-size: var(--text-base);
 }
 
 .single-page-container {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 60px;
+    margin-bottom: var(--space-16);
 }
 
 
@@ -154,15 +154,15 @@ a {
 
 .indi-amenity {
     flex-basis: 40%;
-    margin: 10px;
+    margin: var(--space-2);
     display: flex;
-    font-size: 16px;
-    font-weight: 600;
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
     align-items: center;
 }
 
 .indi-amenity .icon_svg {
-    margin: 5px;
+    margin: var(--space-1);
 }
 
 .website-line {
