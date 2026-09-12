@@ -8,6 +8,7 @@ import CreateRestaurantModal from "../CreateRestaurantModal";
 import { useHistory } from "react-router-dom";
 import { AppDispatch } from "../../store";
 import { User } from "../../types";
+import { onAvatarError } from "../../utils/images";
 
 interface ProfileButtonProps {
   user: User | null;
@@ -60,7 +61,11 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
   return (
     <>
       <button onClick={openMenu} className='profileButton' aria-label="User menu">
-        <i className="fa-solid fa-user"></i>
+        {user && user.profile_image_url ? (
+          <img className="profileButton-avatar" src={user.profile_image_url} alt="" onError={onAvatarError} />
+        ) : (
+          <i className="fa-solid fa-user"></i>
+        )}
       </button>
       <ul className={ulClassName} ref={ulRef}>
         {user ? (

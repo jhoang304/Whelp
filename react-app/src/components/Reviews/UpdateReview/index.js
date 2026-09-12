@@ -14,13 +14,22 @@ function UpdateReview(){
   const dispatch = useDispatch();
   const history = useHistory();
 
-  const [review, setReview] = useState(oldReview["review"]);
-  const [rating, setRating] = useState(oldReview["rating"]);
+  // The review may not be in the store yet (e.g. arriving from the profile page).
+  const [review, setReview] = useState(oldReview ? oldReview.review : "");
+  const [rating, setRating] = useState(oldReview ? oldReview.rating : 5);
   const [errors, setErrors] = useState([]);
 
   useEffect( () => {
     dispatch(getSingleRestaurant(restaurantId));
-  }, [dispatch, restaurantId]);
+    if (!oldReview) dispatch(fetchAllReviewsByRestaurantId(restaurantId));
+  }, [dispatch, restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (oldReview) {
+      setReview(oldReview.review);
+      setRating(oldReview.rating);
+    }
+  }, [oldReview]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -49,7 +58,7 @@ function UpdateReview(){
         const data = await res.json();
         if (data && data.errors) setErrors(data.errors);
       });
-      history.push(`/single/${oldReview.restaurant_id}`)
+      history.push(`/single/${restaurantId}`)
     }
 
     return (

@@ -3,7 +3,7 @@ import { useModal } from '../../context/Modal';
 
 interface OpenModalButtonProps {
   modalComponent: React.ReactElement; // component to render inside the modal
-  buttonText: string; // text of the button that opens the modal
+  buttonText: React.ReactNode; // text (or icon + text) of the button that opens the modal
   onButtonClick?: () => void; // optional: callback function that will be called once the button that opens the modal is clicked
   onModalClose?: () => void; // optional: callback function that will be called once the modal is closed
   className?: string;
