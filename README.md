@@ -5,16 +5,19 @@ https://whelp-8ru8.onrender.com/
 
 ## Introduction
 
-Whelp is a platform where users can search for businesses and leave reviews for them. Users can also create their own businesses and add them to the platform. Whelp is a full-stack application built with React, Redux, Flask, SQLAlchemy, and PostgreSQL. Some functionalities include:
+Whelp is a platform where users can search for businesses and leave reviews for them. Users can also create their own businesses and add them to the platform. Whelp is a full-stack application built with React, Redux, TypeScript, Flask, SQLAlchemy, and PostgreSQL. Some functionalities include:
 
 * User authentication and authorization
 * Creating, reading, updating, and deleting businesses
 * Creating, reading, updating, and deleting reviews
+* Searching businesses by name, city, state, or description
+* User profile pages with an avatar, the reviews a user has written, and the businesses they own
+* Business owners can publicly respond to reviews left on their restaurants (one response per review, editable and deletable)
+* Photo uploads (restaurant photos and profile pictures) stored in AWS S3, with a paste-a-URL fallback
 
 Future Functionalities:
-* Profile page
-* Search bar
-* Business owners can respond to reviews
+* Photos attached to individual reviews
+* Business hours and amenities editable by the owner
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -25,9 +28,10 @@ The website uses the following technologies:
 * Python
 * Flask
 * SQLAlchemy
+* AWS S3 (boto3) for image storage
 
 ### Frontend:
-* JavaScript
+* TypeScript / JavaScript
 * React
 * Redux
 
@@ -35,10 +39,11 @@ The website uses the following technologies:
 
 ## Launching locally instructions:
 Running the backend server:
-* From the root directory, run "pipenv install -r requirements.txt" to install dependencies
+* From the root directory, copy `.env.example` to `.env` (the defaults use a local SQLite database)
+* Run "pipenv install -r requirements.txt" to install dependencies
 * Run "pipenv shell" to run the virtual environment
 * Run "flask db upgrade" to create a local database
-* Run "flask seed all" to populate the database with seed data
+* Run "flask seed all" to populate the database with seed data (6 users, 10 restaurants, 34 dated reviews, and 11 owner responses)
 * Run "flask run" to boot up the backend server
 
 Running the frontend server:
@@ -46,21 +51,28 @@ Running the frontend server:
 * Run "npm install" to install dependencies
 * Run "npm start" to boot up the frontend server and open a browser tab to the landing page
 
+Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.
+
+### Photo uploads (optional)
+Uploads go to an S3 bucket when these variables are set in `.env`:
+
+```
+S3_BUCKET=your-bucket-name
+S3_KEY=your-access-key-id
+S3_SECRET=your-secret-access-key
+```
+
+The IAM user needs `s3:PutObject` and `s3:DeleteObject` on the bucket, and objects must be publicly readable (either through a bucket policy or by leaving ACLs enabled; the app retries without an ACL if the bucket has ACLs disabled). Without these variables the app still works: the photo dialogs accept an image URL instead, and the upload endpoint answers with a clear 503.
+
+### Running the tests
+```
+pipenv install --dev
+pytest
+```
+The tests in `tests/` run the Flask app against an in-memory SQLite database and cover profiles, owner responses, and the upload endpoint (S3 is mocked).
+
 --------------------------------------------------------------------------------------------------------------------------------------
 
 # Images:
 
-## Landing Page
-![Landing Page](https://cdn.discordapp.com/attachments/320286625521336341/1146592516372693013/whelp_landing_page.png?ex=67d417be&is=67d2c63e&hm=60d5153b98be3026b9038393125aeda76a5082029869f82d918e8cec4395adb4&)
-
-## Login Page
-![Login Page](https://cdn.discordapp.com/attachments/320286625521336341/1146592738981199973/whelp_login_page.png?ex=67d417f3&is=67d2c673&hm=80ba48352e78a01a8c57c75a3245c41835aad1f16fcb0820b17894a695e97b2f&)
-
-## Signup Page
-![Signup Page](https://cdn.discordapp.com/attachments/320286625521336341/1146592900864540682/whelp_signup_page.png?ex=67d4181a&is=67d2c69a&hm=23680728429a8428aad50f60169e57e55a47d36914da34041408fb041cb23431&)
-
-## Business Page
-![Business Page](https://cdn.discordapp.com/attachments/320286625521336341/1146593078908563496/whelp_1.png?ex=67d41844&is=67d2c6c4&hm=40fee0250f78a562276c07b9d1ea468857265bab22bcd7abf21067ccc86b7cc1&)
-
-## Profile Page
-![Profile Page](https://cdn.discordapp.com/attachments/320286625521336341/1161064891097043105/profile_page.png?ex=67d40231&is=67d2b0b1&hm=0019f8f94c4e4595eddc5f37a9b867a235da6fc791507c0398780bb18b855043&)
+Screenshots are best viewed on the live site linked above. The previous hosted images expired, so they were removed from this README.
