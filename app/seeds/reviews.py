@@ -1,4 +1,5 @@
 from app.models import db, Review, environment, SCHEMA
+from datetime import datetime, timedelta
 
 def seed_reviews():
     review1 = Review(
@@ -175,9 +176,19 @@ def seed_reviews():
 
 
 
-    db.session.add_all([review1, review2, review3, review4, review5, review6, review7, review8, review9, review10, review11, review12, review13, review14, review15, review16,
-                        review17, review18, review19, review20, review21, review22, review23, review24, review25, review26, review27, review28, review30, review31, review32, review33,
-                        review34, review35])
+    all_reviews = [review1, review2, review3, review4, review5, review6, review7, review8, review9, review10, review11, review12, review13, review14, review15, review16,
+                   review17, review18, review19, review20, review21, review22, review23, review24, review25, review26, review27, review28, review30, review31, review32, review33,
+                   review34, review35]
+
+    # Spread the reviews over the last two years (newest first on the site)
+    # instead of stamping them all with the moment the seed ran.
+    newest = datetime(2025, 8, 1, 12, 0, 0)
+    for index, review in enumerate(all_reviews):
+        posted = newest - timedelta(days=(index * 37) % 730, hours=(index * 7) % 24)
+        review.createdAt = posted
+        review.updatedAt = posted
+
+    db.session.add_all(all_reviews)
     db.session.commit()
 
 
