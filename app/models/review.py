@@ -20,6 +20,8 @@ class Review(db.Model):
     user = db.relationship("User", back_populates="reviews")
     restaurant = db.relationship("Restaurant", back_populates="reviews")
     review_images = db.relationship("ReviewImage", back_populates="review", cascade="all, delete")
+    # A review has at most one owner response; deleting the review removes it.
+    response = db.relationship("ReviewResponse", back_populates="review", uselist=False, cascade="all, delete-orphan")
 
     def to_dict(self):
         return {

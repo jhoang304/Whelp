@@ -8,6 +8,7 @@ import { deleteReviewById } from "../../store/reviews";
 import OpenModalButton from "../OpenModalButton";
 import CreateRestaurantModal from "../CreateRestaurantModal";
 import RatingStar from "../RatingStar";
+import OwnerResponse from "../Reviews/OwnerResponse";
 import UpdateProfile from "./UpdateProfile";
 import {
     avatarUrl,
@@ -184,6 +185,11 @@ export default function UserProfilePage(): React.JSX.Element {
                                         <span className="profile-review-date">{formatDate(review.createdAt, LONG_DATE)}</span>
                                     </div>
                                     <p className="profile-review-text">{review.review}</p>
+                                    <OwnerResponse
+                                        review={review}
+                                        canManage={false}
+                                        businessName={review.restaurant ? review.restaurant.name : undefined}
+                                    />
                                     {isOwnProfile && (
                                         <div className="profile-review-actions">
                                             <button
