@@ -14,8 +14,8 @@ export interface Restaurant {
   website: string;
   avgRating: number;
   numReviews?: number;
-  previewImage: string;
-  oneReview: string;
+  previewImage: string | null;
+  oneReview?: string | null;
 }
 
 export interface RestaurantImage {
@@ -28,6 +28,35 @@ export interface RestaurantImage {
   createdByUserId: number;
 }
 
+export interface ReviewImage {
+  id: number;
+  review_id: number;
+  url: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface User {
+  id: number;
+  username: string;
+  email?: string;
+  first_name: string;
+  last_name: string;
+  profile_image_url?: string | null;
+  createdAt?: string;
+  firstName?: string;
+  lastName?: string;
+}
+
+/** Public subset of a user, as embedded in reviews and responses. */
+export type PublicUser = Pick<User, 'id' | 'username' | 'first_name' | 'last_name' | 'profile_image_url' | 'createdAt'>;
+
+
+/** Restaurant data embedded in a review payload. */
+export type ReviewRestaurant = Omit<Restaurant, 'avgRating' | 'previewImage' | 'oneReview'> & {
+  previewImage?: string | null;
+};
+
 export interface Review {
   id: number;
   user_id: number;
@@ -36,16 +65,17 @@ export interface Review {
   rating: number;
   createdAt: string;
   updatedAt: string;
+  user?: PublicUser | null;
+  reviewImages?: ReviewImage[];
+  restaurant?: ReviewRestaurant | null;
 }
 
-export interface User {
-  id: number;
-  username: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  firstName?: string;
-  lastName?: string;
+/** Payload of GET /api/users/get/:id */
+export interface UserProfile extends PublicUser {
+  email?: string; // only present when viewing your own profile
+  restaurants: Restaurant[];
+  restaurant_count: number;
+  review_count: number;
 }
 
 // API Response Containers
@@ -94,11 +124,12 @@ export interface PhotosState {
 }
 
 export interface ReviewsState {
-  [key: string]: any; // To be defined based on actual usage
+  [reviewId: string]: Review;
 }
 
 export interface UserProfileState {
-  [key: string]: any; // To be defined based on actual usage
+  profile: UserProfile | null;
+  reviews: Review[];
 }
 
 export interface RootState {
@@ -154,7 +185,7 @@ export interface RatingStarProps {
 }
 
 export interface OpenModalButtonProps {
-  buttonText: string;
+  buttonText: React.ReactNode;
   modalComponent: React.ReactElement;
   className?: string;
 }
@@ -214,9 +245,9 @@ export interface DeleteRestaurantAction {
   id: number;
 }
 
-export type RestaurantActionTypes = 
+export type RestaurantActionTypes =
   | LoadRestaurantsAction
-  | LoadSingleRestaurantAction 
+  | LoadSingleRestaurantAction
   | SearchRestaurantsAction
   | SearchLoadingAction
   | SearchErrorAction

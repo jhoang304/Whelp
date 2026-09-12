@@ -15,6 +15,8 @@ class User(db.Model, UserMixin):
     hashed_password = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
+    # Optional avatar. Populated by the S3 upload flow (or any public image URL).
+    profile_image_url = db.Column(db.String(255), nullable=True)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
     updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
 
@@ -39,7 +41,20 @@ class User(db.Model, UserMixin):
             'username': self.username,
             'email': self.email,
             'last_name': self.last_name,
-            'first_name': self.first_name
+            'first_name': self.first_name,
+            'profile_image_url': self.profile_image_url,
+            'createdAt': self.createdAt,
+        }
+
+    def to_dict_public(self):
+        """Profile data that is safe to show to anyone (no email)."""
+        return {
+            'id': self.id,
+            'username': self.username,
+            'last_name': self.last_name,
+            'first_name': self.first_name,
+            'profile_image_url': self.profile_image_url,
+            'createdAt': self.createdAt,
         }
 
     def to_dict_express(self, reviews):
@@ -51,5 +66,6 @@ class User(db.Model, UserMixin):
             'email': self.email,
             'last_name': self.last_name,
             'first_name': self.first_name,
+            'profile_image_url': self.profile_image_url,
             'reviews': reviews
         }
