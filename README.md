@@ -62,7 +62,7 @@ S3_KEY=your-access-key-id
 S3_SECRET=your-secret-access-key
 ```
 
-The IAM user needs `s3:PutObject` and `s3:DeleteObject` on the bucket, and objects must be publicly readable (either through a bucket policy or by leaving ACLs enabled; the app retries without an ACL if the bucket has ACLs disabled). Without these variables the app still works: the photo dialogs accept an image URL instead, and the upload endpoint answers with a clear 503.
+The IAM user needs `s3:PutObject` and `s3:DeleteObject` on the bucket, and objects must be publicly readable (either through a bucket policy or by leaving ACLs enabled; the app retries without an ACL if the bucket has ACLs disabled). After each upload the app checks that the object is publicly readable and rejects the upload with a clear message if it is not. Without these variables the app still works: the photo dialogs accept an image URL instead, and the upload endpoint answers with a clear 503.
 
 ### Running the tests
 ```
