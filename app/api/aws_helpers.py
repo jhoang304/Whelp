@@ -8,8 +8,15 @@ Configuration comes from three environment variables:
 
 When they are missing the app still boots; the upload endpoint responds
 with a clear 503 so URL-based images keep working in local development.
+
+Uploaded photos are served straight from the bucket, so objects must be
+publicly readable: either through a bucket policy granting s3:GetObject
+(the only option when the bucket has ACLs disabled, which is the AWS
+default) or through the public-read ACL this module tries first.
 """
 import os
+import urllib.error
+import urllib.request
 import uuid
 
 import boto3
@@ -17,6 +24,12 @@ import botocore
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
+NOT_PUBLIC_MESSAGE = (
+    "The photo was uploaded, but the bucket does not allow public reads, so it "
+    "would not display. Add a bucket policy that grants s3:GetObject on the "
+    "bucket's objects (see the README), then try again."
+)
 
 _s3_client = None
 
@@ -58,31 +71,69 @@ def get_unique_filename(filename):
 
 
 def upload_file_to_s3(file, acl="public-read"):
-    """Upload a werkzeug FileStorage to S3 and return {"url": ...} or {"errors": ...}."""
+    """Upload a werkzeug FileStorage to S3 and return {"url": ...} or {"errors": ...}.
+
+    The bytes are read once up front and sent with put_object. boto3's
+    upload_fileobj closes the file object even when the request fails, which
+    made the ACL retry below read from a closed file. Uploads are capped at
+    MAX_UPLOAD_BYTES, so holding them in memory is fine.
+    """
     s = _settings()
     if not s3_configured():
         return {"errors": "Image uploads are not configured on this server."}
 
-    extra_args = {"ContentType": file.content_type or "application/octet-stream"}
+    try:
+        data = file.read()
+    except Exception as e:
+        return {"errors": f"Could not read the uploaded file: {e}"}
+
+    content_type = file.content_type or "application/octet-stream"
+    result = _put_object(s, file.filename, data, content_type, acl)
+
+    if "url" in result and not _object_is_public(result["url"]):
+        # Don't leave an unreadable object behind; tell the owner what to fix.
+        remove_file_from_s3(result["url"])
+        return {"errors": NOT_PUBLIC_MESSAGE}
+
+    return result
+
+
+def _put_object(s, key, data, content_type, acl):
+    params = {
+        "Bucket": s["bucket"],
+        "Key": key,
+        "Body": data,
+        "ContentType": content_type,
+    }
     if acl:
-        extra_args["ACL"] = acl
+        params["ACL"] = acl
 
     try:
-        _client().upload_fileobj(file, s["bucket"], file.filename, ExtraArgs=extra_args)
+        _client().put_object(**params)
     except botocore.exceptions.ClientError as e:
         # Buckets created with "ACLs disabled" (the current AWS default) reject
-        # the ACL header. Retry once without it and rely on the bucket policy.
+        # the ACL header. Retry once without it; the bucket policy must then
+        # grant public read.
         if acl and e.response.get("Error", {}).get("Code") == "AccessControlListNotSupported":
-            try:
-                file.stream.seek(0)
-            except Exception:
-                pass
-            return upload_file_to_s3(file, acl=None)
+            return _put_object(s, key, data, content_type, None)
         return {"errors": str(e)}
     except Exception as e:
         return {"errors": str(e)}
 
-    return {"url": f"{s['location']}{file.filename}"}
+    return {"url": f"{s['location']}{key}"}
+
+
+def _object_is_public(url):
+    """False only when an anonymous HEAD request is explicitly refused (403)."""
+    request = urllib.request.Request(url, method="HEAD")
+    try:
+        urllib.request.urlopen(request, timeout=5)
+    except urllib.error.HTTPError as e:
+        return e.code != 403
+    except Exception:
+        # A network hiccup should not fail an upload that already succeeded.
+        return True
+    return True
 
 
 def is_s3_url(image_url):
