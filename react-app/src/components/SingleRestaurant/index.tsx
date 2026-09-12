@@ -12,6 +12,7 @@ import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
 import DisplayPhotos from "../DisplayPhotos";
+import { onRestaurantImageError } from "../../utils/images";
 import { RootState } from "../../types";
 import { AppDispatch } from "../../store";
 
@@ -85,7 +86,7 @@ function SingleRestaurant(): React.JSX.Element {
                             {
                                 singleRestaurant.restaurantImages?.map(image => {
                                     return (
-                                        <img className="singlePhoto" alt="images" key={image.id} src={image.url} onError={e => {e.currentTarget.src = "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png"}}/>
+                                        <img className="singlePhoto" alt="images" key={image.id} src={image.url} onError={onRestaurantImageError}/>
                                     )
                                 })
                             }

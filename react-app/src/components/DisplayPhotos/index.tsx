@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { getRestaurantRestaurantImages, deleteRestaurantImageThunk } from "../../store/restaurantPhoto";
 import { RootState } from "../../types";
 import { AppDispatch } from "../../store";
+import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 
 interface DisplayPhotosProps {
     singleRestaurant: any;
@@ -63,7 +64,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
             <h2 className="display-h2">Photos for {singleRestaurant.name}</h2>
             <ul className="photo-container">
                 {allResPhotoArray.map((photo: any, index: number) => {
-                    const isDefaultPhoto = photo.url === "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png";
+                    const isDefaultPhoto = photo.url === DEFAULT_RESTAURANT_IMAGE;
                     return (
                         <li className="photo-li" key={photo.id}>
                             <img 
@@ -71,7 +72,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                                 src={photo.url} 
                                 alt="res-photos" 
                                 onClick={() => openPhoto(photo.url, index)}
-                                onError={e => {(e.target as HTMLImageElement).src = "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png"}}
+                                onError={onRestaurantImageError}
                             />
                             {sessionUser && photo.createdByUserId === sessionUser.id ? (
                                 <button
@@ -121,7 +122,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                         <img 
                             className="image-viewer-photo" 
                             src={selectedPhoto} 
-                            alt="Enlarged restaurant photo"
+                            alt={`${singleRestaurant.name}, enlarged`}
                             onClick={(e) => e.stopPropagation()}
                         />
                         

@@ -4,8 +4,9 @@ import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';
 import { addRestaurantThunk } from "../../store/restaurants";
+import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 
-
+type ImageMode = "upload" | "url";
 
 function CreateRestaurantModal() {
     const dispatch = useDispatch();
@@ -21,6 +22,8 @@ function CreateRestaurantModal() {
     const [description, setDescription] = useState("")
     const [website, setWebsite] = useState("")
     const [url, setUrl] = useState("")
+    const [imageMode, setImageMode] = useState<ImageMode>("upload")
+    const [imageFile, setImageFile] = useState<File | null>(null)
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
@@ -57,14 +60,28 @@ function CreateRestaurantModal() {
         // Format validation
         if (state && state.length !== 2) validationErrors.push("State must be exactly 2 characters (e.g., CA, NY)");
         if (zipcode && !/^\d{5}$/.test(zipcode)) validationErrors.push("Zip code must be exactly 5 digits");
-        if (phone_number && !/^[\d\s\-\(\)]+$/.test(phone_number)) validationErrors.push("Phone number can only contain digits, spaces, hyphens, and parentheses");
+        if (phone_number && !/^[\d\s\-()]+$/.test(phone_number)) validationErrors.push("Phone number can only contain digits, spaces, hyphens, and parentheses");
         if (website && !website.includes('.')) validationErrors.push("Please enter a valid website URL (e.g., example.com)");
-        if (url && url.trim() && !/^https?:\/\/.+/.test(url)) validationErrors.push("Image URL must start with http:// or https://");
+        if (imageMode === "upload" && !imageFile) validationErrors.push("Choose a cover photo for the restaurant");
+        if (imageMode === "url" && !url.trim()) validationErrors.push("Cover photo URL is required");
+        if (imageMode === "url" && url.trim() && !/^https?:\/\/.+/.test(url.trim())) validationErrors.push("Image URL must start with http:// or https://");
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
             setIsSubmitting(false);
             return;
+        }
+
+        // Upload the cover photo first so the restaurant can be created with its URL.
+        let imageUrl = url.trim();
+        if (imageMode === "upload" && imageFile) {
+            const upload = await uploadImage(imageFile);
+            if (!upload.url) {
+                setErrors(upload.errors || ["Could not upload the cover photo. Please try again."]);
+                setIsSubmitting(false);
+                return;
+            }
+            imageUrl = upload.url;
         }
 
       const newRestaurant = {
@@ -79,7 +96,7 @@ function CreateRestaurantModal() {
         phone_number,
         description,
         website,
-        url,
+        url: imageUrl,
       };
 
         try {
@@ -204,13 +221,48 @@ function CreateRestaurantModal() {
                         required
 
                     />
-                    <input
-                        type="text"
-                        placeholder="Preview Image Url"
-                        value={url}
-                        onChange={(e) => setUrl(e.target.value)}
-                        required
-                    />
+                    <div className="image-picker">
+                        <div className="image-picker-tabs" role="tablist" aria-label="Cover photo source">
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={imageMode === "upload"}
+                                className={imageMode === "upload" ? "active" : ""}
+                                onClick={() => setImageMode("upload")}
+                            >
+                                <i className="fa-solid fa-upload"></i> Upload cover photo
+                            </button>
+                            <button
+                                type="button"
+                                role="tab"
+                                aria-selected={imageMode === "url"}
+                                className={imageMode === "url" ? "active" : ""}
+                                onClick={() => setImageMode("url")}
+                            >
+                                <i className="fa-solid fa-link"></i> Use an image URL
+                            </button>
+                        </div>
+                        {imageMode === "upload" ? (
+                            <label className="image-picker-file">
+                                <input
+                                    type="file"
+                                    accept={ACCEPTED_IMAGE_TYPES}
+                                    onChange={(e) => setImageFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                                />
+                                <span className="image-picker-file-button"><i className="fa-regular fa-image"></i> Choose photo</span>
+                                <span className="image-picker-file-name">
+                                    {imageFile ? imageFile.name : `PNG, JPG, GIF, or WEBP up to ${MAX_UPLOAD_MB} MB`}
+                                </span>
+                            </label>
+                        ) : (
+                            <input
+                                type="text"
+                                placeholder="Cover Image URL (https://...)"
+                                value={url}
+                                onChange={(e) => setUrl(e.target.value)}
+                            />
+                        )}
+                    </div>
                     <input
                         type="textarea"
                         placeholder="Description"

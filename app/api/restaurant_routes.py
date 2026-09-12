@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
 from app.models import Restaurant, Review, RestaurantImage, User, db
 from app.forms import RestaurantForm, RestaurantImageForm
+from app.api.utils import error_messages
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -149,7 +150,7 @@ def create_restaurant():
         return restaurant.to_dict()
 
     else:
-        return form.errors
+        return {"errors": form.errors}, 400
 
 
 # Add Image to Restaurant by Id
@@ -177,7 +178,7 @@ def create_restaurant_image(restaurantId):
         return restaurantImage.to_dict()
 
     else:
-        return form.errors
+        return {"errors": error_messages(form.errors)}, 400
 
 
 # Edit a Restaurant by Id
@@ -213,7 +214,7 @@ def edit_restaurant_by_restaurant_id(restaurantId):
 
 
     else:
-        return form.errors
+        return {"errors": form.errors}, 400
 
 
 # Delete a Restaurant
