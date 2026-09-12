@@ -38,7 +38,12 @@ export const addRestaurantImage = (newRestaurantImage: any, restaurantId: string
         const createdRestaurantImage = await response.json()
         await dispatch(createRestaurantImage(createdRestaurantImage))
         dispatch(getSingleRestaurant(+restaurantId) as any)
+        return null
     }
+    // Return a list of messages so the modal can show them.
+    const data = await response.json().catch(() => ({}))
+    if (Array.isArray(data.errors)) return data.errors as string[]
+    return ["Could not add the photo. Please try again."]
 }
 
 //Delete a photo

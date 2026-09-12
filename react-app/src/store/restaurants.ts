@@ -121,29 +121,28 @@ export const addRestaurantThunk = (newRestaurant: any) => async (dispatch: any) 
         createdRestaurantId = createdRestaurant.id
     }
     else {
-        console.log("add restaurant failed here")
+        // Callers (CreateRestaurantModal) read the JSON errors off the thrown response.
+        throw response
     }
 
-    if (createdRestaurantId) {
-
-        const previewImage={
-            url:newRestaurant.url,
-            preview:true
-        }
-
-        const responseObj = await fetch(`/api/restaurants/${createdRestaurantId}/images`, {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(previewImage)
-        })
-
-        if (responseObj.ok) {
-            return createdRestaurantId
-        }
+    const previewImage={
+        url:newRestaurant.url,
+        preview:true
     }
 
+    const responseObj = await fetch(`/api/restaurants/${createdRestaurantId}/images`, {
+        method: "POST",
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(previewImage)
+    })
+
+    if (!responseObj.ok) {
+        throw responseObj
+    }
+
+    return createdRestaurantId
 }
 
 //Edit a restaurant

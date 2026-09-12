@@ -2,6 +2,7 @@ import React from "react";
 import "./Restaurant.css"
 import RatingStar from "../RatingStar"
 import { RestaurantProps } from "../../types";
+import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 
 function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
     const tick = (
@@ -18,7 +19,7 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
 
     return (
         <div className="restaurant-card">
-            <img className="square" src={restaurant.previewImage} alt="preview-image" onError={e => {e.currentTarget.src = "https://cdn.discordapp.com/attachments/320286625521336341/1141137960859881482/default_whelp_picture.png"}}/>
+            <img className="square" src={restaurant.previewImage || DEFAULT_RESTAURANT_IMAGE} alt={restaurant.name} onError={onRestaurantImageError}/>
             <div className="summary">
                 <span className="bold-name">
                     {restaurant.id}. {restaurant.name}
