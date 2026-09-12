@@ -1,6 +1,8 @@
+import { Review, ReviewResponse, ReviewsState } from '../types';
+
 // Load all reviews by restaurantId
 const LOAD_ALL_REVIEWS_BY_RESTAURANTID = 'reviews/LOAD_ALL_REVIEWS'
-const  loadAllReviewsByRestaurantId = (reviews: any) => {
+const  loadAllReviewsByRestaurantId = (reviews: Review[]) => {
     return {
         type:LOAD_ALL_REVIEWS_BY_RESTAURANTID,
         reviews
@@ -19,7 +21,7 @@ export const fetchAllReviewsByRestaurantId = (restaurantId: any) => async(dispat
 
 const LoadUserReviews = 'reviews/LoadUserReviews'
 
-const loadUserIdRev = (reviews: any) => ({
+const loadUserIdRev = (reviews: Review[]) => ({
   type: LoadUserReviews,
   reviews
 })
@@ -94,21 +96,81 @@ export const updateOneReview = (newReview: any, reviewId: any) => async (dispatc
     }
 }
 
-const initialState = {}
-const reviewReducer = (state: any = initialState, action: any) => {
-    let newState: any
+// ---------------------------------------------------------------------------
+// Business-owner responses (one per review)
+// ---------------------------------------------------------------------------
+const SET_REVIEW_RESPONSE = 'reviews/SET_REVIEW_RESPONSE'
+const REMOVE_REVIEW_RESPONSE = 'reviews/REMOVE_REVIEW_RESPONSE'
+
+const setReviewResponse = (reviewId: number, response: ReviewResponse) => ({
+    type: SET_REVIEW_RESPONSE,
+    reviewId,
+    response,
+})
+
+const removeReviewResponse = (reviewId: number) => ({
+    type: REMOVE_REVIEW_RESPONSE,
+    reviewId,
+})
+
+const errorsFrom = async (res: Response, fallback: string): Promise<string[]> => {
+    const data = await res.json().catch(() => ({}));
+    return Array.isArray(data.errors) ? data.errors : [fallback];
+}
+
+/** Post the owner's reply. Returns null on success or a list of error messages. */
+export const createReviewResponse = (reviewId: number, response: string) => async (dispatch: any) => {
+    const res = await fetch(`/api/reviews/${reviewId}/response`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response }),
+    })
+    if (res.ok) {
+        dispatch(setReviewResponse(reviewId, await res.json()))
+        return null
+    }
+    return errorsFrom(res, "Could not post your response. Please try again.")
+}
+
+/** Edit the owner's reply. Returns null on success or a list of error messages. */
+export const updateReviewResponse = (reviewId: number, response: string) => async (dispatch: any) => {
+    const res = await fetch(`/api/reviews/${reviewId}/response`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response }),
+    })
+    if (res.ok) {
+        dispatch(setReviewResponse(reviewId, await res.json()))
+        return null
+    }
+    return errorsFrom(res, "Could not update your response. Please try again.")
+}
+
+/** Remove the owner's reply. Returns null on success or a list of error messages. */
+export const deleteReviewResponse = (reviewId: number) => async (dispatch: any) => {
+    const res = await fetch(`/api/reviews/${reviewId}/response`, { method: "DELETE" })
+    if (res.ok) {
+        dispatch(removeReviewResponse(reviewId))
+        return null
+    }
+    return errorsFrom(res, "Could not delete your response. Please try again.")
+}
+
+const initialState: ReviewsState = {}
+const reviewReducer = (state: ReviewsState = initialState, action: any): ReviewsState => {
+    let newState: ReviewsState
     switch (action.type) {
         case LOAD_ALL_REVIEWS_BY_RESTAURANTID:
             newState = {};
             const allReviews = action.reviews
-            allReviews.forEach((review: any) =>{
+            allReviews.forEach((review: Review) =>{
                 newState[review["id"]] = review
             })
             return newState
 
         case LoadUserReviews:
             newState = {};
-            action.reviews.forEach((review: any) => {
+            action.reviews.forEach((review: Review) => {
                 newState[review.id] = review
                 })
             return newState
@@ -125,8 +187,21 @@ const reviewReducer = (state: any = initialState, action: any) => {
 
         case UPDATE_REVIEW:
             newState = {...state}
-            newState[action.review.id] = action.review;
+            // keep the joined data (user, restaurant, response) the PUT response lacks
+            newState[action.review.id] = { ...state[action.review.id], ...action.review };
             return newState;
+
+        case SET_REVIEW_RESPONSE: {
+            const existing = state[action.reviewId]
+            if (!existing) return state
+            return { ...state, [action.reviewId]: { ...existing, response: action.response } }
+        }
+
+        case REMOVE_REVIEW_RESPONSE: {
+            const existing = state[action.reviewId]
+            if (!existing) return state
+            return { ...state, [action.reviewId]: { ...existing, response: null } }
+        }
 
         default:
             return state;

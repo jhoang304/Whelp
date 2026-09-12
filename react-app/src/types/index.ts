@@ -51,6 +51,16 @@ export interface User {
 /** Public subset of a user, as embedded in reviews and responses. */
 export type PublicUser = Pick<User, 'id' | 'username' | 'first_name' | 'last_name' | 'profile_image_url' | 'createdAt'>;
 
+/** A business owner's reply to a review. At most one per review. */
+export interface ReviewResponse {
+  id: number;
+  review_id: number;
+  user_id: number;
+  response: string;
+  createdAt: string;
+  updatedAt: string;
+  user: PublicUser | null;
+}
 
 /** Restaurant data embedded in a review payload. */
 export type ReviewRestaurant = Omit<Restaurant, 'avgRating' | 'previewImage' | 'oneReview'> & {
@@ -68,6 +78,7 @@ export interface Review {
   user?: PublicUser | null;
   reviewImages?: ReviewImage[];
   restaurant?: ReviewRestaurant | null;
+  response?: ReviewResponse | null;
 }
 
 /** Payload of GET /api/users/get/:id */

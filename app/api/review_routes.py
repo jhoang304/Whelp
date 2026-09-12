@@ -2,8 +2,8 @@ from flask import Blueprint, request
 from flask_login import current_user, login_required
 from sqlalchemy.sql import func
 
-from app.models import db, Review, Restaurant, RestaurantImage, User, ReviewImage
-from app.forms import ReviewForm, ReviewImageForm
+from app.models import db, Review, Restaurant, RestaurantImage, User, ReviewImage, ReviewResponse
+from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
 from app.api.utils import error_messages
 from .restaurant_routes import restaurant_routes
 
@@ -19,7 +19,7 @@ def _preview_image_url(restaurant_id):
 
 
 def review_with_details(review, restaurant=None):
-  """Serialize a review with its author, images, and restaurant."""
+  """Serialize a review with its author, images, restaurant, and owner response."""
   restaurant = restaurant or review.restaurant
   data = review.to_dict()
   data["user"] = review.user.to_dict_public() if review.user else None
@@ -30,6 +30,7 @@ def review_with_details(review, restaurant=None):
     data["restaurant"] = restaurant_data
   else:
     data["restaurant"] = None
+  data["response"] = review.response.to_dict() if review.response else None
   return data
 
 
@@ -38,7 +39,7 @@ def review_with_details(review, restaurant=None):
 def get_reviews_by_userId(id):
   """
   Returns every review written by a user, newest first, including the
-  restaurant it was left on.
+  restaurant it was left on and any business-owner response.
   """
   reviews = Review.query.filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
   return [review_with_details(review) for review in reviews]
@@ -49,7 +50,7 @@ def get_reviews_by_userId(id):
 def get_reviews_by_restaurant_id(id):
   """
   Returns every review for a restaurant, newest first, including the author,
-  and review images.
+  review images, and any business-owner response.
   """
   restaurant = Restaurant.query.get(id)
   if not restaurant:
@@ -165,3 +166,92 @@ def delete_review(id):
   return {"message": ["Successfully deleted"]},200
 
 
+# ---------------------------------------------------------------------------
+# Business-owner responses
+# ---------------------------------------------------------------------------
+
+def _load_review_for_owner(review_id):
+  """
+  Return (review, None) when the review exists and the current user owns the
+  restaurant it was left on; otherwise (None, (json, status)).
+  """
+  review = Review.query.get(review_id)
+  if not review:
+    return None, ({"errors": ["Review couldn't be found"]}, 404)
+  if not review.restaurant or review.restaurant.user_id != current_user.id:
+    return None, ({"errors": ["Only the owner of this business can respond to its reviews"]}, 403)
+  return review, None
+
+
+# Create an owner response for a review
+@review_routes.route('/<int:id>/response', methods=["POST"])
+@login_required
+def create_review_response(id):
+  """
+  Lets the owner of the reviewed restaurant post a public reply to a review.
+  Each review can have one response.
+  """
+  review, error = _load_review_for_owner(id)
+  if error:
+    return error
+
+  if review.response:
+    return {"errors": ["This review already has a response. Edit the existing response instead."]}, 400
+
+  form = ReviewResponseForm()
+  form["csrf_token"].data = request.cookies.get("csrf_token")
+
+  if form.validate_on_submit():
+    response = ReviewResponse(
+      review_id = review.id,
+      user_id = current_user.id,
+      response = form.data["response"].strip(),
+    )
+    db.session.add(response)
+    db.session.commit()
+    return response.to_dict(), 201
+  return {"errors": error_messages(form.errors)}, 400
+
+
+# Edit an owner response
+@review_routes.route('/<int:id>/response', methods=["PUT"])
+@login_required
+def update_review_response(id):
+  """
+  Lets the business owner edit their response to a review.
+  """
+  review, error = _load_review_for_owner(id)
+  if error:
+    return error
+
+  if not review.response:
+    return {"errors": ["This review doesn't have a response yet"]}, 404
+
+  form = ReviewResponseForm()
+  form["csrf_token"].data = request.cookies.get("csrf_token")
+
+  if form.validate_on_submit():
+    review.response.response = form.data["response"].strip()
+    review.response.updatedAt = func.now()
+    db.session.commit()
+    return review.response.to_dict()
+  return {"errors": error_messages(form.errors)}, 400
+
+
+# Delete an owner response
+@review_routes.route('/<int:id>/response', methods=["DELETE"])
+@login_required
+def delete_review_response(id):
+  """
+  Lets the business owner remove their response to a review.
+  """
+  review, error = _load_review_for_owner(id)
+  if error:
+    return error
+
+  if not review.response:
+    return {"errors": ["This review doesn't have a response yet"]}, 404
+
+  db.session.delete(review.response)
+  db.session.commit()
+  return {"message": ["Successfully deleted"]}, 200
