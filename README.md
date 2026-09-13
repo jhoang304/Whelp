@@ -43,13 +43,16 @@ Running the backend server:
 * Run "pipenv install -r requirements.txt" to install dependencies
 * Run "pipenv shell" to run the virtual environment
 * Run "flask db upgrade" to create a local database
-* Run "flask seed all" to populate the database with seed data (6 users, 10 restaurants, 34 dated reviews, and 11 owner responses)
+* Run "flask seed all" to populate the database with seed data (6 users, 10 restaurants, 34 dated reviews, and 11 owner responses). It only seeds an empty database, so it is safe to run again; use "flask seed all --reset" to wipe everything and reseed
 * Run "flask run" to boot up the backend server
 
 Running the frontend server:
 * From the root directory, cd into the react-app directory/folder
 * Run "npm install" to install dependencies
 * Run "npm start" to boot up the frontend server and open a browser tab to the landing page
+
+### Deploying
+Keep `flask db upgrade && flask seed all` in the build command. Migrations run on every deploy, and the seed step now does nothing once the database has data, so a redeploy no longer erases what users have added. Run `flask seed all --reset` only when you really want a fresh copy of the demo data.
 
 Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.
 
