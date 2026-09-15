@@ -83,20 +83,37 @@ export const clearSearch = () => (dispatch: AppDispatch) => {
 
 // Load a single restaurant
 const LOADSINGLE = "singleRestaurant/loadSingleRestaurant"
+const CLEARSINGLE = "singleRestaurant/clearSingleRestaurant"
 export const loadSingleRestaurant = (detailObj: any) => ({
     type: LOADSINGLE,
     singleRestaurant: detailObj
 })
 
+export const clearSingleRestaurant = () => ({
+    type: CLEARSINGLE
+})
+
+/**
+ * Load one restaurant's detail page. Returns null on success or a list of
+ * error messages on failure, so the page can tell "not found" apart from
+ * "still loading" instead of spinning forever.
+ */
 export const getSingleRestaurant = (restaurantId: number) => async (dispatch: any) => {
     const response = await fetch(`/api/restaurants/${restaurantId}`)
     if (response.ok) {
 
         const detailObj = await response.json()
         dispatch(loadSingleRestaurant(detailObj))
-    } else {
-        console.log("fetch single restaurant failed")
+        return null
     }
+
+    // Drop whatever restaurant was showing before; LOADSINGLE merges, so a
+    // stale one would otherwise bleed into the not-found page.
+    dispatch(clearSingleRestaurant())
+    if (response.status === 404) {
+        return ["We couldn't find that restaurant."]
+    }
+    return ["Something went wrong loading this restaurant."]
 }
 
 //Create a restaurant
@@ -220,6 +237,12 @@ export default function restaurantsReducer(
                     ...state.singleRestaurant,
                     ...newSingleState
                 }
+            }
+        }
+        case CLEARSINGLE: {
+            return {
+                ...state,
+                singleRestaurant: undefined
             }
         }
         case UPDATE_RESTAURANT: {

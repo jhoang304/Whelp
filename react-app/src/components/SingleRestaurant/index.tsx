@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { getSingleRestaurant, deleteRestaurantThunk, getAllRestaurants } from "../../store/restaurants"
 import AddPhotoModal from "../AddPhotoModal";
 import OpenModalButton from "../OpenModalButton";
@@ -25,6 +25,8 @@ interface SingleRestaurantParams {
     restaurantId: string;
 }
 
+type Status = "loading" | "ready" | "error";
+
 function SingleRestaurant(): React.JSX.Element {
     const history = useHistory();
     const { restaurantId } = useParams<SingleRestaurantParams>()
@@ -34,13 +36,26 @@ function SingleRestaurant(): React.JSX.Element {
     })
 
     const dispatch = useDispatch<AppDispatch>()
-    useEffect(() => {
-        if (restaurantId) {
-            dispatch(getSingleRestaurant(+restaurantId) as any).then(() => setIsLoaded(true));
-        }
-    }, [dispatch, restaurantId])
+    const [status, setStatus] = useState<Status>("loading");
+    const [loadErrors, setLoadErrors] = useState<string[]>([]);
 
-    const [isLoaded, setIsLoaded] = useState<boolean>(false);
+    useEffect(() => {
+        if (!restaurantId) return;
+        let cancelled = false;
+        setStatus("loading");
+        dispatch(getSingleRestaurant(+restaurantId) as any).then((errors: string[] | null) => {
+            if (cancelled) return;
+            if (errors) {
+                setLoadErrors(errors);
+                setStatus("error");
+            } else {
+                setStatus("ready");
+            }
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dispatch, restaurantId])
 
     const sessionUser = useSelector((state: RootState) => state.session.user);
 
@@ -61,7 +76,17 @@ function SingleRestaurant(): React.JSX.Element {
     const phoneIcon = (<svg width="24" height="24" className="icon_svg"><path d="M13.59 23.07A7 7 0 018.64 21L3 15.36a7 7 0 010-9.9l1.39-1.41a1 1 0 011.42 0l5 5a1 1 0 010 1.41 2.001 2.001 0 002.83 2.83 1 1 0 011.41 0l4.95 5a1 1 0 010 1.42L18.54 21a7 7 0 01-4.95 2.07zM5.1 6.17l-.71.71a5 5 0 000 7.07l5.66 5.66a5 5 0 007.07 0l.71-.71-3.63-3.63a4 4 0 01-4.86-.61 4 4 0 01-.61-4.86L5.1 6.17zm12.78 5.95a1 1 0 01-1-1 4 4 0 00-4-4 1 1 0 010-2 6 6 0 016 6 1 1 0 01-1 1zm4.19 0a1 1 0 01-1-1 8.19 8.19 0 00-8.19-8.19 1 1 0 010-2c5.625.006 10.184 4.565 10.19 10.19a1 1 0 01-1 1z"></path></svg>)
     const addressIcon = (<svg width="24" height="24" viewBox="0 0 22 22" className="address-icon_svg"><path d="M11 22a3 3 0 01-2.12-.88l-8-8a3 3 0 010-4.24l8-8a3 3 0 014.24 0l8 8a3 3 0 010 4.24l-8 8A3 3 0 0111 22zm0-20a1 1 0 00-.71.29l-8 8a1 1 0 000 1.42l8 8a1 1 0 001.42 0l8-8a1 1 0 000-1.42l-8-8A1 1 0 0011 2zm4.85 8.15a.48.48 0 010 .66l-3 3a.47.47 0 01-.35.15.43.43 0 01-.19 0 .5.5 0 01-.31-.46v-2.05a1 1 0 01-.25.05h-2a1 1 0 00-1 1v1a1 1 0 11-2 0v-1a3 3 0 013-3h2a1 1 0 01.25.05V7.5a.5.5 0 01.31-.5.47.47 0 01.54.15l3 3z"></path></svg>)
 
-    if (!isLoaded || !singleRestaurant) {
+    if (status === "error" || (status === "ready" && !singleRestaurant)) {
+        return (
+            <div className="restaurant-not-found">
+                <i className="fa-regular fa-face-frown"></i>
+                <h2>{loadErrors[0] || "We couldn't find that restaurant."}</h2>
+                <Link to="/restaurants" className="restaurant-not-found-button">Browse restaurants</Link>
+            </div>
+        );
+    }
+
+    if (status === "loading" || !singleRestaurant) {
         return (
             <div className="loading-container">
                 <div className="loading-spinner"></div>

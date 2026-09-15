@@ -71,13 +71,11 @@ def restaurants():
 @restaurant_routes.route('/<int:id>')
 def restaurants_by_id(id):
     SingleRestaurant = Restaurant.query.get(id)
-    print("!!!!",SingleRestaurant.to_dict())
+    if not SingleRestaurant:
+        return {"errors": ["Restaurant couldn't be found"]}, 404
+
     theUser=User.query.get(SingleRestaurant.user_id)
     images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).all()
-    PreviewImage=""
-    for image in images:
-        if image.preview == True:
-            PreviewImage=image
 
     reviews=Review.query.filter(Review.restaurant_id==id).all()
     numReviews=len(reviews)
