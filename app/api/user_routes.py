@@ -14,22 +14,24 @@ user_routes = Blueprint('users', __name__)
 @login_required
 def users():
     """
-    Query for all users and returns them in a list of user dictionaries
+    Query for all users and returns them in a list of user dictionaries.
+    Email addresses are private; use GET /api/auth/ for your own account.
     """
     users = User.query.all()
-    return {'users': [user.to_dict() for user in users]}
+    return {'users': [user.to_dict_public() for user in users]}
 
 
 @user_routes.route('/<int:id>')
 @login_required
 def user(id):
     """
-    Query for a user by id and returns that user in a dictionary
+    Query for a user by id and returns that user in a dictionary.
+    Email addresses are private; use GET /api/auth/ for your own account.
     """
     user = User.query.get(id)
     if not user:
         return {'errors': ["User couldn't be found"]}, 404
-    return user.to_dict()
+    return user.to_dict_public()
 
 
 def _restaurant_summary(restaurant):
