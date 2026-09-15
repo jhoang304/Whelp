@@ -190,13 +190,14 @@ def edit_restaurant_by_restaurant_id(restaurantId):
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
 
+    if restaurant.user_id != current_user.id:
+        return {"errors": ["You can only edit your own restaurants"]}, 403
+
     form = RestaurantForm()
     form["csrf_token"].data = request.cookies["csrf_token"]
 
     if form.validate_on_submit():
 
-        restaurant.id=int(restaurantId)
-        restaurant.user_id = int(current_user.id)
         restaurant.name = request.get_json()["name"]
         restaurant.price = request.get_json()["price"]
         restaurant.name = request.get_json()["name"]
@@ -224,6 +225,10 @@ def delete_restaurant(restaurantId):
     restaurant = Restaurant.query.get(restaurantId)
     if not restaurant:
         return {"errors": ["Restaurant couldn't be found"]}, 404
+
+    if restaurant.user_id != current_user.id:
+        return {"errors": ["You can only delete your own restaurants"]}, 403
+
     db.session.delete(restaurant)
     db.session.commit()
     return {"message": ["Restaurant Successfully deleted"]},200
