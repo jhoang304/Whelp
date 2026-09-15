@@ -59,7 +59,8 @@ function CreateRestaurantModal() {
 
         // Format validation
         if (state && state.length !== 2) validationErrors.push("State must be exactly 2 characters (e.g., CA, NY)");
-        if (zipcode && !/^\d{5}$/.test(zipcode)) validationErrors.push("Zip code must be exactly 5 digits");
+        if (zipcode && !/^[A-Za-z0-9]([A-Za-z0-9 -]{1,8})?[A-Za-z0-9]$/.test(zipcode.trim()))
+            validationErrors.push("Postal code must be 3-10 letters or digits (e.g. 02134, 77003-1234, M5V 3L9)");
         if (phone_number && !/^[\d\s\-()]+$/.test(phone_number)) validationErrors.push("Phone number can only contain digits, spaces, hyphens, and parentheses");
         if (website && !website.includes('.')) validationErrors.push("Please enter a valid website URL (e.g., example.com)");
         if (imageMode === "upload" && !imageFile) validationErrors.push("Choose a cover photo for the restaurant");
@@ -91,7 +92,7 @@ function CreateRestaurantModal() {
         address,
         city,
         state,
-        zipcode,
+        zipcode: zipcode.trim(),
         country,
         phone_number,
         description,
@@ -190,7 +191,7 @@ function CreateRestaurantModal() {
 
                     />
                     <input
-                        type="number"
+                        type="text"
                         placeholder="Zip Code"
                         value={zipcode}
                         onChange={(e) => setZipcode(e.target.value)}

@@ -51,7 +51,7 @@ def app():
 
         restaurant = Restaurant(
             user_id=owner.id, name="Test Bistro", price="$$", address="1 Main St", city="Houston",
-            state="TX", zipcode=77001, country="USA", phone_number="(555) 555-5555",
+            state="TX", zipcode="77001", country="USA", phone_number="(555) 555-5555",
             website="http://testbistro.com", description="A place for tests.")
         db.session.add(restaurant)
         db.session.commit()
