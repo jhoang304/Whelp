@@ -52,7 +52,7 @@ function CreateRestaurantModal() {
         // Length validation
         if (name.length > 100) validationErrors.push("Restaurant name must be 100 characters or less");
         if (address.length > 100) validationErrors.push("Address must be 100 characters or less");
-        if (city.length > 85) validationErrors.push("City must be 85 characters or less");
+        if (city.length > 50) validationErrors.push("City must be 50 characters or less");
         if (country.length > 56) validationErrors.push("Country must be 56 characters or less");
         if (description.length > 500) validationErrors.push("Description must be 500 characters or less");
         if (website.length > 70) validationErrors.push("Website must be 70 characters or less");

@@ -27,9 +27,9 @@ export default function EditRestaurant({ singleRestaurant }) {
         const validationErrors = [];
 
         if (!name) validationErrors.push("Name is required.");
-        if (name.length < 1 || name.length > 100) validationErrors.push("Name must be between 1 and 50 characters.");
-        if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 50 characters.");
-        if (city.length < 1 || city.length > 100) validationErrors.push("City must be between 1 and 85 characters.");
+        if (name.length < 1 || name.length > 100) validationErrors.push("Name must be between 1 and 100 characters.");
+        if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 100 characters.");
+        if (city.length < 1 || city.length > 50) validationErrors.push("City must be between 1 and 50 characters.");
         if (state.length !== 2) validationErrors.push("State must be 2 characters");
         // if (zipcode.length !== 5) validationErrors.push("Zipcode must be 5 characters.");
         if (!/^\d{5}$/.test(zipcode)) validationErrors.push("Zipcode must be a valid 5-digit number.");
