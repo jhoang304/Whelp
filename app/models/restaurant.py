@@ -15,7 +15,7 @@ class Restaurant(db.Model):
     address = db.Column(db.String(100), nullable=False)
     city = db.Column(db.String(50), nullable=False)
     state = db.Column(db.String(50), nullable=False)
-    zipcode = db.Column(db.Integer, nullable=False)
+    zipcode = db.Column(db.String(10), nullable=False)
     country = db.Column(db.String(56), nullable=False)
     phone_number = db.Column(db.String(20), nullable=False)
     website = db.Column(db.String(100), nullable=False)
