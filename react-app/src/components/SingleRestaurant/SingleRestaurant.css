@@ -290,3 +290,48 @@ button:hover {
         opacity: 1;
     }
 }
+
+/* Shown when /single/:id points at a restaurant that doesn't exist. */
+.restaurant-not-found {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 20px;
+    min-height: 400px;
+    color: var(--color-gray-600);
+}
+
+.restaurant-not-found i {
+    font-size: 44px;
+    color: var(--color-gray-400);
+    margin-bottom: var(--space-4);
+}
+
+.restaurant-not-found h2 {
+    margin: 0;
+    font-size: var(--text-2xl);
+    color: var(--color-gray-800);
+}
+
+.restaurant-not-found-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-6) 0 0;
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: white;
+    background-color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+}
+
+.restaurant-not-found-button:hover {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    color: white;
+}
