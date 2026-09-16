@@ -83,20 +83,68 @@ export const clearSearch = () => (dispatch: AppDispatch) => {
 
 // Load a single restaurant
 const LOADSINGLE = "singleRestaurant/loadSingleRestaurant"
+const CLEARSINGLE = "singleRestaurant/clearSingleRestaurant"
 export const loadSingleRestaurant = (detailObj: any) => ({
     type: LOADSINGLE,
     singleRestaurant: detailObj
 })
 
-export const getSingleRestaurant = (restaurantId: number) => async (dispatch: any) => {
-    const response = await fetch(`/api/restaurants/${restaurantId}`)
-    if (response.ok) {
+export const clearSingleRestaurant = () => ({
+    type: CLEARSINGLE
+})
 
-        const detailObj = await response.json()
-        dispatch(loadSingleRestaurant(detailObj))
-    } else {
-        console.log("fetch single restaurant failed")
+// The restaurant the detail page most recently asked for. There is one
+// shared `singleRestaurant` in the store, so navigating between two detail
+// URLs can leave both requests in flight; a slow response for the restaurant
+// we have already navigated away from must not write to the store. Requests
+// for the same restaurant (the page and its children both ask on load) carry
+// the same data, so they are left alone.
+let latestRequestedId: number | null = null
+
+/**
+ * Load one restaurant's detail page. Returns null on success or a list of
+ * error messages on failure, so the page can tell "not found" apart from
+ * "still loading" instead of spinning forever.
+ */
+export const getSingleRestaurant = (restaurantId: number) => async (dispatch: any) => {
+    latestRequestedId = restaurantId
+
+    const superseded = () => latestRequestedId !== restaurantId
+
+    const fail = (messages: string[]) => {
+        if (superseded()) return null
+        // Drop whatever restaurant was showing before; LOADSINGLE merges, so a
+        // stale one would otherwise bleed into the not-found page.
+        dispatch(clearSingleRestaurant())
+        return messages
     }
+
+    let response: Response
+    try {
+        response = await fetch(`/api/restaurants/${restaurantId}`)
+    } catch (networkError) {
+        // fetch rejects, rather than resolving with a status, when the browser
+        // is offline or the connection drops. Without this the promise the page
+        // is awaiting would reject and it would spin forever.
+        return fail(["Couldn't reach the server. Check your connection and try again."])
+    }
+
+    if (!response.ok) {
+        return fail(response.status === 404
+            ? ["We couldn't find that restaurant."]
+            : ["Something went wrong loading this restaurant."])
+    }
+
+    let detail: any
+    try {
+        detail = await response.json()
+    } catch (parseError) {
+        return fail(["Something went wrong loading this restaurant."])
+    }
+
+    if (superseded()) return null
+    dispatch(loadSingleRestaurant(detail))
+    return null
 }
 
 //Create a restaurant
@@ -220,6 +268,12 @@ export default function restaurantsReducer(
                     ...state.singleRestaurant,
                     ...newSingleState
                 }
+            }
+        }
+        case CLEARSINGLE: {
+            return {
+                ...state,
+                singleRestaurant: undefined
             }
         }
         case UPDATE_RESTAURANT: {
