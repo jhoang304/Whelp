@@ -223,6 +223,10 @@ export interface LoadSingleRestaurantAction {
   singleRestaurant: SingleRestaurantResponse;
 }
 
+export interface ClearSingleRestaurantAction {
+  type: 'singleRestaurant/clearSingleRestaurant';
+}
+
 export interface SearchRestaurantsAction {
   type: 'restaurants/searchedRestaurants';
   restaurants: RestaurantsResponse;
@@ -259,6 +263,7 @@ export interface DeleteRestaurantAction {
 export type RestaurantActionTypes =
   | LoadRestaurantsAction
   | LoadSingleRestaurantAction
+  | ClearSingleRestaurantAction
   | SearchRestaurantsAction
   | SearchLoadingAction
   | SearchErrorAction

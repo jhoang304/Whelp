@@ -71,13 +71,11 @@ def restaurants():
 @restaurant_routes.route('/<int:id>')
 def restaurants_by_id(id):
     SingleRestaurant = Restaurant.query.get(id)
-    print("!!!!",SingleRestaurant.to_dict())
+    if not SingleRestaurant:
+        return {"errors": ["Restaurant couldn't be found"]}, 404
+
     theUser=User.query.get(SingleRestaurant.user_id)
     images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).all()
-    PreviewImage=""
-    for image in images:
-        if image.preview == True:
-            PreviewImage=image
 
     reviews=Review.query.filter(Review.restaurant_id==id).all()
     numReviews=len(reviews)
@@ -190,13 +188,14 @@ def edit_restaurant_by_restaurant_id(restaurantId):
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
 
+    if restaurant.user_id != current_user.id:
+        return {"errors": ["You can only edit your own restaurants"]}, 403
+
     form = RestaurantForm()
     form["csrf_token"].data = request.cookies["csrf_token"]
 
     if form.validate_on_submit():
 
-        restaurant.id=int(restaurantId)
-        restaurant.user_id = int(current_user.id)
         restaurant.name = request.get_json()["name"]
         restaurant.price = request.get_json()["price"]
         restaurant.name = request.get_json()["name"]
@@ -224,6 +223,10 @@ def delete_restaurant(restaurantId):
     restaurant = Restaurant.query.get(restaurantId)
     if not restaurant:
         return {"errors": ["Restaurant couldn't be found"]}, 404
+
+    if restaurant.user_id != current_user.id:
+        return {"errors": ["You can only delete your own restaurants"]}, 403
+
     db.session.delete(restaurant)
     db.session.commit()
     return {"message": ["Restaurant Successfully deleted"]},200
