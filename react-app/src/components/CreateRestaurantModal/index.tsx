@@ -1,5 +1,5 @@
 import "./CreateRestaurantModal.css"
-import React, { useState } from "react";
+import { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';

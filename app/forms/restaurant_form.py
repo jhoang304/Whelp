@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField
-from wtforms.validators import DataRequired, Length, Regexp, URL
+from wtforms.validators import DataRequired, Length, Regexp
 
 from .postcode import (
     coerce_to_text, postcode_type,
