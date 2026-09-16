@@ -3,7 +3,7 @@ from flask_login import login_required, current_user
 from app.models import RestaurantImage
 from app.models import db
 from app.api.aws_helpers import remove_file_from_s3
-from app.api.utils import clear_other_previews
+from app.api.utils import clear_other_previews, lock_restaurant
 
 resImage_routes = Blueprint('restaurantImages', __name__)
 
@@ -24,17 +24,35 @@ def delete_res_image(imageId):
     if not (is_uploader or is_owner):
         return {"errors": ["Only the uploader or the business owner can delete this photo"]}, 403
 
-    url = image.url
     restaurant_id = image.restaurant_id
+
+    # Lock before reading anything this transaction acts on. Deleting the cover
+    # promotes another photo, so it has to be serialised against every other
+    # delete for this restaurant — including ones that change no cover
+    # themselves, since those can remove the very row we are about to promote.
+    lock_restaurant(restaurant_id)
+
+    # Re-read under the lock: the row may have changed, or gone, while we
+    # waited for it. populate_existing() overwrites the copy already in the
+    # session rather than handing back the stale one.
+    image = (RestaurantImage.query
+             .populate_existing()
+             .filter(RestaurantImage.id == imageId)
+             .first())
+    if not image:
+        return {"errors": ["Image couldn't be found"]}, 404
+
+    url = image.url
     was_cover = bool(image.preview)
 
     db.session.delete(image)
+    db.session.flush()
 
     if was_cover:
         # Deleting the cover used to leave the restaurant with no preview=True
         # row at all, so the listing fell back to the placeholder until someone
-        # noticed and set a new one. Promote the oldest remaining photo.
-        db.session.flush()
+        # noticed and set a new one. Promote the oldest remaining photo; the
+        # lock above is what makes it still be there at commit.
         replacement = (RestaurantImage.query
                        .filter(RestaurantImage.restaurant_id == restaurant_id)
                        .order_by(RestaurantImage.id)

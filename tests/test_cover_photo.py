@@ -5,7 +5,9 @@ Cover photo (`preview`) rules for restaurant images, per issue #23:
 * a restaurant never has two `preview=True` rows, so `GET /api/restaurants`
   cannot pick a different cover depending on iteration order.
 """
-from app.models import RestaurantImage
+from sqlalchemy import text
+
+from app.models import RestaurantImage, db
 from tests.conftest import login
 
 
@@ -147,3 +149,34 @@ def test_deleting_a_non_cover_photo_leaves_the_cover_alone(client, ids):
 
     assert client.delete(f"/api/restaurant-images/{second}").status_code == 200
     assert [image.id for image in previews(ids["restaurant"])] == [ids["image"]]
+
+
+def test_a_photo_deleted_while_we_waited_for_the_lock_is_404(client, ids, monkeypatch):
+    """
+    Stands in for another request removing the row between our first read and
+    the restaurant lock. The refresh under the lock has to report 404 rather
+    than carry on and fail at commit.
+
+    The real interleaving cannot be reproduced here: the suite runs on a
+    single-connection in-memory SQLite, where FOR UPDATE is a no-op. This
+    covers the branch, not the locking itself.
+    """
+    from app.api import restaurant_image_routes as routes
+
+    def remove_the_row_while_locking(restaurant_id):
+        db.session.execute(
+            text("DELETE FROM restaurant_images WHERE id = :id"), {"id": ids["image"]})
+
+    monkeypatch.setattr(routes, "lock_restaurant", remove_the_row_while_locking)
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 404
+
+
+def test_deleting_a_photo_still_promotes_after_the_lock_reordering(client, ids):
+    """The replacement is now chosen under the lock; behaviour is unchanged."""
+    login(client, "owner@test.io")
+    second = add_image(client, ids["restaurant"], "https://example.com/b.jpg").get_json()["id"]
+
+    assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 200
+    assert [image.id for image in previews(ids["restaurant"])] == [second]
