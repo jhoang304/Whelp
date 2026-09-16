@@ -12,8 +12,16 @@ def clear_other_previews(restaurant_id, keep_image_id=None):
     Drop `preview` from a restaurant's other images so at most one row is its
     cover photo. Call it inside the transaction that sets the new preview;
     it stages the changes and leaves the commit to the caller.
+
+    The restaurant row is locked first. Without it, two cover changes racing
+    on the same restaurant would both read the old cover, both demote it, and
+    both commit a preview=True row, leaving the listing to pick whichever
+    iterated last. Postgres blocks the second caller here until the first
+    commits; SQLite ignores FOR UPDATE, which is fine for the test suite.
     """
-    from app.models import RestaurantImage
+    from app.models import Restaurant, RestaurantImage
+
+    Restaurant.query.filter(Restaurant.id == restaurant_id).with_for_update().first()
 
     query = RestaurantImage.query.filter(
         RestaurantImage.restaurant_id == restaurant_id,

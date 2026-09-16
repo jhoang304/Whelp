@@ -63,20 +63,37 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
         setCurrentPhotoIndex(index);
     };
 
+    // Both handlers clear busyPhotoId in a finally: this modal stays mounted
+    // either way, and an unhandled rejection would otherwise leave the button
+    // disabled with nothing to explain why.
     const handleSetCover = async (photo: any) => {
         setErrors([]);
         setBusyPhotoId(photo.id);
-        const failures: string[] | null = await dispatch(setCoverPhotoThunk(photo.id, singleRestaurant.id) as any);
-        setBusyPhotoId(null);
-        if (failures) setErrors(failures);
+        try {
+            const failures: string[] | null = await dispatch(setCoverPhotoThunk(photo.id, singleRestaurant.id) as any);
+            if (failures) setErrors(failures);
+        } catch (unexpected) {
+            setErrors(["Something went wrong setting the cover photo. Please try again."]);
+        } finally {
+            setBusyPhotoId(null);
+        }
     };
 
     const handleRemove = async (photo: any) => {
         setErrors([]);
         setBusyPhotoId(photo.id);
-        await dispatch(deleteRestaurantImageThunk(photo.id, photo.restaurant_id) as any);
-        await dispatch(getRestaurantRestaurantImages(singleRestaurant.id) as any);
-        setBusyPhotoId(null);
+        try {
+            const failures: string[] | null = await dispatch(deleteRestaurantImageThunk(photo.id, photo.restaurant_id) as any);
+            if (failures) {
+                setErrors(failures);
+                return;
+            }
+            await dispatch(getRestaurantRestaurantImages(singleRestaurant.id) as any);
+        } catch (unexpected) {
+            setErrors(["Something went wrong removing the photo. Please try again."]);
+        } finally {
+            setBusyPhotoId(null);
+        }
     };
 
     if (!isLoaded) {

@@ -25,7 +25,24 @@ def delete_res_image(imageId):
         return {"errors": ["Only the uploader or the business owner can delete this photo"]}, 403
 
     url = image.url
+    restaurant_id = image.restaurant_id
+    was_cover = bool(image.preview)
+
     db.session.delete(image)
+
+    if was_cover:
+        # Deleting the cover used to leave the restaurant with no preview=True
+        # row at all, so the listing fell back to the placeholder until someone
+        # noticed and set a new one. Promote the oldest remaining photo.
+        db.session.flush()
+        replacement = (RestaurantImage.query
+                       .filter(RestaurantImage.restaurant_id == restaurant_id)
+                       .order_by(RestaurantImage.id)
+                       .first())
+        if replacement:
+            clear_other_previews(restaurant_id, keep_image_id=replacement.id)
+            replacement.preview = True
+
     db.session.commit()
     remove_file_from_s3(url)
     return {"message": "Successfully deleted"}

@@ -107,3 +107,43 @@ def test_restaurant_list_reports_the_current_cover(client, ids):
     listing = client.get("/api/restaurants/").get_json()["Restaurants"]
     entry = next(r for r in listing if r["id"] == ids["restaurant"])
     assert entry["previewImage"] == "https://example.com/new-cover.jpg"
+
+
+def test_deleting_the_cover_promotes_another_photo(client, ids):
+    """A restaurant with photos left must never be without a cover."""
+    login(client, "owner@test.io")
+    second = add_image(client, ids["restaurant"], "https://example.com/b.jpg").get_json()["id"]
+    third = add_image(client, ids["restaurant"], "https://example.com/c.jpg").get_json()["id"]
+
+    # the seeded image is the cover; deleting it must hand the badge on
+    assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 200
+
+    covers = previews(ids["restaurant"])
+    assert len(covers) == 1
+    assert covers[0].id == second, "the oldest remaining photo takes over"
+    assert RestaurantImage.query.get(third).preview is False
+
+
+def test_the_listing_keeps_a_cover_after_the_current_one_is_deleted(client, ids):
+    login(client, "owner@test.io")
+    add_image(client, ids["restaurant"], "https://example.com/b.jpg")
+    client.delete(f"/api/restaurant-images/{ids['image']}")
+
+    listing = client.get("/api/restaurants/").get_json()["Restaurants"]
+    entry = next(r for r in listing if r["id"] == ids["restaurant"])
+    assert entry["previewImage"] == "https://example.com/b.jpg"
+
+
+def test_deleting_the_last_photo_leaves_no_cover(client, ids):
+    """Nothing to promote is fine; the card falls back to the placeholder."""
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 200
+    assert previews(ids["restaurant"]) == []
+
+
+def test_deleting_a_non_cover_photo_leaves_the_cover_alone(client, ids):
+    login(client, "owner@test.io")
+    second = add_image(client, ids["restaurant"], "https://example.com/b.jpg").get_json()["id"]
+
+    assert client.delete(f"/api/restaurant-images/{second}").status_code == 200
+    assert [image.id for image in previews(ids["restaurant"])] == [ids["image"]]
