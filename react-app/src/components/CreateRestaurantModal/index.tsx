@@ -5,12 +5,9 @@ import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';
 import { addRestaurantThunk } from "../../store/restaurants";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
-import { isValidPostcode, POSTCODE_MESSAGE } from "../../utils/postcode";
+import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
 
 type ImageMode = "upload" | "url";
-
-/** Matches the `description` column and RestaurantForm's Length validator. */
-export const MAX_DESCRIPTION_LENGTH = 500;
 
 function CreateRestaurantModal() {
     const dispatch = useDispatch();
@@ -39,33 +36,12 @@ function CreateRestaurantModal() {
         setIsSubmitting(true);
         setErrors([]); // Clear previous errors
 
-        // Perform client-side validation
-        const validationErrors: string[] = [];
+        // The field rules live in utils/restaurantValidation so this form and
+        // the edit modal cannot drift apart again; the cover photo is ours.
+        const validationErrors: string[] = validateRestaurant({
+            name, price, address, city, state, zipcode, country, phone_number, website, description,
+        });
 
-        // Required field validation
-        if (!name.trim()) validationErrors.push("Restaurant name is required");
-        if (!address.trim()) validationErrors.push("Address is required");
-        if (!city.trim()) validationErrors.push("City is required");
-        if (!state.trim()) validationErrors.push("State is required");
-        if (!zipcode.trim()) validationErrors.push("Zip code is required");
-        if (!country.trim()) validationErrors.push("Country is required");
-        if (!phone_number.trim()) validationErrors.push("Phone number is required");
-        if (!website.trim()) validationErrors.push("Website is required");
-        if (!description.trim()) validationErrors.push("Description is required");
-
-        // Length validation
-        if (name.length > 100) validationErrors.push("Restaurant name must be 100 characters or less");
-        if (address.length > 100) validationErrors.push("Address must be 100 characters or less");
-        if (city.length > 50) validationErrors.push("City must be 50 characters or less");
-        if (country.length > 56) validationErrors.push("Country must be 56 characters or less");
-        if (description.length > MAX_DESCRIPTION_LENGTH) validationErrors.push(`Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`);
-        if (website.length > 70) validationErrors.push("Website must be 70 characters or less");
-
-        // Format validation
-        if (state && state.length !== 2) validationErrors.push("State must be exactly 2 characters (e.g., CA, NY)");
-        if (zipcode && !isValidPostcode(zipcode)) validationErrors.push(POSTCODE_MESSAGE);
-        if (phone_number && !/^[\d\s\-()]+$/.test(phone_number)) validationErrors.push("Phone number can only contain digits, spaces, hyphens, and parentheses");
-        if (website && !website.includes('.')) validationErrors.push("Please enter a valid website URL (e.g., example.com)");
         if (imageMode === "upload" && !imageFile) validationErrors.push("Choose a cover photo for the restaurant");
         if (imageMode === "url" && !url.trim()) validationErrors.push("Cover photo URL is required");
         if (imageMode === "url" && url.trim() && !/^https?:\/\/.+/.test(url.trim())) validationErrors.push("Image URL must start with http:// or https://");

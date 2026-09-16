@@ -92,3 +92,29 @@
 .update-restaurant-form .description-count.near-limit {
     color: rgb(202, 20, 25);
 }
+
+/* Server and client errors, shown above the fields */
+.update-restaurant-errors {
+    list-style: none;
+    margin: 0 50px;
+    padding: 0;
+    color: rgb(202, 20, 25);
+    font-size: 14px;
+}
+
+.update-restaurant-errors:empty {
+    display: none;
+}
+
+.update-restaurant-errors li {
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
+}
+
+.update-restaurant-form button:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
