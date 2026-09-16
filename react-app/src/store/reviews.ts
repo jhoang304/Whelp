@@ -1,5 +1,11 @@
 import { Review, ReviewResponse, ReviewsState } from '../types';
 
+/** Pull the API's `errors` list off a failed response, falling back to `fallback`. */
+const errorsFrom = async (res: Response, fallback: string): Promise<string[]> => {
+    const data = await res.json().catch(() => ({}));
+    return Array.isArray(data.errors) ? data.errors : [fallback];
+}
+
 // Load all reviews by restaurantId
 const LOAD_ALL_REVIEWS_BY_RESTAURANTID = 'reviews/LOAD_ALL_REVIEWS'
 const  loadAllReviewsByRestaurantId = (reviews: Review[]) => {
@@ -62,6 +68,7 @@ const createReview = (review: any) => {
         review
     }
 }
+/** Post a new review. Returns null on success or a list of error messages. */
 export const createOneReview = (newReview: any, restaurantId: any) => async (dispatch: any) => {
     const res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
         method:"POST",
@@ -71,8 +78,9 @@ export const createOneReview = (newReview: any, restaurantId: any) => async (dis
     if(res.ok){
         const review = await res.json();
         dispatch(createReview(review));
-        return review;
+        return null;
     }
+    return errorsFrom(res, "Could not post your review. Please try again.")
 }
 
 //update a review
@@ -83,6 +91,7 @@ const updateReview = (review: any) => {
         review
     }
 }
+/** Save an edited review. Returns null on success or a list of error messages. */
 export const updateOneReview = (newReview: any, reviewId: any) => async (dispatch: any) => {
     const res = await fetch(`/api/reviews/${reviewId}`, {
         method: "PUT",
@@ -92,8 +101,9 @@ export const updateOneReview = (newReview: any, reviewId: any) => async (dispatc
     if(res.ok){
         const review = await res.json();
         dispatch(updateReview(review))
-        return review
+        return null
     }
+    return errorsFrom(res, "Could not save your review. Please try again.")
 }
 
 // ---------------------------------------------------------------------------
@@ -112,11 +122,6 @@ const removeReviewResponse = (reviewId: number) => ({
     type: REMOVE_REVIEW_RESPONSE,
     reviewId,
 })
-
-const errorsFrom = async (res: Response, fallback: string): Promise<string[]> => {
-    const data = await res.json().catch(() => ({}));
-    return Array.isArray(data.errors) ? data.errors : [fallback];
-}
 
 /** Post the owner's reply. Returns null on success or a list of error messages. */
 export const createReviewResponse = (reviewId: number, response: string) => async (dispatch: any) => {

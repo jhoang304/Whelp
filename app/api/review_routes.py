@@ -118,8 +118,7 @@ def create_review_by_restaurant_id(id):
     db.session.add(review)
     db.session.commit()
     return review.to_dict()
-  return {"errors": {"review": "Review text is required",
-    "rating": "Rating must be an integer from 1 to 5",}}, 400
+  return {"errors": error_messages(form.errors)}, 400
 
 
 # Edit a review
@@ -144,8 +143,7 @@ def edit_review(id):
     review.updatedAt = func.now()
     db.session.commit()
     return review.to_dict()
-  return {"errors": {"review": "Review text is required",
-    "stars": "Stars must be an integer from 1 to 5",}}, 400
+  return {"errors": error_messages(form.errors)}, 400
 
 
 # Delete a review
