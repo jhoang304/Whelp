@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
 from app.models import Restaurant, Review, RestaurantImage, User, db
+from app.api.aws_helpers import remove_files_from_s3
 from app.forms import RestaurantForm, RestaurantImageForm
 from app.api.utils import error_messages
 
@@ -229,8 +230,16 @@ def delete_restaurant(restaurantId):
     if restaurant.user_id != current_user.id:
         return {"errors": ["You can only delete your own restaurants"]}, 403
 
+    # Read the URLs before the delete: the cascade drops the restaurant_images
+    # rows, and without this the objects would sit in the bucket forever,
+    # costing storage and staying publicly readable after the user deleted them.
+    image_urls = [image.url for image in restaurant.restaurant_images]
+
     db.session.delete(restaurant)
     db.session.commit()
+    # Best effort, like the single-image delete route: a bucket hiccup must
+    # not turn a successful delete into a 500.
+    remove_files_from_s3(image_urls)
     return {"message": ["Restaurant Successfully deleted"]},200
 
 

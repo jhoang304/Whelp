@@ -4,6 +4,7 @@ import urllib.error
 import botocore.exceptions
 
 from app.api import aws_helpers
+from app.models import Restaurant, RestaurantImage, db
 from tests.conftest import login
 
 
@@ -26,6 +27,10 @@ class FakeS3:
 
     def delete_object(self, Bucket, Key):
         self.deleted.append((Bucket, Key))
+
+    def delete_objects(self, Bucket, Delete):
+        for entry in Delete["Objects"]:
+            self.deleted.append((Bucket, entry["Key"]))
 
 
 def configure_s3(monkeypatch, acls_disabled=False, public=True):
@@ -169,3 +174,80 @@ def test_delete_restaurant_image_permissions(client, ids, monkeypatch):
     assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 200
     assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 404
     assert fake.deleted == []
+
+
+BUCKET_URL = "https://whelp-test-bucket.s3.amazonaws.com/"
+
+
+def test_remove_files_from_s3_batches_and_skips_foreign_urls(monkeypatch):
+    fake = configure_s3(monkeypatch)
+    deleted = aws_helpers.remove_files_from_s3([
+        f"{BUCKET_URL}one.png",
+        "https://i.imgur.com/not-ours.png",
+        f"{BUCKET_URL}two.jpg",
+    ])
+    assert deleted == ["one.png", "two.jpg"]
+    assert fake.deleted == [("whelp-test-bucket", "one.png"), ("whelp-test-bucket", "two.jpg")]
+
+
+def test_remove_files_from_s3_without_our_urls_makes_no_call(monkeypatch):
+    fake = configure_s3(monkeypatch)
+    assert aws_helpers.remove_files_from_s3(["https://i.imgur.com/other.png"]) == []
+    assert fake.deleted == []
+
+
+def test_deleting_a_restaurant_removes_its_uploaded_photos(client, ids, monkeypatch):
+    """Regression: the cascade dropped the rows but orphaned the S3 objects."""
+    fake = configure_s3(monkeypatch)
+    db.session.add_all([
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
+                        preview=False, createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-2.png",
+                        preview=False, createdByUserId=ids["reviewer"]),
+    ])
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    res = client.delete(f"/api/restaurants/{ids['restaurant']}")
+    assert res.status_code == 200, res.get_json()
+
+    assert Restaurant.query.get(ids["restaurant"]) is None
+    assert RestaurantImage.query.filter_by(restaurant_id=ids["restaurant"]).count() == 0
+    # every uploaded object is gone; the seeded example.com image is left alone
+    assert sorted(key for _, key in fake.deleted) == ["uploaded-1.png", "uploaded-2.png"]
+
+
+def test_deleting_a_restaurant_without_uploads_touches_s3_not_at_all(client, ids, monkeypatch):
+    fake = configure_s3(monkeypatch)
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+    assert fake.deleted == []
+
+
+def test_a_refused_delete_leaves_the_bucket_alone(client, ids, monkeypatch):
+    fake = configure_s3(monkeypatch)
+    db.session.add(RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
+                                   preview=False, createdByUserId=ids["owner"]))
+    db.session.commit()
+
+    login(client, "bystander@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 403
+    assert fake.deleted == []
+    assert Restaurant.query.get(ids["restaurant"]) is not None
+
+
+def test_a_bucket_failure_does_not_fail_the_delete(client, ids, monkeypatch):
+    fake = configure_s3(monkeypatch)
+
+    def failing_delete(Bucket, Delete):
+        raise botocore.exceptions.ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}}, "DeleteObjects")
+
+    fake.delete_objects = failing_delete
+    db.session.add(RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
+                                   preview=False, createdByUserId=ids["owner"]))
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+    assert Restaurant.query.get(ids["restaurant"]) is None

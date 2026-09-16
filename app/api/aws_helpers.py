@@ -141,6 +141,37 @@ def is_s3_url(image_url):
     return bool(image_url and s["location"] and image_url.startswith(s["location"]))
 
 
+def remove_files_from_s3(image_urls):
+    """Best-effort delete of several objects we uploaded, batched.
+
+    S3 takes up to 1000 keys per delete_objects call, so a restaurant with
+    a handful of photos costs one request instead of one per photo. URLs
+    that are not ours (seeded or hot-linked images) are ignored. Returns the
+    keys S3 was asked to delete.
+    """
+    if not s3_configured():
+        return []
+
+    s = _settings()
+    keys = [url[len(s["location"]):] for url in image_urls if is_s3_url(url)]
+    if not keys:
+        return []
+
+    deleted = []
+    for start in range(0, len(keys), 1000):
+        chunk = keys[start:start + 1000]
+        try:
+            _client().delete_objects(
+                Bucket=s["bucket"],
+                Delete={"Objects": [{"Key": key} for key in chunk]},
+            )
+        except Exception as e:
+            print(f"[aws_helpers] failed to delete {len(chunk)} object(s): {e}")
+            continue
+        deleted.extend(chunk)
+    return deleted
+
+
 def remove_file_from_s3(image_url):
     """Best-effort delete of an object we uploaded. Ignores URLs from other hosts."""
     if not s3_configured() or not is_s3_url(image_url):
