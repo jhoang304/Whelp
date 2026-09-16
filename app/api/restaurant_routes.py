@@ -1,9 +1,11 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
+from sqlalchemy.orm import selectinload
 from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
 from app.api.aws_helpers import remove_files_from_s3
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
-from app.api.utils import clear_other_previews, error_messages, review_with_details
+from app.api.utils import (
+    clear_other_previews, error_messages, restaurant_cards, reviews_with_details)
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -11,61 +13,8 @@ restaurant_routes = Blueprint('restaurants', __name__)
 # Get all Restaurants
 @restaurant_routes.route('/')
 def restaurants():
-    restaurants = Restaurant.query.all()
-    reviews=Review.query.all()
-    restaurant_images= RestaurantImage.query.all()
-
-
-    for restaurant in restaurants:
-        restaurants_reviews = Review.query.filter(
-            Review.restaurant_id == restaurant.id).all()
-        if len(restaurants_reviews)==0:
-            restaurant.aveRating=0
-        rating = 0
-        review_count = 0
-        for review in restaurants_reviews:
-
-            review_count=review_count+1
-            rating=rating+review.rating
-
-
-            aveRating=rating/review_count
-            restaurant.aveRating=aveRating
-
-
-    for restaurant in restaurants:
-        restaurant.preview= None
-        for image in restaurant_images:
-            if image.restaurant_id == restaurant.id and image.preview == True:
-                restaurant.preview=image.url
-
-    for restaurant in restaurants:
-        restaurant.oneReview= None
-        for review in reviews:
-            if review.restaurant_id == restaurant.id:
-                restaurant.oneReview=review.review
-
-
-    data = {
-        "Restaurants":[{
-        "id":restaurant.id,
-        "user_id": restaurant.user_id,
-        "name":restaurant.name,
-        "price":restaurant.price,
-        "address" : restaurant.address,
-        "city" : restaurant.city,
-        "state" :restaurant.state,
-        "zipcode": restaurant.zipcode,
-        "country":restaurant.country,
-        "phone_number" : restaurant.phone_number,
-        "description" : restaurant.description,
-        "website":restaurant.website,
-        "avgRating": round(restaurant.aveRating,2),
-        "previewImage": restaurant.preview,
-        "oneReview":restaurant.oneReview
-    } for restaurant in restaurants]}
-
-    return data
+    """Every restaurant, as the cards the listing page shows."""
+    return {"Restaurants": restaurant_cards(Restaurant.query.all())}
 
 
 # Get Single Restaurant by Id
@@ -285,9 +234,6 @@ def search_restaurant(keyword):
     
     # Sanitize keyword to prevent SQL injection
     sanitized_keyword = keyword.strip()
-    
-    restaurant_images = RestaurantImage.query.all()
-    reviews = Review.query.all()
 
     # Improved search strategy with prioritization
     if len(sanitized_keyword) < 3:
@@ -304,7 +250,7 @@ def search_restaurant(keyword):
         exact_name_matches = Restaurant.query.filter(
             Restaurant.name.ilike(f"%{sanitized_keyword}%")
         ).all()
-        
+
         # Then get other matches
         other_matches = Restaurant.query.filter(
             db.and_(
@@ -316,53 +262,11 @@ def search_restaurant(keyword):
                 )
             )
         ).all()
-        
+
         # Combine results with name matches first
         queried_restaurants = exact_name_matches + other_matches
 
-    # Calculate average ratings and add preview images
-    for restaurant in queried_restaurants:
-        # Add preview image
-        restaurant.preview = None
-        for image in restaurant_images:
-            if image.restaurant_id == restaurant.id and image.preview == True:
-                restaurant.preview = image.url
-
-        # Calculate average rating
-        restaurant_reviews = [review for review in reviews if review.restaurant_id == restaurant.id]
-        if len(restaurant_reviews) == 0:
-            restaurant.aveRating = 0
-            restaurant.numReviews = 0
-        else:
-            total_rating = sum(review.rating for review in restaurant_reviews)
-            restaurant.aveRating = total_rating / len(restaurant_reviews)
-            restaurant.numReviews = len(restaurant_reviews)
-
-        # Add one sample review
-        restaurant.oneReview = restaurant_reviews[0].review if restaurant_reviews else None
-
-    data = {
-        "Restaurants": [{
-            "id": restaurant.id,
-            "user_id": restaurant.user_id,
-            "name": restaurant.name,
-            "price": restaurant.price,
-            "address": restaurant.address,
-            "city": restaurant.city,
-            "state": restaurant.state,
-            "zipcode": restaurant.zipcode,
-            "country": restaurant.country,
-            "phone_number": restaurant.phone_number,
-            "description": restaurant.description,
-            "website": restaurant.website,
-            "avgRating": round(restaurant.aveRating, 2),
-            "numReviews": restaurant.numReviews,
-            "previewImage": restaurant.preview,
-            "oneReview": restaurant.oneReview
-        } for restaurant in queried_restaurants],
-    }
-
-    return data
+    return {"Restaurants": restaurant_cards(queried_restaurants)}
 
 
 # Get reviews by restaurant's id
@@ -376,8 +280,12 @@ def get_reviews_by_restaurant_id(id):
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
 
-    reviews = Review.query.filter(Review.restaurant_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
-    return {"reviews": [review_with_details(review, restaurant=restaurant) for review in reviews]}
+    reviews = Review.query.options(
+        selectinload(Review.user),
+        selectinload(Review.review_images),
+        selectinload(Review.response),
+    ).filter(Review.restaurant_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
+    return {"reviews": reviews_with_details(reviews, restaurant=restaurant)}
 
 
 # Create a review by restaurant's id

@@ -46,3 +46,34 @@ def test_search_results_carry_ratings_and_preview(client):
     assert result["numReviews"] == 1
     assert result["previewImage"] == "https://example.com/a.jpg"
     assert result["oneReview"] == "Solid."
+
+
+def test_the_teaser_is_the_review_the_feed_puts_first(client, ids):
+    """
+    Both cards show one review's text, and they used to disagree about which:
+    the listing kept the newest, search the oldest.
+
+    Newest means createdAt, not the highest id. This review is written last
+    but dated two years ago, which is the shape the seeds produce -- ranking
+    on id would show it while the feed showed the other one.
+    """
+    from datetime import datetime
+
+    from app.models import Review, User, db
+
+    latecomer = User(username="latecomer", email="latecomer@test.io", password="password",
+                     first_name="Late", last_name="Comer")
+    db.session.add(latecomer)
+    db.session.commit()
+    backdated = Review(user_id=latecomer.id, restaurant_id=ids["restaurant"],
+                       review="Was here two years ago.", rating=2)
+    backdated.createdAt = datetime(2023, 1, 1)
+    db.session.add(backdated)
+    db.session.commit()
+
+    feed = client.get(f"/api/restaurants/{ids['restaurant']}/reviews").get_json()["reviews"]
+    listed = client.get("/api/restaurants/").get_json()["Restaurants"][0]
+    searched = search(client, "bistro")[0]
+
+    assert listed["oneReview"] == searched["oneReview"] == feed[0]["review"] == "Solid."
+    assert listed["numReviews"] == searched["numReviews"] == 2

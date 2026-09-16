@@ -4,7 +4,7 @@ from sqlalchemy.sql import func
 
 from app.models import User, db
 from app.forms import UserProfileForm
-from app.api.utils import error_messages
+from app.api.utils import error_messages, restaurant_cards
 from app.api.aws_helpers import remove_file_from_s3, is_s3_url
 
 user_routes = Blueprint('users', __name__)
@@ -34,16 +34,6 @@ def user(id):
     return user.to_dict_public()
 
 
-def _restaurant_summary(restaurant):
-    """Restaurant card data for the profile page: preview image + rating stats."""
-    data = restaurant.to_dict()
-    reviews = restaurant.reviews
-    data["numReviews"] = len(reviews)
-    data["avgRating"] = round(sum(r.rating for r in reviews) / len(reviews), 2) if reviews else 0
-    data["previewImage"] = next((img.url for img in restaurant.restaurant_images if img.preview), None)
-    return data
-
-
 @user_routes.route('/get/<int:id>', methods=['GET'])
 def get_user_profile(id):
     """
@@ -58,7 +48,7 @@ def get_user_profile(id):
     data = profile.to_dict_public()
     if current_user.is_authenticated and current_user.id == profile.id:
         data["email"] = profile.email
-    data["restaurants"] = [_restaurant_summary(r) for r in profile.restaurants]
+    data["restaurants"] = restaurant_cards(profile.restaurants)
     data["restaurant_count"] = len(profile.restaurants)
     data["review_count"] = len(profile.reviews)
     return data
