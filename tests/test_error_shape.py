@@ -3,6 +3,7 @@ One error shape for the whole API: {"errors": [message, ...]}, a flat list of
 strings, whatever the endpoint and whatever went wrong.
 """
 import pytest
+from werkzeug.exceptions import NotFound
 
 from tests.conftest import login
 
@@ -63,6 +64,10 @@ def signed_out_delete(client, ids):
     return client.delete(f"/api/restaurants/{ids['restaurant']}")
 
 
+def blank_search(client, ids):
+    return client.get("/api/restaurants/search/%20")
+
+
 def unknown_api_path(client, ids):
     return client.get("/api/not-a-real-endpoint")
 
@@ -76,6 +81,7 @@ def unknown_api_path(client, ids):
     rejected_profile_edit,
     unknown_restaurant,
     forbidden_edit,
+    blank_search,
     unknown_api_path,
 ], ids=lambda f: f.__name__)
 def test_every_failure_is_a_flat_list_of_messages(client, ids, make_request):
@@ -127,3 +133,52 @@ def test_the_shape_is_documented(client):
     assert res.status_code == 200
     assert '{"errors": [message, ...]}' in res.get_json()["errors"]
     assert "/api/restaurants/" in res.get_json()["routes"]
+
+
+def test_werkzeug_own_failures_are_converted(client, ids):
+    """
+    A method no rule takes never reaches a route: Werkzeug raises 405 and
+    would answer with an HTML page. The Allow header it built has to survive
+    the conversion, since that is the useful half of the answer.
+    """
+    login(client, "owner@test.io")
+    res = client.open(f"/api/restaurants/{ids['restaurant']}", method="PATCH")
+    assert res.status_code == 405
+    assert res.mimetype == "application/json"
+    assert res.get_json()["errors"] and isinstance(res.get_json()["errors"], list)
+    assert "PUT" in res.headers["Allow"]
+
+
+def test_a_bug_in_a_route_is_still_the_documented_shape(client, app, monkeypatch):
+    """
+    Tests and dev re-raise so the traceback is not swallowed; in production the
+    caller gets JSON rather than Flask's HTML 500 page.
+    """
+    monkeypatch.setitem(app.config, "TESTING", False)
+    monkeypatch.setitem(app.config, "PROPAGATE_EXCEPTIONS", False)
+
+    class Boom:
+        class query:
+            @staticmethod
+            def all():
+                raise RuntimeError("boom")
+
+    monkeypatch.setattr("app.api.restaurant_routes.Restaurant", Boom)
+
+    res = client.get("/api/restaurants/")
+    assert res.status_code == 500
+    assert res.get_json() == {"errors": ["Something went wrong on our end."]}
+
+
+def test_a_page_url_does_not_get_json_errors(client, app, monkeypatch):
+    """The conversion is for API callers; a browser still gets the SPA."""
+    def only_index(filename):
+        if filename != "index.html":
+            raise NotFound()
+        return "stub:index.html"
+
+    monkeypatch.setattr(app, "send_static_file", only_index)
+
+    res = client.get("/some/client/route")
+    assert res.status_code == 200
+    assert res.get_data(as_text=True) == "stub:index.html"

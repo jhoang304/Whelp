@@ -281,7 +281,7 @@ def delete_restaurant(restaurantId):
 @restaurant_routes.route("/search/<keyword>")
 def search_restaurant(keyword):
     if not keyword or len(keyword.strip()) == 0:
-        return {"Restaurants": []}, 400
+        return {"errors": ["Search keyword cannot be empty"]}, 400
     
     # Sanitize keyword to prevent SQL injection
     sanitized_keyword = keyword.strip()

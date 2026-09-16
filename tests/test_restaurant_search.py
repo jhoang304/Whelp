@@ -37,7 +37,7 @@ def test_search_with_no_matches_is_an_empty_list(client):
 def test_a_blank_keyword_is_rejected(client):
     res = client.get("/api/restaurants/search/%20")
     assert res.status_code == 400
-    assert res.get_json()["Restaurants"] == []
+    assert res.get_json()["errors"] == ["Search keyword cannot be empty"]
 
 
 def test_search_results_carry_ratings_and_preview(client):
