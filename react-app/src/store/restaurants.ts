@@ -200,24 +200,46 @@ export const updateSingleRestaurant = (restaurant: any) => ({
     restaurant
 })
 
-export const updateRestaurantThunk = (restaurant: any, user_id: any) => async (dispatch: any) => {
+/**
+ * Save an edited restaurant. Returns null on success or a list of error
+ * messages, the contract createReviewResponse uses, so the modal can show
+ * what went wrong instead of closing over a failed PUT.
+ */
+export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) => {
     const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website } = restaurant
-    const res = await fetch(`/api/restaurants/${+id}`, {
-        method: "PUT",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            user_id, name, price, address, city, state, zipcode, country, phone_number, description, website
+
+    let res: Response
+    try {
+        res = await fetch(`/api/restaurants/${+id}`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id, name, price, address, city, state, zipcode, country, phone_number, description, website
+            })
         })
-    })
+    } catch (networkError) {
+        // fetch rejects, rather than resolving with a status, when the browser
+        // is offline or the connection drops. Returning the message keeps this
+        // thunk's "null or messages" contract, so the modal can recover.
+        return ["Couldn't reach the server. Check your connection and try again."]
+    }
 
     if (res.ok) {
         const updatedRestaurant = await res.json()
         await dispatch(updateSingleRestaurant(updatedRestaurant))
-        dispatch(getSingleRestaurant(updatedRestaurant.id))
-        return updatedRestaurant
+        await dispatch(getSingleRestaurant(updatedRestaurant.id))
+        return null
     }
+
+    const data = await res.json().catch(() => ({}))
+    if (Array.isArray(data.errors)) return data.errors as string[]
+    // Older shape: WTForms' {field: [messages]} dict.
+    if (data.errors && typeof data.errors === 'object') {
+        return Object.values(data.errors).flat() as string[]
+    }
+    return ["Could not save your changes. Please try again."]
 }
 
 

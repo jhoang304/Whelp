@@ -68,3 +68,23 @@ def test_edit_and_delete_missing_restaurant_is_404(client):
     login(client, "owner@test.io")
     assert client.put("/api/restaurants/9999", json=payload()).status_code == 404
     assert client.delete("/api/restaurants/9999").status_code == 404
+
+
+def test_edit_validation_errors_are_a_list_of_messages(client, ids):
+    """The edit modal shows these; a WTForms dict gave it nothing to render."""
+    login(client, "owner@test.io")
+    res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload(name=""))
+    assert res.status_code == 400
+    errors = res.get_json()["errors"]
+    assert isinstance(errors, list) and errors
+    assert all(isinstance(message, str) for message in errors)
+    assert Restaurant.query.get(ids["restaurant"]).name == "Test Bistro"
+
+
+def test_a_website_that_is_not_a_dot_com_is_accepted(client, ids):
+    """The edit modal used to require a trailing .com; the server never did."""
+    login(client, "owner@test.io")
+    res = client.put(f"/api/restaurants/{ids['restaurant']}",
+                     json=payload(website="https://runchickenrun.com/las-vegas/"))
+    assert res.status_code == 200, res.get_json()
+    assert Restaurant.query.get(ids["restaurant"]).website == "https://runchickenrun.com/las-vegas/"
