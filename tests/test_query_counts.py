@@ -1,9 +1,14 @@
 """
-The listing, search, review feeds and profile answer in a fixed number of
-queries, however many rows they cover.
+The listing, search, review feeds and profile answer in a number of queries
+that does not grow with the rows they cover.
 
 Each test counts the statements for a small table, grows the table, and counts
 again: the absolute number is nobody's business, but it must not move.
+
+One caveat, covered by the last test here: selectinload splits its IN list
+every 500 parent rows, so an unpaginated review feed does cost one more
+statement per collection per 500 reviews. That is a couple of extra queries at
+600 reviews, not 600 of them -- and paginating the feeds is #42.
 """
 from contextlib import contextmanager
 
@@ -119,6 +124,36 @@ def test_a_profile_does_not_cost_a_query_per_business(client, ids):
         res = client.get(url)
     assert len(res.get_json()["restaurants"]) == 10
     assert len(after) == len(before), "\n".join(after)
+
+
+# SQLAlchemy chunks a selectin load's IN list at this many parent keys.
+SELECTIN_BATCH = 500
+
+
+def test_a_feed_past_the_batch_size_costs_batches_not_a_query_per_row(client, ids):
+    """
+    The feeds are not paginated yet (#42), so this is where "does not grow"
+    stops being literally true. What has to hold is the shape: crossing the
+    batch boundary costs one more statement per collection, not one per review.
+    """
+    url = f"/api/restaurants/{ids['restaurant']}/reviews"
+    with counted() as small:
+        assert client.get(url).status_code == 200
+
+    db.session.add_all([
+        Review(user_id=ids["reviewer"], restaurant_id=ids["restaurant"],
+               review=f"Bulk review {n}", rating=4)
+        for n in range(SELECTIN_BATCH + 100)
+    ])
+    db.session.commit()
+
+    with counted() as large:
+        res = client.get(url)
+    assert len(res.get_json()["reviews"]) == SELECTIN_BATCH + 101
+
+    # review_images and response each need a second batch; nothing else moves.
+    assert len(large) - len(small) <= 2, "\n".join(large)
+    assert len(large) < 12, "\n".join(large)
 
 
 def test_the_cards_still_say_what_they_said(client, ids):

@@ -112,7 +112,13 @@ def review_stats(restaurant_ids):
 def latest_review_texts(restaurant_ids):
     """
     {restaurant_id: the text of its newest review} -- the one line a card
-    shows -- in one query, joined back through max(id) per restaurant.
+    shows -- in one query.
+
+    Newest is createdAt first and id only as the tie-break, which is the order
+    the review feeds use, so a card's teaser is the review its feed puts at
+    the top. Ranking on id alone would disagree with that: createdAt is set
+    independently of insertion order, and the seeds do exactly that, spreading
+    reviews over two years in the order they happen to be written.
     """
     from app.models import Review, db
 
@@ -120,13 +126,17 @@ def latest_review_texts(restaurant_ids):
     if not ids:
         return {}
 
-    newest = db.session.query(
+    ranked = db.session.query(
         Review.restaurant_id.label("restaurant_id"),
-        func.max(Review.id).label("id"),
-    ).filter(Review.restaurant_id.in_(ids)).group_by(Review.restaurant_id).subquery()
+        Review.review.label("review"),
+        func.row_number().over(
+            partition_by=Review.restaurant_id,
+            order_by=(Review.createdAt.desc(), Review.id.desc()),
+        ).label("position"),
+    ).filter(Review.restaurant_id.in_(ids)).subquery()
 
-    rows = db.session.query(Review.restaurant_id, Review.review).join(
-        newest, Review.id == newest.c.id).all()
+    rows = db.session.query(ranked.c.restaurant_id, ranked.c.review).filter(
+        ranked.c.position == 1).all()
     return dict(rows)
 
 
@@ -136,9 +146,14 @@ def restaurant_cards(restaurants):
     list all show: the restaurant, its rating, how many reviews it has, its
     cover photo, and one review's text.
 
-    Three queries whatever the number of restaurants. It is a batch helper and
-    not a Restaurant method because avoiding the per-restaurant query is the
-    whole point -- a summary() called in a loop would put them straight back.
+    Three queries whatever the number of restaurants -- though the ids go into
+    an IN list, so the statement grows with the page even where the count of
+    them does not. That is the argument for paginating the listing (#42), not
+    for going back to a query per row.
+
+    It is a batch helper and not a Restaurant method because avoiding the
+    per-restaurant query is the whole point: a summary() called in a loop puts
+    them straight back.
     """
     restaurants = list(restaurants)
     ids = [restaurant.id for restaurant in restaurants]
