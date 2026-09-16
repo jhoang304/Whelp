@@ -1,4 +1,7 @@
 # Whelp
+
+[![CI](https://github.com/jhoang304/Whelp/actions/workflows/ci.yml/badge.svg)](https://github.com/jhoang304/Whelp/actions/workflows/ci.yml)
+
 https://whelp-8ru8.onrender.com/
 
 * Whelp is a web application based on the idea of Yelp
@@ -68,11 +71,21 @@ S3_SECRET=your-secret-access-key
 The IAM user needs `s3:PutObject` and `s3:DeleteObject` on the bucket, and objects must be publicly readable (either through a bucket policy or by leaving ACLs enabled; the app retries without an ACL if the bucket has ACLs disabled). After each upload the app checks that the object is publicly readable and rejects the upload with a clear message if it is not. Without these variables the app still works: the photo dialogs accept an image URL instead, and the upload endpoint answers with a clear 503.
 
 ### Running the tests
+
+Backend, from the repo root:
 ```
 pipenv install --dev
 pytest
 ```
-The tests in `tests/` run the Flask app against an in-memory SQLite database and cover profiles, owner responses, and the upload endpoint (S3 is mocked).
+
+Frontend, from `react-app/`:
+```
+npm ci
+npx tsc --noEmit
+npm test -- --watchAll=false
+```
+
+The Flask tests run the app against an in-memory SQLite database with S3 mocked, and cover the routes, permissions, error shape, form rules and query counts. Every pull request runs both suites, plus the production build and an advisory dependency audit: see `.github/workflows/ci.yml`.
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
