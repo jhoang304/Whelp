@@ -5,6 +5,17 @@ on:
     branches: [main]
   pull_request:
 
+# Nothing here writes: the jobs read the code, run the suites and build. The
+# repository default is read-only today, but that is a setting someone can
+# change, and this file should not depend on it.
+permissions:
+  contents: read
+
+# Actions are pinned to commit SHAs rather than the moving v4/v5 tags, which
+# can be repointed at any commit -- including by someone who takes over the
+# repository they live in. The trailing comment is the version each SHA was,
+# and is the thing to check when bumping them.
+
 # A new push to a PR makes the previous run's answer irrelevant.
 concurrency:
   group: ci-${{ github.ref }}
@@ -15,9 +26,9 @@ jobs:
     name: pytest
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
         with:
           # Not the Pipfile's python_version: it says 3.9 while Render builds on
           # 3.7 and this suite is developed on 3.11. Pinning the real runtime
@@ -51,9 +62,9 @@ jobs:
       run:
         working-directory: react-app
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           # CRA 4's build needs --openssl-legacy-provider, which only exists on
           # Node 17+. Modernising that toolchain is #33.
