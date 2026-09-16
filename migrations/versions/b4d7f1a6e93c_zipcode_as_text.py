@@ -57,14 +57,42 @@ def upgrade():
         )
 
 
+def _unrepresentable_predicate(dialect):
+    """
+    SQL matching postcodes that cannot survive a trip back through an integer
+    column: letters or punctuation (ZIP+4, Canadian, UK), a leading zero that
+    integer storage would drop, or more digits than an int holds.
+    """
+    has_non_digit = "zipcode !~ '^[0-9]+$'" if dialect == "postgresql" else "zipcode GLOB '*[^0-9]*'"
+    return f"({has_non_digit} OR zipcode LIKE '0%' OR length(zipcode) > 9)"
+
+
 def downgrade():
     """
-    Lossy: any postcode that isn't a plain run of digits (ZIP+4, Canadian,
-    UK) cannot be represented as an integer and becomes 0.
+    An integer column cannot hold a ZIP+4, a Canadian or UK postcode, or the
+    leading zero on 02134, so this refuses to run while any row still has one
+    rather than destroying it quietly. Fix those values yourself first, or set
+    ALLOW_LOSSY_DOWNGRADE=1 to accept that they become 0 or lose the zero.
     """
     schema = SCHEMA if environment == "production" else None
+    dialect = op.get_bind().dialect.name
+    table = _table()
+    doomed = _unrepresentable_predicate(dialect)
 
-    if op.get_bind().dialect.name == "postgresql":
+    unrepresentable = op.get_bind().execute(sa.text(
+        f"SELECT count(*) FROM {table} WHERE {doomed}"
+    )).scalar()
+
+    if unrepresentable and os.environ.get("ALLOW_LOSSY_DOWNGRADE") != "1":
+        raise RuntimeError("\n".join([
+            f"{unrepresentable} restaurant(s) have a postcode that cannot be stored as "
+            f"an integer (non-numeric, or a leading zero that would be lost).",
+            "Review them first:",
+            f"    SELECT id, zipcode FROM {table} WHERE {doomed};",
+            "or re-run with ALLOW_LOSSY_DOWNGRADE=1 to accept the loss.",
+        ]))
+
+    if dialect == "postgresql":
         op.alter_column(
             'restaurants', 'zipcode',
             existing_type=sa.String(length=10),
@@ -75,7 +103,7 @@ def downgrade():
         )
     else:
         op.execute(
-            f"UPDATE {_table()} SET zipcode = '0' "
+            f"UPDATE {table} SET zipcode = '0' "
             "WHERE zipcode GLOB '*[^0-9]*' OR length(zipcode) > 9"
         )
         with op.batch_alter_table('restaurants', schema=schema) as batch_op:
