@@ -15,7 +15,8 @@ class Review(db.Model):
     review = db.Column(db.String(255), nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
+                          onupdate=func.now())
 
     user = db.relationship("User", back_populates="reviews")
     restaurant = db.relationship("Restaurant", back_populates="reviews")

@@ -21,7 +21,8 @@ class Restaurant(db.Model):
     website = db.Column(db.String(100), nullable=False)
     description = db.Column(db.String(500), nullable=False)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
+                          onupdate=func.now())
 
     user = db.relationship("User", back_populates="restaurants")
     reviews = db.relationship("Review", back_populates="restaurant", cascade="all, delete-orphan")

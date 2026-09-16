@@ -48,3 +48,35 @@ def clear_other_previews(restaurant_id, keep_image_id=None):
         query = query.filter(RestaurantImage.id != keep_image_id)
     for image in query.all():
         image.preview = False
+
+
+def preview_image_url(restaurant_id):
+    """The url of a restaurant's cover photo, or None when it has no photos."""
+    from app.models import RestaurantImage
+
+    image = RestaurantImage.query.filter(
+        RestaurantImage.restaurant_id == restaurant_id,
+        RestaurantImage.preview == True,  # noqa: E712 - SQLAlchemy column comparison
+    ).first()
+    return image.url if image else None
+
+
+def review_with_details(review, restaurant=None):
+    """
+    Serialize a review with its author, images, restaurant, and owner response.
+
+    Shared by the review routes and the restaurant's own review listing, which
+    live on different blueprints.
+    """
+    restaurant = restaurant or review.restaurant
+    data = review.to_dict()
+    data["user"] = review.user.to_dict_public() if review.user else None
+    data["reviewImages"] = [image.to_dict() for image in review.review_images]
+    if restaurant:
+        restaurant_data = restaurant.to_dict()
+        restaurant_data["previewImage"] = preview_image_url(restaurant.id)
+        data["restaurant"] = restaurant_data
+    else:
+        data["restaurant"] = None
+    data["response"] = review.response.to_dict() if review.response else None
+    return data

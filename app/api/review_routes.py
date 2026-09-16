@@ -2,36 +2,11 @@ from flask import Blueprint, request
 from flask_login import current_user, login_required
 from sqlalchemy.sql import func
 
-from app.models import db, Review, Restaurant, RestaurantImage, User, ReviewImage, ReviewResponse
+from app.models import db, Review, ReviewImage, ReviewResponse
 from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
-from app.api.utils import error_messages
-from .restaurant_routes import restaurant_routes
+from app.api.utils import error_messages, review_with_details
 
 review_routes = Blueprint('reviews', __name__)
-
-
-def _preview_image_url(restaurant_id):
-  image = RestaurantImage.query.filter(
-    RestaurantImage.restaurant_id == restaurant_id,
-    RestaurantImage.preview == True
-  ).first()
-  return image.url if image else None
-
-
-def review_with_details(review, restaurant=None):
-  """Serialize a review with its author, images, restaurant, and owner response."""
-  restaurant = restaurant or review.restaurant
-  data = review.to_dict()
-  data["user"] = review.user.to_dict_public() if review.user else None
-  data["reviewImages"] = [image.to_dict() for image in review.review_images]
-  if restaurant:
-    restaurant_data = restaurant.to_dict()
-    restaurant_data["previewImage"] = _preview_image_url(restaurant.id)
-    data["restaurant"] = restaurant_data
-  else:
-    data["restaurant"] = None
-  data["response"] = review.response.to_dict() if review.response else None
-  return data
 
 
 # get all reviews by user id
@@ -45,23 +20,8 @@ def get_reviews_by_userId(id):
   return [review_with_details(review) for review in reviews]
 
 
-# Get reviews by restaurant's id
-@restaurant_routes.route('/<int:id>/reviews', methods=['GET'])
-def get_reviews_by_restaurant_id(id):
-  """
-  Returns every review for a restaurant, newest first, including the author,
-  review images, and any business-owner response.
-  """
-  restaurant = Restaurant.query.get(id)
-  if not restaurant:
-    return {"errors": ["restaurant couldn't be found"]}, 404
-
-  reviews = Review.query.filter(Review.restaurant_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
-  return {"reviews": [review_with_details(review, restaurant=restaurant) for review in reviews]}
-
-
 # Add an image for a review
-@review_routes.route('/<int:id>/images', methods=["POST", 'GET'])
+@review_routes.route('/<int:id>/images', methods=["POST"])
 @login_required
 def create_image_by_review_id(id):
 
@@ -87,42 +47,8 @@ def create_image_by_review_id(id):
   return {"errors": error_messages(form.errors)}, 400
 
 
-## Create a review by restaurant's id
-@restaurant_routes.route('/<int:id>/reviews', methods=["POST", "GET"])
-@login_required
-def create_review_by_restaurant_id(id):
-  restaurant = Restaurant.query.get(id)
-
-  if not restaurant:
-    return {"errors": ["restaurant couldn't be found"]}, 404
-
-  if restaurant.user_id == current_user.id:
-    return {"errors": ["User can't add review on his own restaurant"]}, 403
-
-  review = Review.query.filter(Review.restaurant_id == id, Review.user_id == current_user.id).all()
-
-  if len(review) > 0:
-    return {"errors": ["User already has a review for this restaurant"]}, 403
-
-  form = ReviewForm()
-  form["csrf_token"].data = request.cookies.get("csrf_token")
-
-  if form.validate_on_submit():
-    review = Review(
-      user_id = int(current_user.id),
-      restaurant_id = id,
-      review = form.data["review"],
-      rating = form.data["rating"],
-    )
-
-    db.session.add(review)
-    db.session.commit()
-    return review.to_dict()
-  return {"errors": error_messages(form.errors)}, 400
-
-
 # Edit a review
-@review_routes.route('/<int:id>', methods=["PUT", "GET"])
+@review_routes.route('/<int:id>', methods=["PUT"])
 @login_required
 def edit_review(id):
 

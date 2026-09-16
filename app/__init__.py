@@ -81,19 +81,32 @@ def api_help():
     return route_list
 
 
+def api_not_found():
+    """A JSON 404 for API callers, who have no use for index.html."""
+    return {'errors': ['Not found']}, 404
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def react_root(path):
     """
-    This route will direct to the public directory in our
-    react builds in the production environment for favicon
-    or index.html requests
+    Serves the built React app, so a URL only the client router knows about
+    survives a full page load. A path under /api/ that gets this far is a
+    caller asking for data, and answering it with the app's HTML (at 200, no
+    less) hid every typo and stale endpoint.
     """
-    if path == 'favicon.ico':
-        return app.send_from_directory('public', 'favicon.ico')
+    if path.startswith('api/'):
+        return api_not_found()
     return app.send_static_file('index.html')
 
 
 @app.errorhandler(404)
 def not_found(e):
+    """
+    Where unknown paths actually land: `static_url_path` is '/', so the static
+    rule matches first and raises 404 when there is no such file. Serve the
+    SPA for a page URL, and JSON for an API one.
+    """
+    if request.path.startswith('/api/'):
+        return api_not_found()
     return app.send_static_file('index.html')

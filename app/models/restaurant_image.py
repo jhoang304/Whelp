@@ -14,7 +14,8 @@ class RestaurantImage(db.Model):
     url = db.Column(db.String(255))
     preview = db.Column(db.Boolean, default=False)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
+                          onupdate=func.now())
     createdByUserId = db.Column(db.Integer,db.ForeignKey(add_prefix_for_prod("users.id")))
 
 

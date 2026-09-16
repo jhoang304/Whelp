@@ -2,8 +2,8 @@ from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
 from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
 from app.api.aws_helpers import remove_files_from_s3
-from app.forms import RestaurantForm, RestaurantImageForm
-from app.api.utils import clear_other_previews, error_messages
+from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
+from app.api.utils import clear_other_previews, error_messages, review_with_details
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -121,12 +121,12 @@ def restaurants_by_id(id):
 
 
 # Create a Restaurant
-@restaurant_routes.route('/', methods=["POST", "GET"])
+@restaurant_routes.route('/', methods=["POST"])
 @login_required
 def create_restaurant():
 
     form = RestaurantForm()
-    form["csrf_token"].data = request.cookies["csrf_token"]
+    form["csrf_token"].data = request.cookies.get("csrf_token")
 
     if form.validate_on_submit():
         restaurant = Restaurant(
@@ -155,7 +155,7 @@ def create_restaurant():
 
 
 # Add Image to Restaurant by Id
-@restaurant_routes.route('/<int:restaurantId>/images', methods=["POST", "GET"])
+@restaurant_routes.route('/<int:restaurantId>/images', methods=["POST"])
 @login_required
 def create_restaurant_image(restaurantId):
 
@@ -164,7 +164,7 @@ def create_restaurant_image(restaurantId):
         return {"errors": ["restaurant couldn't be found"]}, 404
 
     form = RestaurantImageForm()
-    form["csrf_token"].data = request.cookies["csrf_token"]
+    form["csrf_token"].data = request.cookies.get("csrf_token")
 
     if form.validate_on_submit():
         # Anyone logged in may add a photo, but only the owner decides which
@@ -192,7 +192,7 @@ def create_restaurant_image(restaurantId):
 
 
 # Edit a Restaurant by Id
-@restaurant_routes.route('/<int:restaurantId>', methods=["PUT", "GET"])
+@restaurant_routes.route('/<int:restaurantId>', methods=["PUT"])
 @login_required
 def edit_restaurant_by_restaurant_id(restaurantId):
     restaurant = Restaurant.query.get(restaurantId)
@@ -204,7 +204,7 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         return {"errors": ["You can only edit your own restaurants"]}, 403
 
     form = RestaurantForm()
-    form["csrf_token"].data = request.cookies["csrf_token"]
+    form["csrf_token"].data = request.cookies.get("csrf_token")
 
     if form.validate_on_submit():
 
@@ -364,3 +364,52 @@ def search_restaurant(keyword):
     }
 
     return data
+
+
+# Get reviews by restaurant's id
+@restaurant_routes.route('/<int:id>/reviews', methods=['GET'])
+def get_reviews_by_restaurant_id(id):
+    """
+    Returns every review for a restaurant, newest first, including the author,
+    review images, and any business-owner response.
+    """
+    restaurant = Restaurant.query.get(id)
+    if not restaurant:
+        return {"errors": ["restaurant couldn't be found"]}, 404
+
+    reviews = Review.query.filter(Review.restaurant_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
+    return {"reviews": [review_with_details(review, restaurant=restaurant) for review in reviews]}
+
+
+# Create a review by restaurant's id
+@restaurant_routes.route('/<int:id>/reviews', methods=["POST"])
+@login_required
+def create_review_by_restaurant_id(id):
+    restaurant = Restaurant.query.get(id)
+
+    if not restaurant:
+        return {"errors": ["restaurant couldn't be found"]}, 404
+
+    if restaurant.user_id == current_user.id:
+        return {"errors": ["User can't add review on his own restaurant"]}, 403
+
+    review = Review.query.filter(Review.restaurant_id == id, Review.user_id == current_user.id).all()
+
+    if len(review) > 0:
+        return {"errors": ["User already has a review for this restaurant"]}, 403
+
+    form = ReviewForm()
+    form["csrf_token"].data = request.cookies.get("csrf_token")
+
+    if form.validate_on_submit():
+        review = Review(
+            user_id = int(current_user.id),
+            restaurant_id = id,
+            review = form.data["review"],
+            rating = form.data["rating"],
+        )
+
+        db.session.add(review)
+        db.session.commit()
+        return review.to_dict()
+    return {"errors": error_messages(form.errors)}, 400
