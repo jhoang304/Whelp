@@ -31,10 +31,17 @@ export interface RestaurantFields {
  * Every problem with the form, as messages ready to show. An empty array
  * means the fields are worth sending.
  *
- * The website rule deliberately only asks for a dot: the edit modal used to
- * require a trailing `.com`, which rejects seeded sites such as
- * https://runchickenrun.com/las-vegas/ and every .org, .net and .co, so
- * owners could not edit *any* field without also changing their website.
+ * Two rules here are deliberately loose, for the same reason. The edit modal
+ * used to require a trailing `.com`, which rejects seeded sites such as
+ * https://runchickenrun.com/las-vegas/ and every .org, .net and .co, so owners
+ * could not edit *any* field without also changing their website. A phone
+ * allowlist of digits, spaces, hyphens and parentheses does the same to
+ * `+1 555 123 4567`, and the server imposes no format at all — only
+ * DataRequired and a 20-character limit.
+ *
+ * So the guiding rule is: be stricter than the server only where that cannot
+ * reject something legitimate. "Contains a dot" and "contains a digit" catch
+ * genuine typos without locking anyone out of their own business page.
  */
 export function validateRestaurant(fields: RestaurantFields): string[] {
     const {
@@ -67,7 +74,7 @@ export function validateRestaurant(fields: RestaurantFields): string[] {
     // Format
     if (state && state.length !== 2) errors.push("State must be exactly 2 characters (e.g., CA, NY)");
     if (zipcode && !isValidPostcode(zipcode)) errors.push(POSTCODE_MESSAGE);
-    if (phone_number && !/^[\d\s\-()]+$/.test(phone_number)) errors.push("Phone number can only contain digits, spaces, hyphens, and parentheses");
+    if (phone_number && !/\d/.test(phone_number)) errors.push("Phone number must include at least one digit");
     if (website && !website.includes(".")) errors.push("Please enter a valid website URL (e.g., example.com)");
     if (price && !/^\$+$/.test(price)) errors.push("Price range must be between $ and $$$$$");
 
