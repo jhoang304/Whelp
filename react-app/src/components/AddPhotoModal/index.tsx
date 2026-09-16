@@ -1,9 +1,10 @@
 import "./AddPhoto.css"
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { addRestaurantImage } from "../../store/restaurantPhoto";
 import { AppDispatch } from "../../store";
+import { RootState } from "../../types";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 
 interface AddPhotoModalProps {
@@ -22,8 +23,15 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
     const [file, setFile] = useState<File | null>(null);
     const [url, setUrl] = useState<string>("");
     const [previewSrc, setPreviewSrc] = useState<string | null>(null);
+    const [isCover, setIsCover] = useState<boolean>(false);
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+    // Only the business owner may choose the cover photo; the API rejects it
+    // from anyone else, so the checkbox is hidden rather than left to fail.
+    const sessionUser = useSelector((state: RootState) => state.session.user);
+    const restaurant = useSelector((state: RootState) => state.Restaurants.singleRestaurant);
+    const isOwner = !!sessionUser && !!restaurant && restaurant.user_id === sessionUser.id;
 
     // Show a local preview of the chosen file and release it when it changes.
     useEffect(() => {
@@ -73,7 +81,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
             imageUrl = upload.url;
         }
 
-        const result: string[] | null = await dispatch(addRestaurantImage({ url: imageUrl, preview: false }, restaurantId) as any);
+        const result: string[] | null = await dispatch(addRestaurantImage({ url: imageUrl, preview: isOwner && isCover }, restaurantId) as any);
         setIsSubmitting(false);
 
         if (result) {
@@ -143,6 +151,18 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
                         />
+                    </label>
+                )}
+
+                {isOwner && (
+                    <label className="add-photo-cover">
+                        <input
+                            type="checkbox"
+                            checked={isCover}
+                            onChange={(e) => setIsCover(e.target.checked)}
+                        />
+                        <span>Make this the cover photo</span>
+                        <small>Replaces the photo shown on the restaurant list.</small>
                     </label>
                 )}
 
