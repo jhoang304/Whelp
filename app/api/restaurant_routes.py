@@ -227,9 +227,16 @@ def _still_referenced(image_url):
     two rows can name the same object. Deleting it on behalf of one of them
     would break the other's page — and because the attach route accepts any
     URL, that is also how someone could aim this cleanup at a photo they do
-    not own. Checking first makes the bulk delete safe for the objects that
-    matter; binding uploads to an app-controlled key is the real fix and needs
-    its own schema change.
+    not own.
+
+    This narrows that window; it does not close it. Nothing stops a row
+    naming the same URL from being inserted between this check and the
+    DeleteObjects call, and there is no row to lock against an insert that has
+    not happened yet — closing it properly would mean serialising every image
+    attach against every cleanup on the URL itself. The fix is to stop deriving
+    deletion authority from a caller-supplied URL at all: see issue #58, which
+    gives uploads an app-controlled key owned by exactly one row, and with it
+    this question stops being asked.
     """
     if RestaurantImage.query.filter(RestaurantImage.url == image_url).first():
         return True
@@ -255,7 +262,9 @@ def delete_restaurant(restaurantId):
     db.session.delete(restaurant)
     db.session.commit()
     # Best effort, like the single-image delete route: a bucket hiccup must
-    # not turn a successful delete into a 500.
+    # not turn a successful delete into a 500. The reference check runs after
+    # the commit so this restaurant's own rows are already gone and do not
+    # count as references.
     remove_files_from_s3([url for url in image_urls if not _still_referenced(url)])
     return {"message": ["Restaurant Successfully deleted"]},200
 
