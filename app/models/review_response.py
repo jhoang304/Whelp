@@ -19,7 +19,8 @@ class ReviewResponse(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("users.id")), nullable=False)
     response = db.Column(db.String(1000), nullable=False)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
+                          onupdate=func.now())
 
     review = db.relationship("Review", back_populates="response")
     user = db.relationship("User", back_populates="review_responses")

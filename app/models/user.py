@@ -18,7 +18,8 @@ class User(db.Model, UserMixin):
     # Optional avatar. Populated by the S3 upload flow (or any public image URL).
     profile_image_url = db.Column(db.String(255), nullable=True)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
-    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
+    updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
+                          onupdate=func.now())
 
     reviews = db.relationship("Review", back_populates="user")
     restaurants = db.relationship("Restaurant", back_populates="user")

@@ -109,7 +109,7 @@ def signup(client, username):
 
 def test_oversized_username_is_rejected(client):
     res = signup(client, "u" * 41)
-    assert res.status_code == 401  # signup reports validation errors as 401; see #28
+    assert res.status_code == 400  # a bad body, not an auth failure
     assert User.query.filter_by(username="u" * 41).first() is None
 
 

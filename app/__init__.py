@@ -1,9 +1,10 @@
 import os
-from flask import Flask, render_template, request, session, redirect
+from flask import Flask, make_response, render_template, request, session, redirect
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import LoginManager
+from werkzeug.exceptions import HTTPException
 from .models import db, User
 from .api.user_routes import user_routes
 from .api.auth_routes import auth_routes
@@ -81,19 +82,68 @@ def api_help():
     return route_list
 
 
+# The rules that answer GET for any URL at all: Flask's static handler (the
+# static_url_path is '/') and the SPA catch-all below.
+CATCH_ALL_ENDPOINTS = {'static', 'react_root'}
+
+
+def api_methods_for(path):
+    """
+    The methods a real API rule accepts for `path`.
+
+    The catch-alls answer GET for every URL, which is what lets a client route
+    survive a reload -- but it also means Werkzeug matches them instead of
+    raising 405 for an API URL that only exists under another method. Ask the
+    map directly, ignoring the rules that match everything.
+    """
+    adapter = app.url_map.bind(request.host)
+    allowed = set()
+    for method in ('GET', 'POST', 'PUT', 'PATCH', 'DELETE'):
+        try:
+            endpoint, _ = adapter.match(path, method=method)
+        except HTTPException:
+            continue
+        if endpoint not in CATCH_ALL_ENDPOINTS:
+            allowed.add(method)
+    return allowed
+
+
+def api_error():
+    """
+    The API's answer for a URL no API rule wants: 405 when the endpoint exists
+    under other methods, so a client is told to change the verb rather than
+    hunting a URL that is right there, and 404 otherwise. Either way JSON --
+    an API caller has no use for index.html.
+    """
+    allowed = api_methods_for(request.path)
+    if allowed:
+        response = make_response({'errors': ['Method not allowed']}, 405)
+        response.headers['Allow'] = ', '.join(sorted(allowed))
+        return response
+    return {'errors': ['Not found']}, 404
+
+
 @app.route('/', defaults={'path': ''})
 @app.route('/<path:path>')
 def react_root(path):
     """
-    This route will direct to the public directory in our
-    react builds in the production environment for favicon
-    or index.html requests
+    Serves the built React app, so a URL only the client router knows about
+    survives a full page load. A path under /api/ that gets this far is a
+    caller asking for data, and answering it with the app's HTML (at 200, no
+    less) hid every typo and stale endpoint.
     """
-    if path == 'favicon.ico':
-        return app.send_from_directory('public', 'favicon.ico')
+    if path.startswith('api/'):
+        return api_not_found()
     return app.send_static_file('index.html')
 
 
 @app.errorhandler(404)
 def not_found(e):
+    """
+    Where unknown paths actually land: `static_url_path` is '/', so the static
+    rule matches first and raises 404 when there is no such file. Serve the
+    SPA for a page URL, and JSON for an API one.
+    """
+    if request.path.startswith('/api/'):
+        return api_error()
     return app.send_static_file('index.html')
