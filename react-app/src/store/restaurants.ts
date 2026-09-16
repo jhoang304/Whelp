@@ -207,15 +207,24 @@ export const updateSingleRestaurant = (restaurant: any) => ({
  */
 export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) => {
     const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website } = restaurant
-    const res = await fetch(`/api/restaurants/${+id}`, {
-        method: "PUT",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            user_id, name, price, address, city, state, zipcode, country, phone_number, description, website
+
+    let res: Response
+    try {
+        res = await fetch(`/api/restaurants/${+id}`, {
+            method: "PUT",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                user_id, name, price, address, city, state, zipcode, country, phone_number, description, website
+            })
         })
-    })
+    } catch (networkError) {
+        // fetch rejects, rather than resolving with a status, when the browser
+        // is offline or the connection drops. Returning the message keeps this
+        // thunk's "null or messages" contract, so the modal can recover.
+        return ["Couldn't reach the server. Check your connection and try again."]
+    }
 
     if (res.ok) {
         const updatedRestaurant = await res.json()

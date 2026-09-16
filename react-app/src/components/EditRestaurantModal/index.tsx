@@ -49,23 +49,34 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
         // The thunk returns the server's messages instead of throwing, so a
         // rejected save (400, or a 403 from someone who no longer owns the
         // business) is shown here. The modal used to close before the PUT had
-        // even resolved, and its .catch could never fire.
-        const failures: string[] | null = await dispatch(updateRestaurantThunk({
-            id: singleRestaurant.id,
-            // The server keeps the existing owner; never try to reassign it.
-            user_id: singleRestaurant.user_id,
-            name,
-            price,
-            address,
-            city,
-            state,
-            zipcode: zipcode.trim(),
-            country,
-            phone_number,
-            description,
-            website,
-        }) as any);
+        // even resolved, and its .catch could never fire. The catch below is
+        // the backstop for anything the thunk cannot turn into messages, such
+        // as a 200 whose body is not JSON: without it the modal would sit on
+        // "Saving..." for good.
+        let failures: string[] | null;
+        try {
+            failures = await dispatch(updateRestaurantThunk({
+                id: singleRestaurant.id,
+                // The server keeps the existing owner; never try to reassign it.
+                user_id: singleRestaurant.user_id,
+                name,
+                price,
+                address,
+                city,
+                state,
+                zipcode: zipcode.trim(),
+                country,
+                phone_number,
+                description,
+                website,
+            }) as any);
+        } catch (unexpected) {
+            failures = ["Something went wrong saving your changes. Please try again."];
+        }
 
+        // Reset before closing rather than in a `finally`: closeModal unmounts
+        // this component, so a reset after it would set state on an unmounted
+        // one. Every path that leaves the modal open lands here first.
         setIsSaving(false);
 
         if (failures) {
