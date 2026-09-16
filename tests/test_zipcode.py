@@ -64,7 +64,7 @@ def test_rejects_postcodes_outside_3_to_10_characters(client, zipcode):
     login(client, "owner@test.io")
     res = client.post("/api/restaurants/", json=payload(zipcode))
     assert res.status_code == 400
-    assert "zipcode" in res.get_json()["errors"]
+    assert any("Postal code" in message for message in res.get_json()["errors"])
 
 
 @pytest.mark.parametrize("zipcode", [
@@ -81,7 +81,7 @@ def test_rejects_malformed_postcodes(client, zipcode):
     login(client, "owner@test.io")
     res = client.post("/api/restaurants/", json=payload(zipcode))
     assert res.status_code == 400
-    assert "zipcode" in res.get_json()["errors"]
+    assert any("Postal code" in message for message in res.get_json()["errors"])
     assert Restaurant.query.filter_by(name="Zip Test").first() is None
 
 

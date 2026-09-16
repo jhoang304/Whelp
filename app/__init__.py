@@ -1,10 +1,11 @@
+import json
 import os
 from flask import Flask, make_response, render_template, request, session, redirect
 from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import LoginManager
-from werkzeug.exceptions import HTTPException
+from werkzeug.exceptions import HTTPException, InternalServerError
 from .models import db, User
 from .api.user_routes import user_routes
 from .api.auth_routes import auth_routes
@@ -70,16 +71,26 @@ def inject_csrf_token(response):
     return response
 
 
+ERROR_SHAPE = (
+    'Every failing response is {"errors": [message, ...]}: a flat list of '
+    'human-readable strings the UI can render as-is. The status code carries '
+    'what kind of failure it was -- 400 a bad body, 401 not signed in, 403 not '
+    'yours, 404 no such thing, 405 wrong method (with an Allow header), 500 '
+    'our fault. That holds for the failures Werkzeug raises before a route '
+    'runs, and for the ones no route saw coming.'
+)
+
+
 @app.route("/api/docs")
 def api_help():
     """
-    Returns all API routes and their doc strings
+    Returns the API's error contract, then all routes and their doc strings
     """
     acceptable_methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
     route_list = { rule.rule: [[ method for method in rule.methods if method in acceptable_methods ],
                     app.view_functions[rule.endpoint].__doc__ ]
                     for rule in app.url_map.iter_rules() if rule.endpoint != 'static' }
-    return route_list
+    return {"errors": ERROR_SHAPE, "routes": route_list}
 
 
 # The rules that answer GET for any URL at all: Flask's static handler (the
@@ -135,6 +146,39 @@ def react_root(path):
     if path.startswith('api/'):
         return api_not_found()
     return app.send_static_file('index.html')
+
+
+@app.errorhandler(HTTPException)
+def http_exception_to_json(e):
+    """
+    Werkzeug raises these before any route runs -- a 405, a 413, a body that
+    isn't the JSON it claims -- and answers with an HTML page. API callers get
+    the documented shape instead, on the error's own response so its headers
+    (405's Allow, for one) survive.
+    """
+    if not request.path.startswith('/api/'):
+        return e
+
+    response = e.get_response()
+    response.data = json.dumps({'errors': [e.description]})
+    response.content_type = 'application/json'
+    return response
+
+
+@app.errorhandler(Exception)
+def unexpected_error_to_json(e):
+    """
+    A bug in a route is still a failure the caller has to read. Flask's HTML
+    500 page is not that, and the frontend's parser would fall back to a
+    generic message -- so say it in the shape, and log it.
+    """
+    if app.config.get('PROPAGATE_EXCEPTIONS', app.testing or app.debug):
+        raise e
+
+    app.logger.exception('Unhandled error on %s %s', request.method, request.path)
+    if request.path.startswith('/api/'):
+        return {'errors': ['Something went wrong on our end.']}, 500
+    return InternalServerError()
 
 
 @app.errorhandler(404)

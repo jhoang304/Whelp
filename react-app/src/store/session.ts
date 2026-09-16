@@ -1,3 +1,5 @@
+import { parseErrors } from "../utils/parseErrors";
+
 // constants
 const SET_USER = "session/SET_USER";
 const REMOVE_USER = "session/REMOVE_USER";
@@ -20,12 +22,7 @@ export const authenticate = () => async (dispatch: any) => {
 		},
 	});
 	if (response.ok) {
-		const data = await response.json();
-		if (data.errors) {
-			return;
-		}
-
-		dispatch(setUser(data));
+		dispatch(setUser(await response.json()));
 	}
 };
 
@@ -45,14 +42,8 @@ export const login = (email: any, password: any) => async (dispatch: any) => {
 		const data = await response.json();
 		dispatch(setUser(data));
 		return null;
-	} else if (response.status < 500) {
-		const data = await response.json();
-		if (data.errors) {
-			return data.errors;
-		}
-	} else {
-		return ["An error occurred. Please try again."];
 	}
+	return parseErrors(response, "An error occurred. Please try again.");
 };
 
 export const logout = () => async (dispatch: any) => {
@@ -87,27 +78,8 @@ export const signUp = (username: any, email: any, first_name: any, last_name: an
 	  const data = await response.json();
 	  dispatch(setUser(data));
 	  return null;
-	} else if (response.status < 500) {
-	  const data = await response.json();
-	  if (data.errors) {
-		const fieldErrorMap = {
-		  username: "Username",
-		  email: "Email",
-		  first_name: "First Name",
-		  last_name: "Last Name"
-		};
-
-		const formattedErrors = data.errors.map((error: any) => {
-		  const [fieldName, errorMessage] = error.split(" : ");
-		  const formattedFieldName = (fieldErrorMap as any)[fieldName] || fieldName;
-		  return `${formattedFieldName} ${errorMessage.replace("Field ", "")}`;
-		});
-
-		return formattedErrors;
-	  }
-	} else {
-	  return ["An error occurred. Please try again."];
 	}
+	return parseErrors(response, "An error occurred. Please try again.");
   };
 
 export default function reducer(state: any = initialState, action: any) {

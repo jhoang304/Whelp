@@ -70,7 +70,7 @@ def test_oversized_city_is_rejected_not_500(client):
     login(client, "owner@test.io")
     res = client.post("/api/restaurants/", json=restaurant_payload(city="c" * 51))
     assert res.status_code == 400
-    assert "city" in res.get_json()["errors"]
+    assert any("City" in message for message in res.get_json()["errors"])
 
 
 def test_city_at_the_column_limit_is_accepted(client):

@@ -6,6 +6,7 @@ import {
     RestaurantsResponse
 } from '../types';
 import { AppDispatch } from './index';
+import { parseErrors } from '../utils/parseErrors';
 
 //Load all restaurants
 const LOAD = "restaurants/loadRestaurants";
@@ -219,13 +220,7 @@ export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) 
         return null
     }
 
-    const data = await res.json().catch(() => ({}))
-    if (Array.isArray(data.errors)) return data.errors as string[]
-    // Older shape: WTForms' {field: [messages]} dict.
-    if (data.errors && typeof data.errors === 'object') {
-        return Object.values(data.errors).flat() as string[]
-    }
-    return ["Could not save your changes. Please try again."]
+    return parseErrors(res, "Could not save your changes. Please try again.")
 }
 
 

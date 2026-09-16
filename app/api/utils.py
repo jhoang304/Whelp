@@ -1,5 +1,13 @@
 def error_messages(form_errors):
-    """Flatten WTForms' {field: [messages]} into a plain list of messages."""
+    """
+    Flatten WTForms' {field: [messages]} into a plain list of messages.
+
+    Every failing response in this API answers {"errors": [message, ...]} -- a
+    flat list of strings a UI can render as-is, with the status code carrying
+    what kind of failure it was. Route the form errors through here rather
+    than handing back form.errors, whose shape is WTForms' business, and write
+    messages that name their own field, since nothing else will.
+    """
     messages = []
     for field in form_errors:
         for error in form_errors[field]:

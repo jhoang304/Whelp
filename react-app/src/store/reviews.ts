@@ -1,10 +1,5 @@
 import { Review, ReviewResponse, ReviewsState } from '../types';
-
-/** Pull the API's `errors` list off a failed response, falling back to `fallback`. */
-const errorsFrom = async (res: Response, fallback: string): Promise<string[]> => {
-    const data = await res.json().catch(() => ({}));
-    return Array.isArray(data.errors) ? data.errors : [fallback];
-}
+import { parseErrors } from '../utils/parseErrors';
 
 export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
 
@@ -90,7 +85,7 @@ export const createOneReview = (newReview: any, restaurantId: any) => async (dis
         dispatch(createReview(review));
         return null;
     }
-    return errorsFrom(res, "Could not post your review. Please try again.")
+    return parseErrors(res, "Could not post your review. Please try again.")
 }
 
 //update a review
@@ -118,7 +113,7 @@ export const updateOneReview = (newReview: any, reviewId: any) => async (dispatc
         dispatch(updateReview(review))
         return null
     }
-    return errorsFrom(res, "Could not save your review. Please try again.")
+    return parseErrors(res, "Could not save your review. Please try again.")
 }
 
 // ---------------------------------------------------------------------------
@@ -149,7 +144,7 @@ export const createReviewResponse = (reviewId: number, response: string) => asyn
         dispatch(setReviewResponse(reviewId, await res.json()))
         return null
     }
-    return errorsFrom(res, "Could not post your response. Please try again.")
+    return parseErrors(res, "Could not post your response. Please try again.")
 }
 
 /** Edit the owner's reply. Returns null on success or a list of error messages. */
@@ -163,7 +158,7 @@ export const updateReviewResponse = (reviewId: number, response: string) => asyn
         dispatch(setReviewResponse(reviewId, await res.json()))
         return null
     }
-    return errorsFrom(res, "Could not update your response. Please try again.")
+    return parseErrors(res, "Could not update your response. Please try again.")
 }
 
 /** Remove the owner's reply. Returns null on success or a list of error messages. */
@@ -173,7 +168,7 @@ export const deleteReviewResponse = (reviewId: number) => async (dispatch: any) 
         dispatch(removeReviewResponse(reviewId))
         return null
     }
-    return errorsFrom(res, "Could not delete your response. Please try again.")
+    return parseErrors(res, "Could not delete your response. Please try again.")
 }
 
 const initialState: ReviewsState = {}
