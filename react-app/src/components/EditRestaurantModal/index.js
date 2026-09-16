@@ -5,6 +5,9 @@ import { useModal } from "../../context/Modal";
 import { updateRestaurantThunk } from "../../store/restaurants"
 import { isValidPostcode, POSTCODE_MESSAGE } from "../../utils/postcode";
 
+/** Matches the `description` column and RestaurantForm's Length validator. */
+export const MAX_DESCRIPTION_LENGTH = 500;
+
 
 export default function EditRestaurant({ singleRestaurant }) {
     const dispatch = useDispatch();
@@ -36,7 +39,7 @@ export default function EditRestaurant({ singleRestaurant }) {
         if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
         if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
         if (website.length < 1 || website.length > 70) validationErrors.push("Website must be between 1 and 70 characters.");
-        if (description.length < 1 || description.length > 500) validationErrors.push("Description must be between 1 and 500 characters.");
+        if (description.length < 1 || description.length > MAX_DESCRIPTION_LENGTH) validationErrors.push(`Description must be between 1 and ${MAX_DESCRIPTION_LENGTH} characters.`);
         if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
         // if (!/^https?:\/\/.+/.test(website)) validationErrors.push("Invalid website format.");
         if (!/\.com$/.test(website)) validationErrors.push("Invalid website format.");
@@ -140,11 +143,17 @@ export default function EditRestaurant({ singleRestaurant }) {
                         </label>
                         <label>
                             <span>Description</span>
-                            <input
-                                type="text"
-                                value={description}
-                                onChange={(e) => setDescription(e.target.value)}
-                            />
+                            <div className="description-field">
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    rows={4}
+                                    maxLength={MAX_DESCRIPTION_LENGTH}
+                                />
+                                <span className={`description-count${description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}>
+                                    {description.length}/{MAX_DESCRIPTION_LENGTH}
+                                </span>
+                            </div>
                         </label>
                         <label>
                             <span>Price Range</span>

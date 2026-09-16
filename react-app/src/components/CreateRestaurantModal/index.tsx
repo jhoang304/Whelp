@@ -9,6 +9,9 @@ import { isValidPostcode, POSTCODE_MESSAGE } from "../../utils/postcode";
 
 type ImageMode = "upload" | "url";
 
+/** Matches the `description` column and RestaurantForm's Length validator. */
+export const MAX_DESCRIPTION_LENGTH = 500;
+
 function CreateRestaurantModal() {
     const dispatch = useDispatch();
     const history = useHistory();
@@ -55,7 +58,7 @@ function CreateRestaurantModal() {
         if (address.length > 100) validationErrors.push("Address must be 100 characters or less");
         if (city.length > 50) validationErrors.push("City must be 50 characters or less");
         if (country.length > 56) validationErrors.push("Country must be 56 characters or less");
-        if (description.length > 500) validationErrors.push("Description must be 500 characters or less");
+        if (description.length > MAX_DESCRIPTION_LENGTH) validationErrors.push(`Description must be ${MAX_DESCRIPTION_LENGTH} characters or less`);
         if (website.length > 70) validationErrors.push("Website must be 70 characters or less");
 
         // Format validation
@@ -264,14 +267,19 @@ function CreateRestaurantModal() {
                             />
                         )}
                     </div>
-                    <input
-                        type="textarea"
-                        placeholder="Description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        required
-
-                    />
+                    <div className="description-field">
+                        <textarea
+                            placeholder="Description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            rows={4}
+                            maxLength={MAX_DESCRIPTION_LENGTH}
+                            required
+                        />
+                        <span className={`description-count${description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}>
+                            {description.length}/{MAX_DESCRIPTION_LENGTH}
+                        </span>
+                    </div>
                 <button 
                     className="add-business-button" 
                     type="submit" 
