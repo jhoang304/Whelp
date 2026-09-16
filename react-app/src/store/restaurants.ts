@@ -93,27 +93,58 @@ export const clearSingleRestaurant = () => ({
     type: CLEARSINGLE
 })
 
+// The restaurant the detail page most recently asked for. There is one
+// shared `singleRestaurant` in the store, so navigating between two detail
+// URLs can leave both requests in flight; a slow response for the restaurant
+// we have already navigated away from must not write to the store. Requests
+// for the same restaurant (the page and its children both ask on load) carry
+// the same data, so they are left alone.
+let latestRequestedId: number | null = null
+
 /**
  * Load one restaurant's detail page. Returns null on success or a list of
  * error messages on failure, so the page can tell "not found" apart from
  * "still loading" instead of spinning forever.
  */
 export const getSingleRestaurant = (restaurantId: number) => async (dispatch: any) => {
-    const response = await fetch(`/api/restaurants/${restaurantId}`)
-    if (response.ok) {
+    latestRequestedId = restaurantId
 
-        const detailObj = await response.json()
-        dispatch(loadSingleRestaurant(detailObj))
-        return null
+    const superseded = () => latestRequestedId !== restaurantId
+
+    const fail = (messages: string[]) => {
+        if (superseded()) return null
+        // Drop whatever restaurant was showing before; LOADSINGLE merges, so a
+        // stale one would otherwise bleed into the not-found page.
+        dispatch(clearSingleRestaurant())
+        return messages
     }
 
-    // Drop whatever restaurant was showing before; LOADSINGLE merges, so a
-    // stale one would otherwise bleed into the not-found page.
-    dispatch(clearSingleRestaurant())
-    if (response.status === 404) {
-        return ["We couldn't find that restaurant."]
+    let response: Response
+    try {
+        response = await fetch(`/api/restaurants/${restaurantId}`)
+    } catch (networkError) {
+        // fetch rejects, rather than resolving with a status, when the browser
+        // is offline or the connection drops. Without this the promise the page
+        // is awaiting would reject and it would spin forever.
+        return fail(["Couldn't reach the server. Check your connection and try again."])
     }
-    return ["Something went wrong loading this restaurant."]
+
+    if (!response.ok) {
+        return fail(response.status === 404
+            ? ["We couldn't find that restaurant."]
+            : ["Something went wrong loading this restaurant."])
+    }
+
+    let detail: any
+    try {
+        detail = await response.json()
+    } catch (parseError) {
+        return fail(["Something went wrong loading this restaurant."])
+    }
+
+    if (superseded()) return null
+    dispatch(loadSingleRestaurant(detail))
+    return null
 }
 
 //Create a restaurant
