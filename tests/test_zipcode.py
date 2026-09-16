@@ -65,3 +65,47 @@ def test_rejects_postcodes_outside_3_to_10_characters(client, zipcode):
     res = client.post("/api/restaurants/", json=payload(zipcode))
     assert res.status_code == 400
     assert "zipcode" in res.get_json()["errors"]
+
+
+@pytest.mark.parametrize("zipcode", [
+    "!!!",          # punctuation only
+    "770@31234",    # stray symbol
+    "A--B",         # repeated separator
+    "A- B",         # mixed separators in a row
+    "-2134",        # leading separator
+    "02134-",       # trailing separator
+    " 02134",       # untrimmed
+])
+def test_rejects_malformed_postcodes(client, zipcode):
+    """Length alone is not a postcode; the shape is enforced server-side too."""
+    login(client, "owner@test.io")
+    res = client.post("/api/restaurants/", json=payload(zipcode))
+    assert res.status_code == 400
+    assert "zipcode" in res.get_json()["errors"]
+    assert Restaurant.query.filter_by(name="Zip Test").first() is None
+
+
+def test_editing_rejects_a_malformed_postcode(client, ids):
+    login(client, "owner@test.io")
+    res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload("!!!", name="Test Bistro"))
+    assert res.status_code == 400
+    assert Restaurant.query.get(ids["restaurant"]).zipcode == "77001"
+
+
+def test_server_and_client_postcode_rules_are_the_same():
+    """
+    app/forms/postcode.py and react-app/src/utils/postcode.ts must agree;
+    a client looser than the server is how issue #19 happened.
+    """
+    import pathlib
+    import re
+
+    from app.forms.postcode import POSTCODE_MAX, POSTCODE_MIN, POSTCODE_REGEX
+
+    source = (pathlib.Path(__file__).resolve().parents[1]
+              / "react-app" / "src" / "utils" / "postcode.ts").read_text(encoding="utf-8")
+
+    pattern = re.search(r"POSTCODE_PATTERN = /(.+)/;", source).group(1)
+    assert pattern == POSTCODE_REGEX
+    assert re.search(r"POSTCODE_MIN = (\d+);", source).group(1) == str(POSTCODE_MIN)
+    assert re.search(r"POSTCODE_MAX = (\d+);", source).group(1) == str(POSTCODE_MAX)

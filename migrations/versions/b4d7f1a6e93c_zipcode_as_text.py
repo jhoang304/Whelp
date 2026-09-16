@@ -23,23 +23,68 @@ down_revision = '9b3e5d2f7c14'
 branch_labels = None
 depends_on = None
 
+# The column this migration replaces, and restores on downgrade, was int4.
+INT_MAX = 2147483647
+
 
 def _table():
     """Raw-SQL table name, schema-qualified in production."""
     return f"{SCHEMA}.restaurants" if environment == "production" else "restaurants"
 
 
+def _fits_in_integer(dialect):
+    """
+    SQL boolean: this postcode is digits only and inside the old int4 range.
+
+    Written as an ordered CASE rather than a chain of ANDs because neither
+    engine promises to evaluate the arms of a boolean operator left to right,
+    and the numeric comparison is only safe once the digit and length checks
+    have passed.
+    """
+    if dialect == "postgresql":
+        non_digit, to_number, yes, no = "zipcode !~ '^[0-9]+$'", "zipcode::bigint", "true", "false"
+    else:
+        non_digit, to_number, yes, no = "zipcode GLOB '*[^0-9]*'", "CAST(zipcode AS INTEGER)", "1", "0"
+    return (
+        f"(CASE WHEN {non_digit} THEN {no}"
+        f" WHEN length(zipcode) > 10 THEN {no}"
+        f" ELSE {to_number} <= {INT_MAX} END)"
+    )
+
+
+def _loses_information(dialect):
+    """
+    SQL boolean: converting this postcode back to an integer would not round
+    trip. Either it is not a number the old column could hold at all, or it
+    carries a leading zero that integer storage would silently drop.
+    """
+    return (f"(NOT {_fits_in_integer(dialect)}"
+            f" OR (zipcode LIKE '0%' AND length(zipcode) > 1))")
+
+
+def _pad_to_five():
+    """
+    Postgres expression casting the old integer to text, zero-padded back to
+    five digits. lpad() truncates anything wider than its target, so it is
+    applied only to values short of five digits: the old column enforced no
+    five-digit limit server-side, and 770031234 has to survive intact.
+    """
+    return ("CASE WHEN length(zipcode::text) < 5"
+            " THEN lpad(zipcode::text, 5, '0')"
+            " ELSE zipcode::text END")
+
+
 def upgrade():
     schema = SCHEMA if environment == "production" else None
 
     if op.get_bind().dialect.name == "postgresql":
-        # Cast and zero-pad in one statement so the column is never invalid.
+        # Cast and pad in one statement so the column is never invalid.
         op.alter_column(
             'restaurants', 'zipcode',
             existing_type=sa.Integer(),
             type_=sa.String(length=10),
             existing_nullable=False,
-            postgresql_using="lpad(zipcode::text, 5, '0')",
+            postgresql_using=_pad_to_five(),
             schema=schema,
         )
     else:
@@ -57,16 +102,6 @@ def upgrade():
         )
 
 
-def _unrepresentable_predicate(dialect):
-    """
-    SQL matching postcodes that cannot survive a trip back through an integer
-    column: letters or punctuation (ZIP+4, Canadian, UK), a leading zero that
-    integer storage would drop, or more digits than an int holds.
-    """
-    has_non_digit = "zipcode !~ '^[0-9]+$'" if dialect == "postgresql" else "zipcode GLOB '*[^0-9]*'"
-    return f"({has_non_digit} OR zipcode LIKE '0%' OR length(zipcode) > 9)"
-
-
 def downgrade():
     """
     An integer column cannot hold a ZIP+4, a Canadian or UK postcode, or the
@@ -77,16 +112,16 @@ def downgrade():
     schema = SCHEMA if environment == "production" else None
     dialect = op.get_bind().dialect.name
     table = _table()
-    doomed = _unrepresentable_predicate(dialect)
+    doomed = _loses_information(dialect)
 
-    unrepresentable = op.get_bind().execute(sa.text(
+    lossy = op.get_bind().execute(sa.text(
         f"SELECT count(*) FROM {table} WHERE {doomed}"
     )).scalar()
 
-    if unrepresentable and os.environ.get("ALLOW_LOSSY_DOWNGRADE") != "1":
+    if lossy and os.environ.get("ALLOW_LOSSY_DOWNGRADE") != "1":
         raise RuntimeError("\n".join([
-            f"{unrepresentable} restaurant(s) have a postcode that cannot be stored as "
-            f"an integer (non-numeric, or a leading zero that would be lost).",
+            f"{lossy} restaurant(s) have a postcode that cannot be stored as an "
+            f"integer (non-numeric, out of range, or a leading zero that would be lost).",
             "Review them first:",
             f"    SELECT id, zipcode FROM {table} WHERE {doomed};",
             "or re-run with ALLOW_LOSSY_DOWNGRADE=1 to accept the loss.",
@@ -98,14 +133,16 @@ def downgrade():
             existing_type=sa.String(length=10),
             type_=sa.Integer(),
             existing_nullable=False,
-            postgresql_using="(CASE WHEN zipcode ~ '^[0-9]{1,9}$' THEN zipcode ELSE '0' END)::integer",
+            postgresql_using=(
+                f"(CASE WHEN {_fits_in_integer(dialect)}"
+                " THEN zipcode::bigint ELSE 0 END)::integer"
+            ),
             schema=schema,
         )
     else:
-        op.execute(
-            f"UPDATE {table} SET zipcode = '0' "
-            "WHERE zipcode GLOB '*[^0-9]*' OR length(zipcode) > 9"
-        )
+        # Zero only what genuinely will not fit; the table rebuild below turns
+        # the rest into integers (dropping leading zeros) on its own.
+        op.execute(f"UPDATE {table} SET zipcode = '0' WHERE NOT {_fits_in_integer(dialect)}")
         with op.batch_alter_table('restaurants', schema=schema) as batch_op:
             batch_op.alter_column(
                 'zipcode',
