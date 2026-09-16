@@ -98,9 +98,14 @@ def test_accepts_a_numeric_postcode_from_older_callers(client):
     assert Restaurant.query.filter_by(name="Zip Test").one().zipcode == "77003"
 
 
-@pytest.mark.parametrize("zipcode", [77003.5, {"a": 1}, None])
+@pytest.mark.parametrize("zipcode", [77003.5, {"a": 1}, None, True, False])
 def test_rejects_non_postcode_json_types_with_400(client, zipcode):
-    """Coercing to text must not let nonsense through as a stored value."""
+    """
+    Coercing to text must not let nonsense through as a stored value. `true`
+    is the sharp case: str(True) is "True", which is 3-10 characters and
+    matches the postcode pattern, so it would have been stored as a real
+    postcode had the filter stringified everything.
+    """
     login(client, "owner@test.io")
     res = client.post("/api/restaurants/", json=payload(zipcode))
     assert res.status_code == 400, res.get_json()

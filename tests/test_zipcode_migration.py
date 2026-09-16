@@ -63,14 +63,15 @@ def test_loses_information(evaluate, zipcode, _fits, lossy):
     assert evaluate(zipcode_migration._loses_information("sqlite"), zipcode) is lossy
 
 
-def test_postgres_upgrade_pads_only_short_values():
+def test_postgres_padding_is_restricted_to_short_digit_strings():
     """
-    lpad() truncates anything wider than its target, so an unguarded
-    lpad(zipcode::text, 5, '0') would turn 770031234 into 77003.
+    lpad() both truncates anything wider than its target and happily pads a
+    negative number into nonsense, so it must only ever see one to four
+    digits: 770031234 must not become 77003, and -123 must not become 0-123.
     """
     expression = zipcode_migration._pad_to_five()
     assert "lpad(" in expression
-    assert expression.startswith("CASE WHEN length(zipcode::text) < 5")
+    assert "^[0-9]{1,4}$" in expression
     assert expression.endswith("ELSE zipcode::text END")
 
 
@@ -79,3 +80,41 @@ def test_postgres_downgrade_bounds_by_range_not_digit_count():
     fits = zipcode_migration._fits_in_integer("postgresql")
     assert str(zipcode_migration.INT_MAX) in fits
     assert "{1,9}" not in MIGRATION.read_text(encoding="utf-8")
+
+
+# --- upgrade-side padding ---------------------------------------------------
+
+@pytest.fixture()
+def pad():
+    """Apply the SQLite upgrade's padding rule to one legacy integer value."""
+    connection = sqlite3.connect(":memory:")
+    connection.execute("CREATE TABLE restaurants (zipcode)")
+
+    def run(value):
+        connection.execute("DELETE FROM restaurants")
+        connection.execute("INSERT INTO restaurants VALUES (?)", (value,))
+        connection.execute(
+            "UPDATE restaurants SET zipcode = substr('00000' || zipcode, -5, 5) "
+            "WHERE length(zipcode) < 5 AND zipcode NOT GLOB '*[^0-9]*'")
+        return connection.execute("SELECT zipcode FROM restaurants").fetchone()[0]
+
+    yield run
+    connection.close()
+
+
+@pytest.mark.parametrize("before, after", [
+    (2134, "02134"),        # the case the migration exists for
+    (77003, 77003),         # already five digits, untouched
+    (770031234, 770031234), # longer than five, untouched
+    (-123, -123),           # lpad/substr would have made this '0-123'
+])
+def test_padding_leaves_non_digit_values_alone(pad, before, after):
+    assert pad(before) == after
+
+
+def test_over_long_values_are_caught_before_the_column_shrinks(evaluate):
+    """int4 reaches -2147483648: 11 characters, too wide for VARCHAR(10)."""
+    predicate = zipcode_migration.TOO_LONG_FOR_COLUMN
+    assert evaluate(predicate, "-2147483648") is True
+    assert evaluate(predicate, "2147483647") is False
+    assert evaluate(predicate, "02134") is False

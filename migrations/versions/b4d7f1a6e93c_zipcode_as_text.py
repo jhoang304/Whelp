@@ -62,20 +62,44 @@ def _loses_information(dialect):
             f" OR (zipcode LIKE '0%' AND length(zipcode) > 1))")
 
 
+# int4 goes down to -2147483648, which is 11 characters and does not fit the
+# new column. Portable: both engines accept CAST(x AS TEXT).
+TOO_LONG_FOR_COLUMN = "length(CAST(zipcode AS TEXT)) > 10"
+
+
 def _pad_to_five():
     """
-    Postgres expression casting the old integer to text, zero-padded back to
-    five digits. lpad() truncates anything wider than its target, so it is
-    applied only to values short of five digits: the old column enforced no
-    five-digit limit server-side, and 770031234 has to survive intact.
+    Postgres expression casting the old integer to text, zero-padding values
+    short of five digits back to five.
+
+    Only all-digit values are padded. The old column was a bare IntegerField
+    behind DataRequired, so a legacy negative zipcode is possible, and
+    lpad('-123', 5, '0') would rewrite it as '0-123'. Those values are junk
+    either way; this migration's job is not to make them worse, so anything
+    that is not four-or-fewer digits passes through as-is.
     """
-    return ("CASE WHEN length(zipcode::text) < 5"
+    return ("CASE WHEN zipcode::text ~ '^[0-9]{1,4}$'"
             " THEN lpad(zipcode::text, 5, '0')"
             " ELSE zipcode::text END")
 
 
 def upgrade():
     schema = SCHEMA if environment == "production" else None
+    table = _table()
+
+    # Postgres would fail the ALTER here with an opaque "value too long for
+    # type character varying(10)", and SQLite would quietly overfill the
+    # column, so say plainly what is wrong before touching anything.
+    too_long = op.get_bind().execute(sa.text(
+        f"SELECT count(*) FROM {table} WHERE {TOO_LONG_FOR_COLUMN}"
+    )).scalar()
+    if too_long:
+        raise RuntimeError("\n".join([
+            f"{too_long} restaurant(s) have a zipcode of more than 10 characters, "
+            "which will not fit the VARCHAR(10) this migration creates.",
+            "Review them first:",
+            f"    SELECT id, zipcode FROM {table} WHERE {TOO_LONG_FOR_COLUMN};",
+        ]))
 
     if op.get_bind().dialect.name == "postgresql":
         # Cast and pad in one statement so the column is never invalid.
@@ -96,9 +120,11 @@ def upgrade():
                 type_=sa.String(length=10),
                 existing_nullable=False,
             )
+        # `NOT GLOB '*[^0-9]*'` keeps the padding off negative values, matching
+        # the Postgres expression above.
         op.execute(
-            f"UPDATE {_table()} SET zipcode = substr('00000' || zipcode, -5, 5) "
-            "WHERE length(zipcode) < 5"
+            f"UPDATE {table} SET zipcode = substr('00000' || zipcode, -5, 5) "
+            "WHERE length(zipcode) < 5 AND zipcode NOT GLOB '*[^0-9]*'"
         )
 
 
