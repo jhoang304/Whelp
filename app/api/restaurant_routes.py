@@ -215,7 +215,7 @@ def edit_restaurant_by_restaurant_id(restaurantId):
 
 
     else:
-        return {"errors": form.errors}, 400
+        return {"errors": error_messages(form.errors)}, 400
 
 
 # Delete a Restaurant

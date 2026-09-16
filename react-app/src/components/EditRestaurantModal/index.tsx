@@ -3,78 +3,78 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { updateRestaurantThunk } from "../../store/restaurants"
-import { isValidPostcode, POSTCODE_MESSAGE } from "../../utils/postcode";
+import { AppDispatch } from "../../store";
+import { RootState } from "../../types";
+import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
 
-/** Matches the `description` column and RestaurantForm's Length validator. */
-export const MAX_DESCRIPTION_LENGTH = 500;
+interface EditRestaurantProps {
+    singleRestaurant: any;
+}
 
+export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps): React.JSX.Element {
+    const dispatch = useDispatch<AppDispatch>();
+    // Declared before handleUpdate rather than after it: the handler reads it,
+    // and the old file only got away with that because of closure timing.
+    const sessionUser = useSelector((rootState: RootState) => rootState.session.user);
 
-export default function EditRestaurant({ singleRestaurant }) {
-    const dispatch = useDispatch();
-    const [name, setName] = useState(singleRestaurant.name);
-    const [price, setPrice] = useState(singleRestaurant.price)
-    const [address, setAddress] = useState(singleRestaurant.address)
-    const [city, setCity] = useState(singleRestaurant.city)
-    const [state, setState] = useState(singleRestaurant.state)
-    const [zipcode, setZipcode] = useState(singleRestaurant.zipcode)
-    const [country, setCountry] = useState(singleRestaurant.country)
-    const [phone_number, setPhone_number] = useState(singleRestaurant.phone_number)
-    const [description, setDescription] = useState(singleRestaurant.description)
-    const [website, setWebsite] = useState(singleRestaurant.website)
-    const [errors, setErrors] = useState([]);
+    const [name, setName] = useState<string>(singleRestaurant.name);
+    const [price, setPrice] = useState<string>(singleRestaurant.price)
+    const [address, setAddress] = useState<string>(singleRestaurant.address)
+    const [city, setCity] = useState<string>(singleRestaurant.city)
+    const [state, setState] = useState<string>(singleRestaurant.state)
+    const [zipcode, setZipcode] = useState<string>(String(singleRestaurant.zipcode ?? ""))
+    const [country, setCountry] = useState<string>(singleRestaurant.country)
+    const [phone_number, setPhone_number] = useState<string>(singleRestaurant.phone_number)
+    const [description, setDescription] = useState<string>(singleRestaurant.description)
+    const [website, setWebsite] = useState<string>(singleRestaurant.website)
+    const [errors, setErrors] = useState<string[]>([]);
+    const [isSaving, setIsSaving] = useState<boolean>(false);
     const { closeModal } = useModal();
 
-    const handleUpdate = (e) => {
+    const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        // Perform client-side validation
-        const validationErrors = [];
-
-        if (!name) validationErrors.push("Name is required.");
-        if (name.length < 1 || name.length > 100) validationErrors.push("Name must be between 1 and 100 characters.");
-        if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 100 characters.");
-        if (city.length < 1 || city.length > 50) validationErrors.push("City must be between 1 and 50 characters.");
-        if (state.length !== 2) validationErrors.push("State must be 2 characters");
-        if (!isValidPostcode(zipcode)) validationErrors.push(POSTCODE_MESSAGE);
-        if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
-        if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
-        if (website.length < 1 || website.length > 70) validationErrors.push("Website must be between 1 and 70 characters.");
-        if (description.length < 1 || description.length > MAX_DESCRIPTION_LENGTH) validationErrors.push(`Description must be between 1 and ${MAX_DESCRIPTION_LENGTH} characters.`);
-        if (!/^\$+$/.test(price)) validationErrors.push("Invalid price format.");
-        // if (!/^https?:\/\/.+/.test(website)) validationErrors.push("Invalid website format.");
-        if (!/\.com$/.test(website)) validationErrors.push("Invalid website format.");
+        const validationErrors = validateRestaurant({
+            name, price, address, city, state, zipcode, country, phone_number, website, description,
+        });
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
-            return; // Exit if there are validation errors
+            return;
         }
 
-        const updatedRestaurant = {
+        setErrors([]);
+        setIsSaving(true);
+
+        // The thunk returns the server's messages instead of throwing, so a
+        // rejected save (400, or a 403 from someone who no longer owns the
+        // business) is shown here. The modal used to close before the PUT had
+        // even resolved, and its .catch could never fire.
+        const failures: string[] | null = await dispatch(updateRestaurantThunk({
             id: singleRestaurant.id,
-            user_id: sessionUser.id,
+            // The server keeps the existing owner; never try to reassign it.
+            user_id: singleRestaurant.user_id,
             name,
             price,
             address,
             city,
             state,
-            zipcode: String(zipcode).trim(),
+            zipcode: zipcode.trim(),
             country,
             phone_number,
             description,
             website,
+        }) as any);
+
+        setIsSaving(false);
+
+        if (failures) {
+            setErrors(failures);
+            return;
         }
 
-        dispatch(updateRestaurantThunk(updatedRestaurant))
-            .then(closeModal())
-            .catch(
-                async (res) => {
-                    const data = await res.json();
-                    if (data && data.errors) setErrors(data.errors);
-                }
-            )
+        closeModal();
     }
-
-    const sessionUser = useSelector(state => state.session.user);
 
     let sessionLinks;
 
@@ -88,7 +88,7 @@ export default function EditRestaurant({ singleRestaurant }) {
                         className="update-restaurant-form"
                         onSubmit={handleUpdate}
                     >
-                        <ul>
+                        <ul className="update-restaurant-errors">
                             {errors.map((error, idx) => (
                                 <li key={idx}>{error}</li>
                             ))}
@@ -158,7 +158,7 @@ export default function EditRestaurant({ singleRestaurant }) {
                         <label>
                             <span>Price Range</span>
                             <select
-                            class="price-selector"
+                            className="price-selector"
                             onChange={(e) => setPrice(e.target.value)}
                             value={price}
                             >
@@ -187,7 +187,8 @@ export default function EditRestaurant({ singleRestaurant }) {
                         </label>
                         <button
                             type="submit"
-                        >Submit</button>
+                            disabled={isSaving}
+                        >{isSaving ? "Saving..." : "Submit"}</button>
                     </form>
                 </>
             )
