@@ -1,6 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
-from app.models import Restaurant, Review, RestaurantImage, User, db
+from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
+from app.api.aws_helpers import remove_files_from_s3
 from app.forms import RestaurantForm, RestaurantImageForm
 from app.api.utils import clear_other_previews, error_messages
 
@@ -227,6 +228,30 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         return {"errors": form.errors}, 400
 
 
+def _still_referenced(image_url):
+    """
+    True when some remaining row still points at this object.
+
+    An image row carries a URL the caller typed, not a key this app minted, so
+    two rows can name the same object. Deleting it on behalf of one of them
+    would break the other's page — and because the attach route accepts any
+    URL, that is also how someone could aim this cleanup at a photo they do
+    not own.
+
+    This narrows that window; it does not close it. Nothing stops a row
+    naming the same URL from being inserted between this check and the
+    DeleteObjects call, and there is no row to lock against an insert that has
+    not happened yet — closing it properly would mean serialising every image
+    attach against every cleanup on the URL itself. The fix is to stop deriving
+    deletion authority from a caller-supplied URL at all: see issue #58, which
+    gives uploads an app-controlled key owned by exactly one row, and with it
+    this question stops being asked.
+    """
+    if RestaurantImage.query.filter(RestaurantImage.url == image_url).first():
+        return True
+    return ReviewImage.query.filter(ReviewImage.url == image_url).first() is not None
+
+
 # Delete a Restaurant
 @restaurant_routes.route('/<int:restaurantId>', methods=["DELETE"])
 @login_required
@@ -238,8 +263,18 @@ def delete_restaurant(restaurantId):
     if restaurant.user_id != current_user.id:
         return {"errors": ["You can only delete your own restaurants"]}, 403
 
+    # Read the URLs before the delete: the cascade drops the restaurant_images
+    # rows, and without this the objects would sit in the bucket forever,
+    # costing storage and staying publicly readable after the user deleted them.
+    image_urls = [image.url for image in restaurant.restaurant_images]
+
     db.session.delete(restaurant)
     db.session.commit()
+    # Best effort, like the single-image delete route: a bucket hiccup must
+    # not turn a successful delete into a 500. The reference check runs after
+    # the commit so this restaurant's own rows are already gone and do not
+    # count as references.
+    remove_files_from_s3([url for url in image_urls if not _still_referenced(url)])
     return {"message": ["Restaurant Successfully deleted"]},200
 
 

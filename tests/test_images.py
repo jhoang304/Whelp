@@ -4,6 +4,7 @@ import urllib.error
 import botocore.exceptions
 
 from app.api import aws_helpers
+from app.models import Restaurant, RestaurantImage, Review, ReviewImage, db
 from tests.conftest import login
 
 
@@ -14,6 +15,7 @@ class FakeS3:
         self.acls_disabled = acls_disabled
         self.uploaded = []  # list of put_object kwargs
         self.deleted = []
+        self.refused = set()  # keys delete_objects should report as failures
 
     def put_object(self, **kwargs):
         self.uploaded.append(kwargs)
@@ -26,6 +28,17 @@ class FakeS3:
 
     def delete_object(self, Bucket, Key):
         self.deleted.append((Bucket, Key))
+
+    def delete_objects(self, Bucket, Delete, refuse=()):
+        """S3 answers 200 with per-key Errors; `refuse` mimics that."""
+        errors = []
+        for entry in Delete["Objects"]:
+            if entry["Key"] in self.refused:
+                errors.append({"Key": entry["Key"], "Code": "AccessDenied",
+                               "Message": "Access Denied"})
+                continue
+            self.deleted.append((Bucket, entry["Key"]))
+        return {"Deleted": [], "Errors": errors}
 
 
 def configure_s3(monkeypatch, acls_disabled=False, public=True):
@@ -169,3 +182,154 @@ def test_delete_restaurant_image_permissions(client, ids, monkeypatch):
     assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 200
     assert client.delete(f"/api/restaurant-images/{ids['image']}").status_code == 404
     assert fake.deleted == []
+
+
+BUCKET_URL = "https://whelp-test-bucket.s3.amazonaws.com/"
+
+
+def test_remove_files_from_s3_batches_and_skips_foreign_urls(monkeypatch):
+    fake = configure_s3(monkeypatch)
+    deleted = aws_helpers.remove_files_from_s3([
+        f"{BUCKET_URL}one.png",
+        "https://i.imgur.com/not-ours.png",
+        f"{BUCKET_URL}two.jpg",
+    ])
+    assert deleted == ["one.png", "two.jpg"]
+    assert fake.deleted == [("whelp-test-bucket", "one.png"), ("whelp-test-bucket", "two.jpg")]
+
+
+def test_remove_files_from_s3_without_our_urls_makes_no_call(monkeypatch):
+    fake = configure_s3(monkeypatch)
+    assert aws_helpers.remove_files_from_s3(["https://i.imgur.com/other.png"]) == []
+    assert fake.deleted == []
+
+
+def test_deleting_a_restaurant_removes_its_uploaded_photos(client, ids, monkeypatch):
+    """Regression: the cascade dropped the rows but orphaned the S3 objects."""
+    fake = configure_s3(monkeypatch)
+    db.session.add_all([
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
+                        preview=False, createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-2.png",
+                        preview=False, createdByUserId=ids["reviewer"]),
+    ])
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    res = client.delete(f"/api/restaurants/{ids['restaurant']}")
+    assert res.status_code == 200, res.get_json()
+
+    assert Restaurant.query.get(ids["restaurant"]) is None
+    assert RestaurantImage.query.filter_by(restaurant_id=ids["restaurant"]).count() == 0
+    # every uploaded object is gone; the seeded example.com image is left alone
+    assert sorted(key for _, key in fake.deleted) == ["uploaded-1.png", "uploaded-2.png"]
+
+
+def test_deleting_a_restaurant_without_uploads_touches_s3_not_at_all(client, ids, monkeypatch):
+    fake = configure_s3(monkeypatch)
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+    assert fake.deleted == []
+
+
+def test_a_refused_delete_leaves_the_bucket_alone(client, ids, monkeypatch):
+    fake = configure_s3(monkeypatch)
+    db.session.add(RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
+                                   preview=False, createdByUserId=ids["owner"]))
+    db.session.commit()
+
+    login(client, "bystander@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 403
+    assert fake.deleted == []
+    assert Restaurant.query.get(ids["restaurant"]) is not None
+
+
+def test_a_bucket_failure_does_not_fail_the_delete(client, ids, monkeypatch):
+    fake = configure_s3(monkeypatch)
+
+    def failing_delete(Bucket, Delete):
+        raise botocore.exceptions.ClientError(
+            {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}}, "DeleteObjects")
+
+    fake.delete_objects = failing_delete
+    db.session.add(RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
+                                   preview=False, createdByUserId=ids["owner"]))
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+    assert Restaurant.query.get(ids["restaurant"]) is None
+
+
+def test_remove_files_from_s3_excludes_keys_s3_refused(monkeypatch):
+    """DeleteObjects answers 200 with per-key Errors; those are not deleted."""
+    fake = configure_s3(monkeypatch)
+    fake.refused = {"locked.png"}
+    deleted = aws_helpers.remove_files_from_s3([
+        f"{BUCKET_URL}one.png", f"{BUCKET_URL}locked.png", f"{BUCKET_URL}two.jpg",
+    ])
+    assert deleted == ["one.png", "two.jpg"]
+    assert sorted(key for _, key in fake.deleted) == ["one.png", "two.jpg"]
+
+
+def test_delete_does_not_remove_an_object_another_row_still_shows(client, ids, monkeypatch):
+    """
+    Image rows carry a URL the caller typed, not a key we minted, so two rows
+    can name the same object. Deleting one restaurant must not break the other.
+    """
+    fake = configure_s3(monkeypatch)
+    shared = f"{BUCKET_URL}shared.png"
+    other = Restaurant(
+        user_id=ids["owner"], name="Second Bistro", price="$", address="9 Side St",
+        city="Austin", state="TX", zipcode="78701", country="USA",
+        phone_number="(555) 222-3333", website="http://second.com", description="Another.")
+    db.session.add(other)
+    db.session.commit()
+    db.session.add_all([
+        RestaurantImage(restaurant_id=ids["restaurant"], url=shared, preview=False,
+                        createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=other.id, url=shared, preview=False,
+                        createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}only-mine.png",
+                        preview=False, createdByUserId=ids["owner"]),
+    ])
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+
+    keys = sorted(key for _, key in fake.deleted)
+    assert keys == ["only-mine.png"], "the shared object is still in use"
+
+
+def test_delete_does_not_remove_an_object_another_reviews_image_still_shows(client, ids, monkeypatch):
+    """
+    The review image has to hang off a review on a *different* restaurant: the
+    deleted restaurant's own reviews (and their images) cascade away with it,
+    so those objects really are orphaned.
+    """
+    fake = configure_s3(monkeypatch)
+    shared = f"{BUCKET_URL}shared-with-review.png"
+
+    other = Restaurant(
+        user_id=ids["bystander"], name="Third Bistro", price="$", address="3 Far St",
+        city="Dallas", state="TX", zipcode="75201", country="USA",
+        phone_number="(555) 444-5555", website="http://third.com", description="Elsewhere.")
+    db.session.add(other)
+    db.session.commit()
+
+    elsewhere = Review(user_id=ids["reviewer"], restaurant_id=other.id,
+                       review="Good too.", rating=5)
+    db.session.add(elsewhere)
+    db.session.commit()
+
+    db.session.add_all([
+        RestaurantImage(restaurant_id=ids["restaurant"], url=shared, preview=False,
+                        createdByUserId=ids["owner"]),
+        ReviewImage(review_id=elsewhere.id, url=shared),
+    ])
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+    assert fake.deleted == [], "another review still displays this object"
