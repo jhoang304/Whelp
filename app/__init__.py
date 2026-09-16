@@ -70,16 +70,24 @@ def inject_csrf_token(response):
     return response
 
 
+ERROR_SHAPE = (
+    'Every failing response is {"errors": [message, ...]}: a flat list of '
+    'human-readable strings the UI can render as-is. The status code carries '
+    'what kind of failure it was -- 400 a bad body, 401 not signed in, 403 not '
+    'yours, 404 no such thing, 405 wrong method (with an Allow header).'
+)
+
+
 @app.route("/api/docs")
 def api_help():
     """
-    Returns all API routes and their doc strings
+    Returns the API's error contract, then all routes and their doc strings
     """
     acceptable_methods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
     route_list = { rule.rule: [[ method for method in rule.methods if method in acceptable_methods ],
                     app.view_functions[rule.endpoint].__doc__ ]
                     for rule in app.url_map.iter_rules() if rule.endpoint != 'static' }
-    return route_list
+    return {"errors": ERROR_SHAPE, "routes": route_list}
 
 
 # The rules that answer GET for any URL at all: Flask's static handler (the

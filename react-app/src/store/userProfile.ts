@@ -1,4 +1,5 @@
 import { Review, UserProfile, UserProfileState } from '../types';
+import { parseErrors } from '../utils/parseErrors';
 import { setUser } from './session';
 
 const LOAD_PROFILE = 'userProfile/LOAD_PROFILE';
@@ -55,15 +56,13 @@ export const editProfileThunk = (updates: ProfileUpdates, userId: string | numbe
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),
     });
-    const data = await response.json().catch(() => ({}));
-
     if (response.ok) {
+        const data = await response.json().catch(() => ({}));
         dispatch(setUser(data));
         await dispatch(getProfileThunk(userId));
         return null;
     }
-    if (Array.isArray(data.errors)) return data.errors;
-    return ["Could not update your profile. Please try again."];
+    return parseErrors(response, "Could not update your profile. Please try again.");
 };
 
 const initialState: UserProfileState = { profile: null, reviews: [] };

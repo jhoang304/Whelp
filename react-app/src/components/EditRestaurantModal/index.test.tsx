@@ -108,7 +108,9 @@ test("a rejected save shows the server's errors and keeps the modal open", async
   expect(submitButton()).not.toBeDisabled();
 });
 
-test("a 400 whose errors are a WTForms dict is still shown", async () => {
+test("a 400 the API should never send still tells the user something", async () => {
+  // The API answers {"errors": [message, ...]}; anything else (a proxy's HTML
+  // error page, say) must not leave the form silent.
   (global as any).fetch = jest.fn(() =>
     Promise.resolve({
       ok: false,
@@ -121,7 +123,7 @@ test("a 400 whose errors are a WTForms dict is still shown", async () => {
   fireEvent.click(submitButton());
 
   expect(
-    await screen.findByText("Field must be between 1 and 100 characters long.")
+    await screen.findByText("Could not save your changes. Please try again.")
   ).toBeInTheDocument();
   expect(mockCloseModal).not.toHaveBeenCalled();
 });

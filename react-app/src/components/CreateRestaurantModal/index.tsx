@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';
 import { addRestaurantThunk } from "../../store/restaurants";
+import { parseErrors } from "../../utils/parseErrors";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
 
@@ -84,27 +85,11 @@ function CreateRestaurantModal() {
             closeModal();
             history.push(`/single/${createdRestaurantId}`);
         } catch (res: any) {
-            try {
-                const data = await res.json();
-                if (data && data.errors) {
-                    // Handle different error formats
-                    if (Array.isArray(data.errors)) {
-                        setErrors(data.errors);
-                    } else if (typeof data.errors === 'object') {
-                        // Convert object errors to array
-                        const errorMessages = Object.values(data.errors).flat() as string[];
-                        setErrors(errorMessages);
-                    } else {
-                        setErrors([data.errors]);
-                    }
-                } else if (data.message) {
-                    setErrors([data.message]);
-                } else {
-                    setErrors(["An error occurred while creating the restaurant. Please try again."]);
-                }
-            } catch (parseError) {
-                setErrors(["Network error. Please check your connection and try again."]);
-            }
+            // addRestaurantThunk throws the failed response itself; a dropped
+            // connection throws a TypeError from fetch instead.
+            setErrors(typeof res?.json === "function"
+                ? await parseErrors(res, "An error occurred while creating the restaurant. Please try again.")
+                : ["Network error. Please check your connection and try again."]);
         } finally {
             setIsSubmitting(false);
         }

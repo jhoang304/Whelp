@@ -1,14 +1,9 @@
 import { getSingleRestaurant } from "./restaurants";
 import { RestaurantImage } from "../types";
 import { AppDispatch } from "./index";
+import { parseErrors } from "../utils/parseErrors";
 
 export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
-
-/** Pull the API's `errors` list off a failed response, falling back to `fallback`. */
-const errorsFrom = async (res: Response, fallback: string): Promise<string[]> => {
-    const data = await res.json().catch(() => ({}))
-    return Array.isArray(data.errors) ? data.errors : [fallback]
-}
 
 //load photos
 const LOADPHOTO = "photos/loadRestaurantImages"
@@ -45,7 +40,7 @@ export const addRestaurantImage = (newRestaurantImage: any, restaurantId: string
         return null
     }
     // Return a list of messages so the modal can show them.
-    return errorsFrom(response, "Could not add the photo. Please try again.")
+    return parseErrors(response, "Could not add the photo. Please try again.")
 }
 
 //Make an existing photo the restaurant's cover
@@ -69,7 +64,7 @@ export const setCoverPhotoThunk = (photoId: string | number, restaurantId: strin
         dispatch(getSingleRestaurant(+restaurantId) as any)
         return null
     }
-    return errorsFrom(res, "Could not set the cover photo. Please try again.")
+    return parseErrors(res, "Could not set the cover photo. Please try again.")
 }
 
 //Delete a photo
@@ -99,7 +94,7 @@ export const deleteRestaurantImageThunk = (photoId: string | number, restaurantI
         dispatch(getSingleRestaurant(+restaurantId) as any)
         return null
     }
-    return errorsFrom(res, "Could not remove the photo. Please try again.")
+    return parseErrors(res, "Could not remove the photo. Please try again.")
 }
 
 

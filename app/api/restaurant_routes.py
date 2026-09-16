@@ -151,7 +151,7 @@ def create_restaurant():
         return restaurant.to_dict()
 
     else:
-        return {"errors": form.errors}, 400
+        return {"errors": error_messages(form.errors)}, 400
 
 
 # Add Image to Restaurant by Id

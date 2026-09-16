@@ -1,3 +1,5 @@
+import { parseErrors } from "./parseErrors";
+
 export interface UploadResult {
   url?: string;
   errors?: string[];
@@ -22,11 +24,11 @@ export async function uploadImage(file: File): Promise<UploadResult> {
   try {
     // No Content-Type header: the browser sets the multipart boundary itself.
     const response = await fetch("/api/images/upload", { method: "POST", body });
-    const data = await response.json().catch(() => ({}));
-    if (response.ok && data.url) {
-      return { url: data.url };
+    if (response.ok) {
+      const data = await response.json().catch(() => ({}));
+      if (data.url) return { url: data.url };
     }
-    return { errors: data.errors || ["Image upload failed. Please try again."] };
+    return { errors: await parseErrors(response, "Image upload failed. Please try again.") };
   } catch (err) {
     return { errors: ["Network error while uploading the image. Please try again."] };
   }
