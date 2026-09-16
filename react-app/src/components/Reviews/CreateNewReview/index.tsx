@@ -42,10 +42,17 @@ function CreateNewReview(): React.JSX.Element {
 
     // The thunk returns the API's messages instead of throwing, so a rejected
     // review (already reviewed, own restaurant, expired session) has to be
-    // shown here rather than silently redirecting.
-    const failures: string[] | null = await dispatch(
-      createOneReview({ review: trimmed, rating }, +restaurantId) as any
-    );
+    // shown here rather than silently redirecting. The catch is the backstop
+    // for anything it cannot turn into messages, such as a 200 whose body is
+    // not JSON: every path that stays on this page must re-enable the form.
+    let failures: string[] | null;
+    try {
+      failures = await dispatch(
+        createOneReview({ review: trimmed, rating }, +restaurantId) as any
+      );
+    } catch (unexpected) {
+      failures = ["Something went wrong posting your review. Please try again."];
+    }
 
     if (failures) {
       setErrors(failures);
@@ -53,8 +60,16 @@ function CreateNewReview(): React.JSX.Element {
       return;
     }
 
-    await dispatch(getSingleRestaurant(+restaurantId) as any);
-    await dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
+    // The review is saved. Refreshing is best effort: if the connection drops
+    // here, the restaurant page loads for itself and reports its own errors,
+    // which beats stranding the user on a disabled form.
+    try {
+      await dispatch(getSingleRestaurant(+restaurantId) as any);
+      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
+    } catch (refreshError) {
+      // fall through to the restaurant page
+    }
+
     history.push(`/single/${restaurantId}`);
   }
 

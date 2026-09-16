@@ -6,6 +6,8 @@ const errorsFrom = async (res: Response, fallback: string): Promise<string[]> =>
     return Array.isArray(data.errors) ? data.errors : [fallback];
 }
 
+export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
+
 // Load all reviews by restaurantId
 const LOAD_ALL_REVIEWS_BY_RESTAURANTID = 'reviews/LOAD_ALL_REVIEWS'
 const  loadAllReviewsByRestaurantId = (reviews: Review[]) => {
@@ -70,11 +72,19 @@ const createReview = (review: any) => {
 }
 /** Post a new review. Returns null on success or a list of error messages. */
 export const createOneReview = (newReview: any, restaurantId: any) => async (dispatch: any) => {
-    const res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
-        method:"POST",
-        headers: {"Content-Type":"application/json"},
-        body:JSON.stringify(newReview)
-    })
+    let res: Response
+    try {
+        res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
+            method:"POST",
+            headers: {"Content-Type":"application/json"},
+            body:JSON.stringify(newReview)
+        })
+    } catch (networkError) {
+        // fetch rejects, rather than resolving with a status, when the browser
+        // is offline or the connection drops. Returning the message keeps this
+        // thunk's "null or messages" contract, so the form can recover.
+        return [NETWORK_ERROR]
+    }
     if(res.ok){
         const review = await res.json();
         dispatch(createReview(review));
@@ -93,11 +103,16 @@ const updateReview = (review: any) => {
 }
 /** Save an edited review. Returns null on success or a list of error messages. */
 export const updateOneReview = (newReview: any, reviewId: any) => async (dispatch: any) => {
-    const res = await fetch(`/api/reviews/${reviewId}`, {
-        method: "PUT",
-        headers: {"Content-Type":"application/json"},
-        body:JSON.stringify(newReview)
-    })
+    let res: Response
+    try {
+        res = await fetch(`/api/reviews/${reviewId}`, {
+            method: "PUT",
+            headers: {"Content-Type":"application/json"},
+            body:JSON.stringify(newReview)
+        })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
     if(res.ok){
         const review = await res.json();
         dispatch(updateReview(review))

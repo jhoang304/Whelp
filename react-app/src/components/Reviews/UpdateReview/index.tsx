@@ -59,10 +59,18 @@ function UpdateReview(): React.JSX.Element {
 
     // The thunk returns the API's messages instead of throwing, so a rejected
     // edit (someone else's review, expired session) has to be shown here
-    // rather than redirecting as though it had saved.
-    const failures: string[] | null = await dispatch(
-      updateOneReview({ review: trimmed, rating }, reviewId) as any
-    );
+    // rather than redirecting as though it had saved. The catch is the
+    // backstop for anything it cannot turn into messages, such as a 200 whose
+    // body is not JSON: every path that stays on this page must re-enable the
+    // form.
+    let failures: string[] | null;
+    try {
+      failures = await dispatch(
+        updateOneReview({ review: trimmed, rating }, reviewId) as any
+      );
+    } catch (unexpected) {
+      failures = ["Something went wrong saving your review. Please try again."];
+    }
 
     if (failures) {
       setErrors(failures);
@@ -70,8 +78,16 @@ function UpdateReview(): React.JSX.Element {
       return;
     }
 
-    await dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
-    await dispatch(getSingleRestaurant(+restaurantId) as any);
+    // The edit is saved. Refreshing is best effort: if the connection drops
+    // here, the restaurant page loads for itself and reports its own errors,
+    // which beats stranding the user on a disabled form.
+    try {
+      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
+      await dispatch(getSingleRestaurant(+restaurantId) as any);
+    } catch (refreshError) {
+      // fall through to the restaurant page
+    }
+
     history.push(`/single/${restaurantId}`);
   }
 
