@@ -2,7 +2,7 @@ from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
 from app.models import Restaurant, Review, RestaurantImage, User, db
 from app.forms import RestaurantForm, RestaurantImageForm
-from app.api.utils import error_messages
+from app.api.utils import clear_other_previews, error_messages
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -166,12 +166,21 @@ def create_restaurant_image(restaurantId):
     form["csrf_token"].data = request.cookies["csrf_token"]
 
     if form.validate_on_submit():
+        # Anyone logged in may add a photo, but only the owner decides which
+        # one is the cover. Reading `preview` off the form (not the raw JSON)
+        # also means a body without the key is a plain photo, not a 500.
+        if form.data["preview"] and restaurant.user_id != current_user.id:
+            return {"errors": ["Only the business owner can set the cover photo"]}, 403
+
         restaurantImage = RestaurantImage(
             restaurant_id = int(restaurantId),
-            url = request.get_json()["url"],
-            preview = request.get_json()["preview"],
+            url = form.data["url"],
+            preview = form.data["preview"],
             createdByUserId = current_user.id
         )
+
+        if restaurantImage.preview:
+            clear_other_previews(restaurantId)
 
         db.session.add(restaurantImage)
         db.session.commit()

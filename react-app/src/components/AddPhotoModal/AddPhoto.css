@@ -171,3 +171,36 @@
     opacity: 0.7;
     cursor: not-allowed;
 }
+
+/* Owner-only: promote the new photo to the restaurant's cover */
+.add-photo-cover {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    align-items: center;
+    column-gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background: #fafafa;
+    cursor: pointer;
+}
+
+.add-photo-cover input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    grid-row: span 2;
+}
+
+.add-photo-cover span {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.add-photo-cover small {
+    grid-column: 2;
+    font-size: 12px;
+    color: #767676;
+}

@@ -62,6 +62,66 @@
     transform: scale(1.05);
 }
 
+.photo-frame {
+    position: relative;
+    display: block;
+    overflow: hidden;
+}
+
+.cover-badge {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 10px;
+    border-radius: 999px;
+    background: rgba(0, 0, 0, 0.72);
+    color: #ffd166;
+    font-size: 12px;
+    font-weight: 600;
+    pointer-events: none;
+}
+
+.cover-badge i {
+    font-size: 11px;
+}
+
+.photo-actions {
+    display: flex;
+    flex-direction: column;
+}
+
+.photo-actions button {
+    padding: 12px 16px;
+    border: none;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.photo-actions button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.photo-actions .set-cover-photo {
+    background: #f8f8f8;
+    color: #333;
+    border-top: 1px solid #e6e6e6;
+}
+
+.set-cover-photo:hover:not(:disabled) {
+    background: #ececec;
+}
+
 .delete-photo {
     padding: 12px 16px;
     border: none;
@@ -78,12 +138,29 @@
     margin: 0;
 }
 
-.delete-photo:hover {
+.delete-photo:hover:not(:disabled) {
     background: #d60b12;
 }
 
-.delete-photo i {
+.delete-photo i,
+.set-cover-photo i {
     font-size: 12px;
+}
+
+.photo-errors {
+    list-style: none;
+    margin: 0;
+    padding: 12px 30px 0;
+    color: #b91c1c;
+    font-size: 14px;
+}
+
+.photo-errors li {
+    padding: 8px 12px;
+    margin-bottom: 8px;
+    background-color: #f8d7da;
+    border: 1px solid #f5c6cb;
+    border-radius: 4px;
 }
 
 .empty-holder {
