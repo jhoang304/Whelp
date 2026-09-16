@@ -7,3 +7,4 @@ __pycache__/
 *.db
 CLAUDE.md
 .pytest_cache/
+cookies.txt

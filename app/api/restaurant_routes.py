@@ -1,4 +1,4 @@
-from flask import Blueprint, jsonify, request, session
+from flask import Blueprint, request
 from flask_login import login_required, current_user
 from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
 from app.api.aws_helpers import remove_files_from_s3
@@ -210,7 +210,6 @@ def edit_restaurant_by_restaurant_id(restaurantId):
 
         restaurant.name = request.get_json()["name"]
         restaurant.price = request.get_json()["price"]
-        restaurant.name = request.get_json()["name"]
         restaurant.address = request.get_json()["address"]
         restaurant.city = request.get_json()["city"]
         restaurant.state = request.get_json()["state"]

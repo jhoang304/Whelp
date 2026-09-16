@@ -44,8 +44,6 @@ export interface User {
   last_name: string;
   profile_image_url?: string | null;
   createdAt?: string;
-  firstName?: string;
-  lastName?: string;
 }
 
 /** Public subset of a user, as embedded in reviews and responses. */
@@ -151,40 +149,6 @@ export interface RootState {
   user: UserProfileState;
 }
 
-// Form Types
-export interface LoginFormData {
-  credential: string;
-  password: string;
-}
-
-export interface SignupFormData {
-  email: string;
-  username: string;
-  firstName: string;
-  lastName: string;
-  password: string;
-  confirmPassword: string;
-}
-
-export interface RestaurantFormData {
-  name: string;
-  price: string;
-  address: string;
-  city: string;
-  state: string;
-  zipcode: string;
-  country: string;
-  phone_number: string;
-  website: string;
-  description: string;
-  url?: string; // For image
-}
-
-export interface ReviewFormData {
-  review: string;
-  rating: number;
-}
-
 // Component Props Types
 export interface RestaurantProps {
   restaurant: Restaurant;
@@ -200,17 +164,6 @@ export interface OpenModalButtonProps {
   modalComponent: React.ReactElement;
   className?: string;
 }
-
-// Utility Types
-export type ApiError = {
-  message: string;
-  errors?: { [key: string]: string };
-};
-
-export type ThunkResult<T = void> = (
-  dispatch: any,
-  getState: () => RootState
-) => Promise<T>;
 
 // Redux Action Types
 export interface LoadRestaurantsAction {
@@ -245,21 +198,6 @@ export interface ClearSearchAction {
   type: 'restaurants/clearSearchResults';
 }
 
-export interface AddRestaurantAction {
-  type: 'restaurants/addRestaurants';
-  newRestaurant: Restaurant;
-}
-
-export interface UpdateRestaurantAction {
-  type: 'restaurants/updateRestaurant';
-  restaurant: Restaurant;
-}
-
-export interface DeleteRestaurantAction {
-  type: 'restaurants/deleteRestaurant';
-  id: number;
-}
-
 export type RestaurantActionTypes =
   | LoadRestaurantsAction
   | LoadSingleRestaurantAction
@@ -267,7 +205,4 @@ export type RestaurantActionTypes =
   | SearchRestaurantsAction
   | SearchLoadingAction
   | SearchErrorAction
-  | ClearSearchAction
-  | AddRestaurantAction
-  | UpdateRestaurantAction
-  | DeleteRestaurantAction;
+  | ClearSearchAction;

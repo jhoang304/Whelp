@@ -148,13 +148,6 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: an
 }
 
 //Create a restaurant
-const ADD_RESTAURANT ="restaurants/addRestaurants"
-
-export const createRestaurant=(newRestaurant: any)=>({
-    type: ADD_RESTAURANT,
-    newRestaurant
-})
-
 export const addRestaurantThunk = (newRestaurant: any) => async (dispatch: any) => {
     let createdRestaurantId;
     const response = await fetch("/api/restaurants/", {
@@ -194,12 +187,6 @@ export const addRestaurantThunk = (newRestaurant: any) => async (dispatch: any) 
 }
 
 //Edit a restaurant
-const UPDATE_RESTAURANT = "restaurants/updateRestaurant"
-export const updateSingleRestaurant = (restaurant: any) => ({
-    type: UPDATE_RESTAURANT,
-    restaurant
-})
-
 /**
  * Save an edited restaurant. Returns null on success or a list of error
  * messages, the contract createReviewResponse uses, so the modal can show
@@ -228,7 +215,6 @@ export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) 
 
     if (res.ok) {
         const updatedRestaurant = await res.json()
-        await dispatch(updateSingleRestaurant(updatedRestaurant))
         await dispatch(getSingleRestaurant(updatedRestaurant.id))
         return null
     }
@@ -244,19 +230,12 @@ export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) 
 
 
 //Delete a restaurant
-const DELETE_RESTAURANT = "restaurants/deleteRestaurant"
-export const deleteRestaurant = (id: number) => ({
-    type: DELETE_RESTAURANT,
-    id
-})
-
 export const deleteRestaurantThunk = (id: number) => async (dispatch: any) => {
 
     const res = await fetch(`/api/restaurants/${id}`, {
         method: "DELETE"
     })
     if (res.ok) {
-        await dispatch(deleteRestaurant(id))
         dispatch(getAllRestaurants())
     }
 }
@@ -297,20 +276,6 @@ export default function restaurantsReducer(
                 ...state,
                 singleRestaurant: undefined
             }
-        }
-        case UPDATE_RESTAURANT: {
-            const updateRestaurantState = { ...state }
-            if (updateRestaurantState.singleRestaurant) {
-                (updateRestaurantState.singleRestaurant as any)[action.restaurant.id] = action.restaurant
-            }
-            return updateRestaurantState
-        }
-        case DELETE_RESTAURANT: {
-            const deleteRestaurantState = { ...state }
-            if (deleteRestaurantState.singleRestaurant) {
-                delete (deleteRestaurantState.singleRestaurant as any)[action.id]
-            }
-            return deleteRestaurantState
         }
         case SEARCH_RESTAURANTS_LOADING:
             return {
