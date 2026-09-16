@@ -7,7 +7,7 @@ export interface Restaurant {
   address: string;
   city: string;
   state: string;
-  zipcode: number;
+  zipcode: string;
   country: string;
   phone_number: string;
   description: string;
@@ -102,7 +102,7 @@ export interface SingleRestaurantResponse {
   address: string;
   city: string;
   state: string;
-  zipcode: number;
+  zipcode: string;
   country: string;
   phone_number: string;
   description: string;
@@ -172,7 +172,7 @@ export interface RestaurantFormData {
   address: string;
   city: string;
   state: string;
-  zipcode: number;
+  zipcode: string;
   country: string;
   phone_number: string;
   website: string;

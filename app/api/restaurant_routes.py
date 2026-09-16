@@ -135,7 +135,9 @@ def create_restaurant():
             address = request.get_json()["address"],
             city = request.get_json()["city"],
             state = request.get_json()["state"],
-            zipcode = request.get_json()["zipcode"],
+            # form.data, not the raw JSON: the postcode filter normalises a
+            # numeric zipcode to text, and a VARCHAR column will not take an int.
+            zipcode = form.data["zipcode"],
             country = request.get_json()["country"],
             phone_number = request.get_json()["phone_number"],
             website = request.get_json()["website"],
@@ -202,7 +204,7 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         restaurant.address = request.get_json()["address"]
         restaurant.city = request.get_json()["city"]
         restaurant.state = request.get_json()["state"]
-        restaurant.zipcode = request.get_json()["zipcode"]
+        restaurant.zipcode = form.data["zipcode"]
         restaurant.country = request.get_json()["country"]
         restaurant.phone_number = request.get_json()["phone_number"]
         restaurant.website = request.get_json()["website"]

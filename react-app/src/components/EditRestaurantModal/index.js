@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { updateRestaurantThunk } from "../../store/restaurants"
+import { isValidPostcode, POSTCODE_MESSAGE } from "../../utils/postcode";
 
 
 export default function EditRestaurant({ singleRestaurant }) {
@@ -31,8 +32,7 @@ export default function EditRestaurant({ singleRestaurant }) {
         if (address.length < 1 || address.length > 100) validationErrors.push("Address must be between 1 and 100 characters.");
         if (city.length < 1 || city.length > 50) validationErrors.push("City must be between 1 and 50 characters.");
         if (state.length !== 2) validationErrors.push("State must be 2 characters");
-        // if (zipcode.length !== 5) validationErrors.push("Zipcode must be 5 characters.");
-        if (!/^\d{5}$/.test(zipcode)) validationErrors.push("Zipcode must be a valid 5-digit number.");
+        if (!isValidPostcode(zipcode)) validationErrors.push(POSTCODE_MESSAGE);
         if (country.length < 1 || country.length > 56) validationErrors.push("Country must be between 1 and 56 characters.");
         if (phone_number.length < 1 || phone_number.length > 20) validationErrors.push("Phone Number must be between 1 and 20 characters.");
         if (website.length < 1 || website.length > 70) validationErrors.push("Website must be between 1 and 70 characters.");
@@ -54,7 +54,7 @@ export default function EditRestaurant({ singleRestaurant }) {
             address,
             city,
             state,
-            zipcode,
+            zipcode: String(zipcode).trim(),
             country,
             phone_number,
             description,

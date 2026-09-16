@@ -56,7 +56,7 @@ def restaurant_payload(**overrides):
         "address": "3 Long Rd",
         "city": "Houston",
         "state": "TX",
-        "zipcode": 77002,
+        "zipcode": "77002",
         "country": "USA",
         "phone_number": "(555) 000-0000",
         "website": "http://lengthtest.com",
