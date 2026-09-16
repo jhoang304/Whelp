@@ -27,13 +27,6 @@ export const getRestaurantRestaurantImages = (restaurantId: string | number) => 
 
 
 //Add a photo
-const ADD_PHOTO = "photos/addRestaurantImage"
-export const createRestaurantImage = (createdRestaurantImage: RestaurantImage) => ({
-    type: ADD_PHOTO,
-    id: createdRestaurantImage.id,
-    createdRestaurantImage
-
-})
 export const addRestaurantImage = (newRestaurantImage: any, restaurantId: string | number) => async (dispatch: AppDispatch) => {
     let response: Response
     try {
@@ -48,8 +41,6 @@ export const addRestaurantImage = (newRestaurantImage: any, restaurantId: string
         return [NETWORK_ERROR]
     }
     if (response.ok) {
-        const createdRestaurantImage = await response.json()
-        await dispatch(createRestaurantImage(createdRestaurantImage))
         dispatch(getSingleRestaurant(+restaurantId) as any)
         return null
     }

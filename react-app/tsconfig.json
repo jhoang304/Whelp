@@ -22,7 +22,7 @@
     "types": ["node", "react", "react-dom"],
     "noImplicitAny": true,
     "noImplicitReturns": true,
-    "noUnusedLocals": false,
+    "noUnusedLocals": true,
     "noUnusedParameters": false
   },
   "include": [
