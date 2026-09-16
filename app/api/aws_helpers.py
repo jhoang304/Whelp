@@ -161,14 +161,25 @@ def remove_files_from_s3(image_urls):
     for start in range(0, len(keys), 1000):
         chunk = keys[start:start + 1000]
         try:
-            _client().delete_objects(
+            response = _client().delete_objects(
                 Bucket=s["bucket"],
                 Delete={"Objects": [{"Key": key} for key in chunk]},
             )
         except Exception as e:
             print(f"[aws_helpers] failed to delete {len(chunk)} object(s): {e}")
             continue
-        deleted.extend(chunk)
+
+        # DeleteObjects answers 200 for a request S3 accepted even when some of
+        # the keys in it failed; those come back under Errors rather than as an
+        # exception. Reporting the whole chunk as deleted would hide objects
+        # that are still in the bucket.
+        failures = (response or {}).get("Errors") or []
+        failed_keys = {failure.get("Key") for failure in failures}
+        for failure in failures:
+            print(f"[aws_helpers] S3 refused to delete {failure.get('Key')}: "
+                  f"{failure.get('Code')} {failure.get('Message')}")
+
+        deleted.extend(key for key in chunk if key not in failed_keys)
     return deleted
 
 

@@ -4,7 +4,7 @@ import urllib.error
 import botocore.exceptions
 
 from app.api import aws_helpers
-from app.models import Restaurant, RestaurantImage, db
+from app.models import Restaurant, RestaurantImage, Review, ReviewImage, db
 from tests.conftest import login
 
 
@@ -15,6 +15,7 @@ class FakeS3:
         self.acls_disabled = acls_disabled
         self.uploaded = []  # list of put_object kwargs
         self.deleted = []
+        self.refused = set()  # keys delete_objects should report as failures
 
     def put_object(self, **kwargs):
         self.uploaded.append(kwargs)
@@ -28,9 +29,16 @@ class FakeS3:
     def delete_object(self, Bucket, Key):
         self.deleted.append((Bucket, Key))
 
-    def delete_objects(self, Bucket, Delete):
+    def delete_objects(self, Bucket, Delete, refuse=()):
+        """S3 answers 200 with per-key Errors; `refuse` mimics that."""
+        errors = []
         for entry in Delete["Objects"]:
+            if entry["Key"] in self.refused:
+                errors.append({"Key": entry["Key"], "Code": "AccessDenied",
+                               "Message": "Access Denied"})
+                continue
             self.deleted.append((Bucket, entry["Key"]))
+        return {"Deleted": [], "Errors": errors}
 
 
 def configure_s3(monkeypatch, acls_disabled=False, public=True):
@@ -251,3 +259,77 @@ def test_a_bucket_failure_does_not_fail_the_delete(client, ids, monkeypatch):
     login(client, "owner@test.io")
     assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
     assert Restaurant.query.get(ids["restaurant"]) is None
+
+
+def test_remove_files_from_s3_excludes_keys_s3_refused(monkeypatch):
+    """DeleteObjects answers 200 with per-key Errors; those are not deleted."""
+    fake = configure_s3(monkeypatch)
+    fake.refused = {"locked.png"}
+    deleted = aws_helpers.remove_files_from_s3([
+        f"{BUCKET_URL}one.png", f"{BUCKET_URL}locked.png", f"{BUCKET_URL}two.jpg",
+    ])
+    assert deleted == ["one.png", "two.jpg"]
+    assert sorted(key for _, key in fake.deleted) == ["one.png", "two.jpg"]
+
+
+def test_delete_does_not_remove_an_object_another_row_still_shows(client, ids, monkeypatch):
+    """
+    Image rows carry a URL the caller typed, not a key we minted, so two rows
+    can name the same object. Deleting one restaurant must not break the other.
+    """
+    fake = configure_s3(monkeypatch)
+    shared = f"{BUCKET_URL}shared.png"
+    other = Restaurant(
+        user_id=ids["owner"], name="Second Bistro", price="$", address="9 Side St",
+        city="Austin", state="TX", zipcode="78701", country="USA",
+        phone_number="(555) 222-3333", website="http://second.com", description="Another.")
+    db.session.add(other)
+    db.session.commit()
+    db.session.add_all([
+        RestaurantImage(restaurant_id=ids["restaurant"], url=shared, preview=False,
+                        createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=other.id, url=shared, preview=False,
+                        createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}only-mine.png",
+                        preview=False, createdByUserId=ids["owner"]),
+    ])
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+
+    keys = sorted(key for _, key in fake.deleted)
+    assert keys == ["only-mine.png"], "the shared object is still in use"
+
+
+def test_delete_does_not_remove_an_object_another_reviews_image_still_shows(client, ids, monkeypatch):
+    """
+    The review image has to hang off a review on a *different* restaurant: the
+    deleted restaurant's own reviews (and their images) cascade away with it,
+    so those objects really are orphaned.
+    """
+    fake = configure_s3(monkeypatch)
+    shared = f"{BUCKET_URL}shared-with-review.png"
+
+    other = Restaurant(
+        user_id=ids["bystander"], name="Third Bistro", price="$", address="3 Far St",
+        city="Dallas", state="TX", zipcode="75201", country="USA",
+        phone_number="(555) 444-5555", website="http://third.com", description="Elsewhere.")
+    db.session.add(other)
+    db.session.commit()
+
+    elsewhere = Review(user_id=ids["reviewer"], restaurant_id=other.id,
+                       review="Good too.", rating=5)
+    db.session.add(elsewhere)
+    db.session.commit()
+
+    db.session.add_all([
+        RestaurantImage(restaurant_id=ids["restaurant"], url=shared, preview=False,
+                        createdByUserId=ids["owner"]),
+        ReviewImage(review_id=elsewhere.id, url=shared),
+    ])
+    db.session.commit()
+
+    login(client, "owner@test.io")
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
+    assert fake.deleted == [], "another review still displays this object"

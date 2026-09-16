@@ -1,6 +1,6 @@
 from flask import Blueprint, jsonify, request, session
 from flask_login import login_required, current_user
-from app.models import Restaurant, Review, RestaurantImage, User, db
+from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
 from app.api.aws_helpers import remove_files_from_s3
 from app.forms import RestaurantForm, RestaurantImageForm
 from app.api.utils import error_messages
@@ -219,6 +219,23 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         return {"errors": form.errors}, 400
 
 
+def _still_referenced(image_url):
+    """
+    True when some remaining row still points at this object.
+
+    An image row carries a URL the caller typed, not a key this app minted, so
+    two rows can name the same object. Deleting it on behalf of one of them
+    would break the other's page — and because the attach route accepts any
+    URL, that is also how someone could aim this cleanup at a photo they do
+    not own. Checking first makes the bulk delete safe for the objects that
+    matter; binding uploads to an app-controlled key is the real fix and needs
+    its own schema change.
+    """
+    if RestaurantImage.query.filter(RestaurantImage.url == image_url).first():
+        return True
+    return ReviewImage.query.filter(ReviewImage.url == image_url).first() is not None
+
+
 # Delete a Restaurant
 @restaurant_routes.route('/<int:restaurantId>', methods=["DELETE"])
 @login_required
@@ -239,7 +256,7 @@ def delete_restaurant(restaurantId):
     db.session.commit()
     # Best effort, like the single-image delete route: a bucket hiccup must
     # not turn a successful delete into a 500.
-    remove_files_from_s3(image_urls)
+    remove_files_from_s3([url for url in image_urls if not _still_referenced(url)])
     return {"message": ["Restaurant Successfully deleted"]},200
 
 
