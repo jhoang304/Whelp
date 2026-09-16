@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A new push to a PR makes the previous run's answer irrelevant.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: pytest
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Not the Pipfile's python_version: it says 3.9 while Render builds on
+          # 3.7 and this suite is developed on 3.11. Pinning the real runtime
+          # everywhere is #32; until then CI states which one it ran.
+          python-version: '3.11'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          # requirements.txt holds the pinned runtime deps; pytest is the only
+          # dev dependency the suite needs (see Pipfile [dev-packages]).
+          pip install -r requirements.txt pytest
+
+      - name: Run the tests
+        run: pytest
+
+      - name: Audit dependencies
+        # Advisory for now: #32 documents the known CVEs in the pinned Flask,
+        # Werkzeug and SQLAlchemy, so this would fail every run until that
+        # lands. Read the output, then make it blocking once it is green.
+        continue-on-error: true
+        run: |
+          pip install pip-audit
+          pip-audit --requirement requirements.txt
+
+  frontend:
+    name: tsc, jest and build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: react-app
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # CRA 4's build needs --openssl-legacy-provider, which only exists on
+          # Node 17+. Modernising that toolchain is #33.
+          node-version: '18'
+          cache: npm
+          cache-dependency-path: react-app/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type-check
+        run: npx tsc --noEmit
+
+      - name: Run the tests
+        run: npm test -- --watchAll=false
+
+      - name: Build
+        run: npm run build
