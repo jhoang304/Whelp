@@ -52,14 +52,32 @@ def test_public_gets_do_not_depend_on_rule_ordering(client, ids):
     assert isinstance(own_reviews.get_json(), list)
 
 
-def test_get_on_a_post_only_route_never_reaches_the_handler(client, ids):
-    """Neither `/images` URL has a public GET, so a GET is just an unknown path."""
+def test_get_on_a_post_only_route_is_a_405_not_a_404(client, ids):
+    """
+    Neither `/images` URL has a public GET. The SPA catch-all matches every
+    GET, so Werkzeug never raises 405 for these itself -- but the endpoint
+    does exist, and saying "not found" would send a client hunting for a URL
+    that is right there.
+    """
     login(client, "owner@test.io")
     for url in (f"/api/restaurants/{ids['restaurant']}/images",
                 f"/api/reviews/{ids['review']}/images"):
         res = client.get(url)
-        assert res.status_code == 404, url
-        assert res.get_json() == {"errors": ["Not found"]}, url
+        assert res.status_code == 405, url
+        assert res.headers["Allow"] == "POST", url
+        assert res.get_json() == {"errors": ["Method not allowed"]}, url
+        assert res.mimetype == "application/json", url
+
+
+def test_a_405_lists_every_method_the_url_does_take(client, ids):
+    """`/api/restaurants/<id>` reads, edits and deletes; it just won't PATCH."""
+    res = client.get(f"/api/restaurants/{ids['restaurant']}/reviews/nope")
+    assert res.status_code == 404  # a path no rule claims is still a 404
+
+    login(client, "owner@test.io")
+    res = client.open(f"/api/restaurants/{ids['restaurant']}", method="PATCH")
+    assert res.status_code == 405
+    assert set(res.headers["Allow"].split(", ")) >= {"DELETE", "GET", "PUT"}
 
 
 def test_every_restaurant_url_belongs_to_the_restaurant_blueprint(app):
