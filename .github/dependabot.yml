@@ -1,0 +1,17 @@
+version: 2
+
+updates:
+  # The workflow pins actions to commit SHAs, which is the point -- and which
+  # means nothing bumps them on its own. Dependabot moves the SHA and the
+  # version comment beside it together, so the pin stays reviewable rather
+  # than quietly going stale.
+  #
+  # Only the actions are watched here. pip and npm would open a PR per
+  # advisory against a dependency set that is knowingly behind (#32, #33),
+  # which is a backlog to work through deliberately, not a queue to drip out.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: ci
