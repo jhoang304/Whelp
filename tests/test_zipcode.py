@@ -85,6 +85,40 @@ def test_rejects_malformed_postcodes(client, zipcode):
     assert Restaurant.query.filter_by(name="Zip Test").first() is None
 
 
+def test_accepts_a_numeric_postcode_from_older_callers(client):
+    """
+    The column used to be an integer and the API took a JSON number, so
+    `"zipcode": 77003` must still work rather than blowing up Length() with
+    len(int) - which surfaced as a 500, not a 400.
+    """
+    login(client, "owner@test.io")
+    res = client.post("/api/restaurants/", json=payload(77003))
+    assert res.status_code == 200, res.get_json()
+    assert res.get_json()["zipcode"] == "77003"
+    assert Restaurant.query.filter_by(name="Zip Test").one().zipcode == "77003"
+
+
+@pytest.mark.parametrize("zipcode", [77003.5, {"a": 1}, None])
+def test_rejects_non_postcode_json_types_with_400(client, zipcode):
+    """Coercing to text must not let nonsense through as a stored value."""
+    login(client, "owner@test.io")
+    res = client.post("/api/restaurants/", json=payload(zipcode))
+    assert res.status_code == 400, res.get_json()
+    assert Restaurant.query.filter_by(name="Zip Test").first() is None
+
+
+def test_list_valued_postcode_is_taken_as_its_first_entry(client):
+    """
+    A JSON list is standard multi-valued form data, so the form reads its
+    first entry. What matters is that it no longer reaches SQLAlchemy raw:
+    persisting the unvalidated JSON made this a 500.
+    """
+    login(client, "owner@test.io")
+    res = client.post("/api/restaurants/", json=payload(["77003"]))
+    assert res.status_code == 200, res.get_json()
+    assert Restaurant.query.filter_by(name="Zip Test").one().zipcode == "77003"
+
+
 def test_editing_rejects_a_malformed_postcode(client, ids):
     login(client, "owner@test.io")
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload("!!!", name="Test Bistro"))
