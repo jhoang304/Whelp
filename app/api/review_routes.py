@@ -1,10 +1,11 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
 from app.models import db, Review, ReviewImage, ReviewResponse
 from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
-from app.api.utils import error_messages, review_with_details
+from app.api.utils import error_messages, reviews_with_details
 
 review_routes = Blueprint('reviews', __name__)
 
@@ -16,8 +17,13 @@ def get_reviews_by_userId(id):
   Returns every review written by a user, newest first, including the
   restaurant it was left on and any business-owner response.
   """
-  reviews = Review.query.filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
-  return [review_with_details(review) for review in reviews]
+  reviews = Review.query.options(
+    selectinload(Review.user),
+    selectinload(Review.review_images),
+    selectinload(Review.response),
+    selectinload(Review.restaurant),
+  ).filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
+  return reviews_with_details(reviews)
 
 
 # Add an image for a review

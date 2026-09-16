@@ -15,6 +15,7 @@ def test_list_entry_carries_the_card_fields(client, ids):
     assert entry["name"] == "Test Bistro"
     assert entry["user_id"] == ids["owner"]
     assert entry["avgRating"] == 4
+    assert entry["numReviews"] == 1
     assert entry["previewImage"] == "https://example.com/a.jpg"
     assert entry["oneReview"] == "Solid."
 

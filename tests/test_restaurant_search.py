@@ -46,3 +46,24 @@ def test_search_results_carry_ratings_and_preview(client):
     assert result["numReviews"] == 1
     assert result["previewImage"] == "https://example.com/a.jpg"
     assert result["oneReview"] == "Solid."
+
+
+def test_the_listing_and_search_agree_on_the_teaser_review(client, ids):
+    """
+    Both cards show one review's text. They used to disagree about which one:
+    the listing kept the newest, search the oldest.
+    """
+    from app.models import Review, User, db
+
+    latecomer = User(username="latecomer", email="latecomer@test.io", password="password",
+                     first_name="Late", last_name="Comer")
+    db.session.add(latecomer)
+    db.session.commit()
+    db.session.add(Review(user_id=latecomer.id, restaurant_id=ids["restaurant"],
+                          review="Came back, still good.", rating=5))
+    db.session.commit()
+
+    listed = client.get("/api/restaurants/").get_json()["Restaurants"][0]
+    searched = search(client, "bistro")[0]
+    assert listed["oneReview"] == searched["oneReview"] == "Came back, still good."
+    assert listed["numReviews"] == searched["numReviews"] == 2

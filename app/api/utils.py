@@ -1,3 +1,6 @@
+from sqlalchemy import func
+
+
 def error_messages(form_errors):
     """
     Flatten WTForms' {field: [messages]} into a plain list of messages.
@@ -58,23 +61,110 @@ def clear_other_previews(restaurant_id, keep_image_id=None):
         image.preview = False
 
 
-def preview_image_url(restaurant_id):
-    """The url of a restaurant's cover photo, or None when it has no photos."""
-    from app.models import RestaurantImage
+def preview_image_urls(restaurant_ids):
+    """
+    {restaurant_id: cover photo url} for the given restaurants, in one query.
 
-    image = RestaurantImage.query.filter(
-        RestaurantImage.restaurant_id == restaurant_id,
+    Where a restaurant has more than one preview -- nothing in the schema stops
+    it yet -- the highest id wins, which is what scanning the table in order
+    used to leave behind.
+    """
+    from app.models import RestaurantImage, db
+
+    ids = list(restaurant_ids)
+    if not ids:
+        return {}
+
+    rows = db.session.query(RestaurantImage.restaurant_id, RestaurantImage.url).filter(
+        RestaurantImage.restaurant_id.in_(ids),
         RestaurantImage.preview == True,  # noqa: E712 - SQLAlchemy column comparison
-    ).first()
-    return image.url if image else None
+    ).order_by(RestaurantImage.id).all()
+    return dict(rows)
 
 
-def review_with_details(review, restaurant=None):
+def preview_image_url(restaurant_id):
+    """The url of one restaurant's cover photo, or None when it has none."""
+    return preview_image_urls([restaurant_id]).get(restaurant_id)
+
+
+def review_stats(restaurant_ids):
+    """
+    {restaurant_id: (average rating, review count)}, in one aggregate query.
+
+    The listing used to run a Review query per restaurant on top of loading
+    every review in the table, and do the arithmetic in Python.
+    """
+    from app.models import Review, db
+
+    ids = list(restaurant_ids)
+    if not ids:
+        return {}
+
+    rows = db.session.query(
+        Review.restaurant_id,
+        func.avg(Review.rating),
+        func.count(Review.id),
+    ).filter(Review.restaurant_id.in_(ids)).group_by(Review.restaurant_id).all()
+    # Postgres averages integers as Decimal, SQLite as float.
+    return {restaurant_id: (float(average), count) for restaurant_id, average, count in rows}
+
+
+def latest_review_texts(restaurant_ids):
+    """
+    {restaurant_id: the text of its newest review} -- the one line a card
+    shows -- in one query, joined back through max(id) per restaurant.
+    """
+    from app.models import Review, db
+
+    ids = list(restaurant_ids)
+    if not ids:
+        return {}
+
+    newest = db.session.query(
+        Review.restaurant_id.label("restaurant_id"),
+        func.max(Review.id).label("id"),
+    ).filter(Review.restaurant_id.in_(ids)).group_by(Review.restaurant_id).subquery()
+
+    rows = db.session.query(Review.restaurant_id, Review.review).join(
+        newest, Review.id == newest.c.id).all()
+    return dict(rows)
+
+
+def restaurant_cards(restaurants):
+    """
+    The card payload the listing, the search results and a profile's business
+    list all show: the restaurant, its rating, how many reviews it has, its
+    cover photo, and one review's text.
+
+    Three queries whatever the number of restaurants. It is a batch helper and
+    not a Restaurant method because avoiding the per-restaurant query is the
+    whole point -- a summary() called in a loop would put them straight back.
+    """
+    restaurants = list(restaurants)
+    ids = [restaurant.id for restaurant in restaurants]
+    stats = review_stats(ids)
+    previews = preview_image_urls(ids)
+    latest = latest_review_texts(ids)
+
+    cards = []
+    for restaurant in restaurants:
+        average, count = stats.get(restaurant.id, (0, 0))
+        card = restaurant.to_dict()
+        card["avgRating"] = round(average, 2)
+        card["numReviews"] = count
+        card["previewImage"] = previews.get(restaurant.id)
+        card["oneReview"] = latest.get(restaurant.id)
+        cards.append(card)
+    return cards
+
+
+def review_with_details(review, restaurant=None, previews=None):
     """
     Serialize a review with its author, images, restaurant, and owner response.
 
     Shared by the review routes and the restaurant's own review listing, which
-    live on different blueprints.
+    live on different blueprints. `previews` is a {restaurant_id: url} map from
+    reviews_with_details; without one the cover photo costs a query per review.
     """
     restaurant = restaurant or review.restaurant
     data = review.to_dict()
@@ -82,9 +172,25 @@ def review_with_details(review, restaurant=None):
     data["reviewImages"] = [image.to_dict() for image in review.review_images]
     if restaurant:
         restaurant_data = restaurant.to_dict()
-        restaurant_data["previewImage"] = preview_image_url(restaurant.id)
+        restaurant_data["previewImage"] = (previews.get(restaurant.id) if previews is not None
+                                           else preview_image_url(restaurant.id))
         data["restaurant"] = restaurant_data
     else:
         data["restaurant"] = None
     data["response"] = review.response.to_dict() if review.response else None
     return data
+
+
+def reviews_with_details(reviews, restaurant=None):
+    """
+    Serialize a page of reviews, reading every cover photo they need in one
+    query instead of one per review.
+    """
+    reviews = list(reviews)
+    if restaurant is not None:
+        ids = [restaurant.id]
+    else:
+        ids = {review.restaurant_id for review in reviews}
+    previews = preview_image_urls(ids)
+    return [review_with_details(review, restaurant=restaurant, previews=previews)
+            for review in reviews]
