@@ -227,3 +227,42 @@ button.add-business-button:hover {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* Description: a real multi-line box with a character counter */
+.add-restaurant-form .description-field {
+    width: 500px;
+    margin: 0 var(--space-20);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.add-restaurant-form .description-field textarea {
+    width: 100%;
+    box-sizing: border-box;
+    border-radius: var(--radius-sm);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-gray-300);
+    font-size: var(--text-base);
+    font-family: inherit;
+    color: var(--color-gray-700);
+    resize: vertical;
+    transition: border-color 0.3s ease;
+}
+
+.add-restaurant-form .description-field textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+}
+
+/* beats `.add-restaurant-form span`, which is 125px wide for field labels */
+.add-restaurant-form .description-count {
+    align-self: flex-end;
+    width: auto;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
+.add-restaurant-form .description-count.near-limit {
+    color: var(--color-error);
+}
