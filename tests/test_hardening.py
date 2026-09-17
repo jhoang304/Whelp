@@ -184,3 +184,17 @@ def test_a_forwarded_address_cannot_buy_a_fresh_allowance(client, rate_limited):
                           headers={"X-Forwarded-For": f"203.0.113.{attempt}"})
         statuses.append(res.status_code)
     assert 429 in statuses, statuses
+
+
+def test_flaskenv_does_not_name_the_environment():
+    """
+    The flask CLI loads .flaskenv, and this file is committed -- so a value
+    here reaches the deployed service whenever it runs `flask db upgrade` or
+    `flask seed all`. APP_ENV=development in it beat the FLASK_ENV=production
+    that Render sets, which would have migrated the default schema while the
+    web process used the production one.
+    """
+    flaskenv = (pathlib.Path(__file__).resolve().parents[1] / ".flaskenv").read_text(encoding="utf-8")
+    named = [line for line in flaskenv.splitlines()
+             if line.strip().startswith(("APP_ENV", "FLASK_ENV"))]
+    assert not named, f".flaskenv must leave the environment to the deployment: {named}"
