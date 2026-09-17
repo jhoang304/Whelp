@@ -28,23 +28,29 @@ def fingerprint(secret):
     return hashlib.sha256(secret.encode("utf-8")).hexdigest()[:8]
 
 
+def describe_database(url):
+    """
+    What a deployment can say about its database without saying the password:
+    who it connects as, where, and a fingerprint to compare with another
+    environment that believes it holds the same credential.
+    """
+    password = url.password or ""
+    return [
+        f"environment={current_environment()} schema={os.environ.get('SCHEMA')}",
+        f"user={url.username} host={url.host} port={url.port} "
+        f"database={url.database} query={dict(url.query)}",
+        f"password length={len(password)} fingerprint={fingerprint(password)}",
+    ]
+
+
 @click.command("check-db")
 @with_appcontext
 def check_db():
     """Report which database this deployment will use, and whether it answers."""
     from app.models import db
 
-    url = make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])
-    password = url.password or ""
-
-    click.echo(f"check-db: environment={current_environment()} schema={os.environ.get('SCHEMA')}")
-    click.echo(
-        f"check-db: user={url.username} host={url.host} port={url.port} "
-        f"database={url.database} query={dict(url.query)}"
-    )
-    click.echo(
-        f"check-db: password length={len(password)} fingerprint={fingerprint(password)}"
-    )
+    for line in describe_database(make_url(current_app.config["SQLALCHEMY_DATABASE_URI"])):
+        click.echo(f"check-db: {line}")
 
     try:
         with db.engine.connect() as connection:

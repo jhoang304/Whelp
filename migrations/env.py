@@ -5,6 +5,7 @@ from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
+from sqlalchemy import text
 
 from alembic import context
 
@@ -78,6 +79,19 @@ def run_migrations_online():
         poolclass=pool.NullPool,
     )
 
+    # Say what we are about to connect to. A refused connection here is the
+    # commonest way a deploy fails, and the traceback it prints names neither
+    # the user nor the host it tried -- which is the whole question when the
+    # same credential works from a laptop. print, not the logger, so it lands
+    # in the build output whatever the logging config says.
+    try:
+        from app.cli import describe_database
+
+        for line in describe_database(connectable.url):
+            print(f"db-upgrade: {line}")
+    except Exception as error:  # a diagnostic must never break a migration
+        print(f"db-upgrade: could not describe the connection ({error})")
+
     with connectable.connect() as connection:
         context.configure(
             connection=connection,
@@ -87,7 +101,7 @@ def run_migrations_online():
         )
         # Create a schema (only in production)
         if environment == "production":
-            connection.execute(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}")
+            connection.execute(text(f"CREATE SCHEMA IF NOT EXISTS {SCHEMA}"))
 
         # Set search path to your schema (only in production)
         with context.begin_transaction():
