@@ -1,4 +1,5 @@
 from app.models import db, ReviewImage, environment, SCHEMA
+from sqlalchemy.sql import text
 
 def seed_reviewImages():
     revImage1 = ReviewImage(
@@ -27,8 +28,8 @@ def seed_reviewImages():
 def undo_reviewImages():
     if environment == "production":
         db.session.execute(
-            f"TRUNCATE table {SCHEMA}.review_images RESTART IDENTITY CASCADE;")
+            text(f"TRUNCATE table {SCHEMA}.review_images RESTART IDENTITY CASCADE;"))
     else:
-        db.session.execute("DELETE FROM review_images")
+        db.session.execute(text("DELETE FROM review_images"))
 
     db.session.commit()

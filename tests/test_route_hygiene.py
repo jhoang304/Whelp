@@ -113,34 +113,34 @@ def test_login_without_a_csrf_cookie_is_refused_not_crashed(app):
 
 def test_editing_without_a_csrf_cookie_is_a_400(client, ids):
     login(client, "owner@test.io")
-    client.delete_cookie("localhost", "csrf_token")
+    client.delete_cookie("csrf_token")
 
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload())
     assert res.status_code == 400
     assert any("csrf" in message.lower() for message in res.get_json()["errors"])
-    assert Restaurant.query.get(ids["restaurant"]).name == "Test Bistro"
+    assert db.session.get(Restaurant, ids["restaurant"]).name == "Test Bistro"
 
 
 def test_editing_a_restaurant_moves_updatedAt(client, ids):
-    restaurant = Restaurant.query.get(ids["restaurant"])
+    restaurant = db.session.get(Restaurant, ids["restaurant"])
     restaurant.updatedAt = datetime(2020, 1, 1)
     db.session.commit()
 
     login(client, "owner@test.io")
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload())
     assert res.status_code == 200, res.get_json()
-    assert Restaurant.query.get(ids["restaurant"]).updatedAt > datetime(2020, 1, 1)
+    assert db.session.get(Restaurant, ids["restaurant"]).updatedAt > datetime(2020, 1, 1)
 
 
 def test_updatedAt_moves_for_models_no_route_sets_by_hand(ids):
     """`onupdate` on the column, so this holds wherever a row is written."""
-    image = RestaurantImage.query.get(ids["image"])
+    image = db.session.get(RestaurantImage, ids["image"])
     image.updatedAt = datetime(2020, 1, 1)
     db.session.commit()
 
     image.preview = False
     db.session.commit()
-    assert RestaurantImage.query.get(ids["image"]).updatedAt > datetime(2020, 1, 1)
+    assert db.session.get(RestaurantImage, ids["image"]).updatedAt > datetime(2020, 1, 1)
 
 
 def test_an_unknown_api_path_is_a_json_404(client):

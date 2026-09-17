@@ -6,6 +6,9 @@ import { RootState } from "../../types";
 import { AppDispatch } from "../../store";
 import './SignupForm.css';
 
+// Mirrored from app/forms/signup_form.py; tests/test_auth.py checks they agree.
+const PASSWORD_MIN_LENGTH = 8;
+
 function SignupFormPage(): React.JSX.Element {
   const dispatch = useDispatch<AppDispatch>();
   const sessionUser = useSelector((state: RootState) => state.session.user);
@@ -21,7 +24,9 @@ function SignupFormPage(): React.JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (password === confirmPassword) {
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      setErrors([`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`]);
+    } else if (password === confirmPassword) {
       const data = await dispatch(signUp(username, email, first_name, last_name, password) as any);
       if (data) {
         setErrors(data);

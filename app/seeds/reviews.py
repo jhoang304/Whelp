@@ -1,5 +1,6 @@
 from app.models import db, Review, environment, SCHEMA
 from datetime import datetime, timedelta
+from sqlalchemy.sql import text
 
 def seed_reviews():
     review1 = Review(
@@ -195,8 +196,8 @@ def seed_reviews():
 def undo_reviews():
     if environment == "production":
         db.session.execute(
-            f"TRUNCATE table {SCHEMA}.reviews RESTART IDENTITY CASCADE;")
+            text(f"TRUNCATE table {SCHEMA}.reviews RESTART IDENTITY CASCADE;"))
     else:
-        db.session.execute("DELETE FROM reviews")
+        db.session.execute(text("DELETE FROM reviews"))
 
     db.session.commit()

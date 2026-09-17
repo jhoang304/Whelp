@@ -16,7 +16,8 @@ sys.path.insert(0, str(ROOT))
 # Configure before importing the app: it builds its config at import time.
 os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ["DATABASE_URL"] = "sqlite://"
-os.environ.pop("FLASK_ENV", None)
+for var in ("APP_ENV", "FLASK_ENV"):
+    os.environ.pop(var, None)
 for var in ("S3_BUCKET", "S3_KEY", "S3_SECRET"):
     os.environ.pop(var, None)
 
@@ -25,7 +26,13 @@ import logging  # noqa: E402
 import pytest  # noqa: E402
 
 from app import app as flask_app  # noqa: E402
+from app.extensions import limiter  # noqa: E402
 from app.models import db, User, Restaurant, Review, RestaurantImage  # noqa: E402
+
+# The suite signs in dozens of times a second, which is exactly what the limit
+# on /api/auth/login is there to stop. Storage is configured either way, so
+# tests/test_hardening.py can turn it back on and prove the limit works.
+limiter.enabled = False
 
 # Config sets SQLALCHEMY_ECHO=True; keep the SQL out of test output.
 for _logger_name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine"):

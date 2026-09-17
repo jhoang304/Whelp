@@ -28,7 +28,7 @@ def user(id):
     Query for a user by id and returns that user in a dictionary.
     Email addresses are private; use GET /api/auth/ for your own account.
     """
-    user = User.query.get(id)
+    user = db.session.get(User, id)
     if not user:
         return {'errors': ["User couldn't be found"]}, 404
     return user.to_dict_public()
@@ -41,7 +41,7 @@ def get_user_profile(id):
     businesses they own, and review/business counts. The email address is
     only included when the viewer is looking at their own profile.
     """
-    profile = User.query.get(id)
+    profile = db.session.get(User, id)
     if not profile:
         return {'errors': ["User couldn't be found"]}, 404
 
@@ -62,7 +62,7 @@ def edit_profile(id):
     profile picture URL (typically produced by POST /api/images/upload).
     Send "profile_image_url": "" to remove the current picture.
     """
-    profile = User.query.get(id)
+    profile = db.session.get(User, id)
     if not profile:
         return {'errors': ['The profile does not exist']}, 404
     if profile.id != current_user.id:

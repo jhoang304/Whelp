@@ -219,7 +219,7 @@ def test_deleting_a_restaurant_removes_its_uploaded_photos(client, ids, monkeypa
     res = client.delete(f"/api/restaurants/{ids['restaurant']}")
     assert res.status_code == 200, res.get_json()
 
-    assert Restaurant.query.get(ids["restaurant"]) is None
+    assert db.session.get(Restaurant, ids["restaurant"]) is None
     assert RestaurantImage.query.filter_by(restaurant_id=ids["restaurant"]).count() == 0
     # every uploaded object is gone; the seeded example.com image is left alone
     assert sorted(key for _, key in fake.deleted) == ["uploaded-1.png", "uploaded-2.png"]
@@ -241,7 +241,7 @@ def test_a_refused_delete_leaves_the_bucket_alone(client, ids, monkeypatch):
     login(client, "bystander@test.io")
     assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 403
     assert fake.deleted == []
-    assert Restaurant.query.get(ids["restaurant"]) is not None
+    assert db.session.get(Restaurant, ids["restaurant"]) is not None
 
 
 def test_a_bucket_failure_does_not_fail_the_delete(client, ids, monkeypatch):
@@ -258,7 +258,7 @@ def test_a_bucket_failure_does_not_fail_the_delete(client, ids, monkeypatch):
 
     login(client, "owner@test.io")
     assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 200
-    assert Restaurant.query.get(ids["restaurant"]) is None
+    assert db.session.get(Restaurant, ids["restaurant"]) is None
 
 
 def test_remove_files_from_s3_excludes_keys_s3_refused(monkeypatch):

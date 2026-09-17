@@ -9,7 +9,7 @@ from sqlalchemy import pool
 from alembic import context
 
 import os
-environment = os.getenv("FLASK_ENV")
+environment = os.getenv("APP_ENV") or os.getenv("FLASK_ENV")
 SCHEMA = os.environ.get("SCHEMA")
 
 

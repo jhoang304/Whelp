@@ -20,11 +20,11 @@ def restaurants():
 # Get Single Restaurant by Id
 @restaurant_routes.route('/<int:id>')
 def restaurants_by_id(id):
-    SingleRestaurant = Restaurant.query.get(id)
+    SingleRestaurant = db.session.get(Restaurant, id)
     if not SingleRestaurant:
         return {"errors": ["Restaurant couldn't be found"]}, 404
 
-    theUser=User.query.get(SingleRestaurant.user_id)
+    theUser=db.session.get(User, SingleRestaurant.user_id)
     images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).all()
 
     reviews=Review.query.filter(Review.restaurant_id==id).all()
@@ -108,7 +108,7 @@ def create_restaurant():
 @login_required
 def create_restaurant_image(restaurantId):
 
-    restaurant = Restaurant.query.get(restaurantId)
+    restaurant = db.session.get(Restaurant, restaurantId)
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
 
@@ -144,7 +144,7 @@ def create_restaurant_image(restaurantId):
 @restaurant_routes.route('/<int:restaurantId>', methods=["PUT"])
 @login_required
 def edit_restaurant_by_restaurant_id(restaurantId):
-    restaurant = Restaurant.query.get(restaurantId)
+    restaurant = db.session.get(Restaurant, restaurantId)
 
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
@@ -204,7 +204,7 @@ def _still_referenced(image_url):
 @restaurant_routes.route('/<int:restaurantId>', methods=["DELETE"])
 @login_required
 def delete_restaurant(restaurantId):
-    restaurant = Restaurant.query.get(restaurantId)
+    restaurant = db.session.get(Restaurant, restaurantId)
     if not restaurant:
         return {"errors": ["Restaurant couldn't be found"]}, 404
 
@@ -276,7 +276,7 @@ def get_reviews_by_restaurant_id(id):
     Returns every review for a restaurant, newest first, including the author,
     review images, and any business-owner response.
     """
-    restaurant = Restaurant.query.get(id)
+    restaurant = db.session.get(Restaurant, id)
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
 
@@ -292,7 +292,7 @@ def get_reviews_by_restaurant_id(id):
 @restaurant_routes.route('/<int:id>/reviews', methods=["POST"])
 @login_required
 def create_review_by_restaurant_id(id):
-    restaurant = Restaurant.query.get(id)
+    restaurant = db.session.get(Restaurant, id)
 
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404

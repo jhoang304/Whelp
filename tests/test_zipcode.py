@@ -4,7 +4,7 @@ are accepted.
 """
 import pytest
 
-from app.models import Restaurant
+from app.models import Restaurant, db
 from tests.conftest import login
 
 
@@ -128,7 +128,7 @@ def test_editing_rejects_a_malformed_postcode(client, ids):
     login(client, "owner@test.io")
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload("!!!", name="Test Bistro"))
     assert res.status_code == 400
-    assert Restaurant.query.get(ids["restaurant"]).zipcode == "77001"
+    assert db.session.get(Restaurant, ids["restaurant"]).zipcode == "77001"
 
 
 def test_server_and_client_postcode_rules_are_the_same():

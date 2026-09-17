@@ -1,4 +1,4 @@
-from app.models import Restaurant
+from app.models import Restaurant, db
 from tests.conftest import login
 
 
@@ -30,14 +30,14 @@ def test_non_owner_cannot_edit_restaurant(client, ids):
     login(client, "bystander@test.io")
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload())
     assert res.status_code == 403
-    assert Restaurant.query.get(ids["restaurant"]).name == "Test Bistro"
+    assert db.session.get(Restaurant, ids["restaurant"]).name == "Test Bistro"
 
 
 def test_non_owner_cannot_delete_restaurant(client, ids):
     login(client, "bystander@test.io")
     res = client.delete(f"/api/restaurants/{ids['restaurant']}")
     assert res.status_code == 403
-    assert Restaurant.query.get(ids["restaurant"]) is not None
+    assert db.session.get(Restaurant, ids["restaurant"]) is not None
 
 
 def test_owner_can_edit_restaurant(client, ids):
@@ -45,7 +45,7 @@ def test_owner_can_edit_restaurant(client, ids):
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload())
     assert res.status_code == 200, res.get_json()
     assert res.get_json()["name"] == "Renamed Bistro"
-    assert Restaurant.query.get(ids["restaurant"]).city == "Austin"
+    assert db.session.get(Restaurant, ids["restaurant"]).city == "Austin"
 
 
 def test_edit_does_not_transfer_ownership(client, ids):
@@ -54,14 +54,14 @@ def test_edit_does_not_transfer_ownership(client, ids):
     res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload())
     assert res.status_code == 200
     assert res.get_json()["user_id"] == ids["owner"]
-    assert Restaurant.query.get(ids["restaurant"]).user_id == ids["owner"]
+    assert db.session.get(Restaurant, ids["restaurant"]).user_id == ids["owner"]
 
 
 def test_owner_can_delete_restaurant(client, ids):
     login(client, "owner@test.io")
     res = client.delete(f"/api/restaurants/{ids['restaurant']}")
     assert res.status_code == 200, res.get_json()
-    assert Restaurant.query.get(ids["restaurant"]) is None
+    assert db.session.get(Restaurant, ids["restaurant"]) is None
 
 
 def test_edit_and_delete_missing_restaurant_is_404(client):
@@ -78,7 +78,7 @@ def test_edit_validation_errors_are_a_list_of_messages(client, ids):
     errors = res.get_json()["errors"]
     assert isinstance(errors, list) and errors
     assert all(isinstance(message, str) for message in errors)
-    assert Restaurant.query.get(ids["restaurant"]).name == "Test Bistro"
+    assert db.session.get(Restaurant, ids["restaurant"]).name == "Test Bistro"
 
 
 def test_a_website_that_is_not_a_dot_com_is_accepted(client, ids):
@@ -87,4 +87,4 @@ def test_a_website_that_is_not_a_dot_com_is_accepted(client, ids):
     res = client.put(f"/api/restaurants/{ids['restaurant']}",
                      json=payload(website="https://runchickenrun.com/las-vegas/"))
     assert res.status_code == 200, res.get_json()
-    assert Restaurant.query.get(ids["restaurant"]).website == "https://runchickenrun.com/las-vegas/"
+    assert db.session.get(Restaurant, ids["restaurant"]).website == "https://runchickenrun.com/las-vegas/"

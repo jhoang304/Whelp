@@ -1,11 +1,11 @@
 import json
 import os
 from flask import Flask, make_response, render_template, request, session, redirect
-from flask_cors import CORS
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import LoginManager
 from werkzeug.exceptions import HTTPException, InternalServerError
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .models import db, User
 from .api.user_routes import user_routes
 from .api.auth_routes import auth_routes
@@ -15,6 +15,8 @@ from .api.review_routes import review_routes
 from .api.image_routes import image_routes
 from .seeds import seed_commands
 from .config import Config
+from .environment import is_production
+from .extensions import limiter
 
 app = Flask(__name__, static_folder='../react-app/build', static_url_path='/')
 
@@ -25,7 +27,7 @@ login.login_view = 'auth.unauthorized'
 
 @login.user_loader
 def load_user(id):
-    return User.query.get(int(id))
+    return db.session.get(User, int(id))
 
 
 # Tell flask about our seed commands
@@ -38,12 +40,14 @@ app.register_blueprint(restaurant_routes, url_prefix='/api/restaurants')
 app.register_blueprint(resImage_routes, url_prefix='/api/restaurant-images')
 app.register_blueprint(review_routes, url_prefix='/api/reviews')
 app.register_blueprint(image_routes, url_prefix='/api/images')
+# Before anything reads an address: the rate limit is keyed on one.
+if app.config["TRUSTED_PROXY_HOPS"]:
+    hops = app.config["TRUSTED_PROXY_HOPS"]
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops, x_proto=hops)
+
 db.init_app(app)
 Migrate(app, db)
-
-# Application Security
-CORS(app)
-
+limiter.init_app(app)
 
 # Since we are deploying with Docker and Flask,
 # we won't be using a buildpack when we deploy to Heroku.
@@ -52,7 +56,7 @@ CORS(app)
 # Well.........
 @app.before_request
 def https_redirect():
-    if os.environ.get('FLASK_ENV') == 'production':
+    if is_production():
         if request.headers.get('X-Forwarded-Proto') == 'http':
             url = request.url.replace('http://', 'https://', 1)
             code = 301
@@ -64,9 +68,8 @@ def inject_csrf_token(response):
     response.set_cookie(
         'csrf_token',
         generate_csrf(),
-        secure=True if os.environ.get('FLASK_ENV') == 'production' else False,
-        samesite='Strict' if os.environ.get(
-            'FLASK_ENV') == 'production' else None,
+        secure=is_production(),
+        samesite='Strict' if is_production() else None,
         httponly=True)
     return response
 

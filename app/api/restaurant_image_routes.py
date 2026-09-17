@@ -15,7 +15,7 @@ def delete_res_image(imageId):
     Delete a restaurant image. Allowed for the user who uploaded it or the
     owner of the restaurant. Files we uploaded to S3 are removed as well.
     """
-    image = RestaurantImage.query.get(imageId)
+    image = db.session.get(RestaurantImage, imageId)
     if not image:
         return {"errors": ["Image couldn't be found"]}, 404
 
@@ -75,7 +75,7 @@ def set_res_image_as_cover(imageId):
     restaurant's other photos lose `preview` in the same transaction so
     exactly one row can ever be the cover.
     """
-    image = RestaurantImage.query.get(imageId)
+    image = db.session.get(RestaurantImage, imageId)
     if not image:
         return {"errors": ["Image couldn't be found"]}, 404
 

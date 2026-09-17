@@ -1,4 +1,5 @@
 from app.models import db, RestaurantImage, environment, SCHEMA
+from sqlalchemy.sql import text
 
 def seed_restaurantImages():
     res1_image1 = RestaurantImage(
@@ -259,8 +260,8 @@ def seed_restaurantImages():
 def undo_restaurantImages():
     if environment == "production":
         db.session.execute(
-            f"TRUNCATE table {SCHEMA}.restaurant_images RESTART IDENTITY CASCADE;")
+            text(f"TRUNCATE table {SCHEMA}.restaurant_images RESTART IDENTITY CASCADE;"))
     else:
-        db.session.execute("DELETE FROM restaurant_images")
+        db.session.execute(text("DELETE FROM restaurant_images"))
 
     db.session.commit()

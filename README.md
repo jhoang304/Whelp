@@ -43,6 +43,7 @@ The website uses the following technologies:
 ## Launching locally instructions:
 Running the backend server:
 * From the root directory, copy `.env.example` to `.env` (the defaults use a local SQLite database)
+* Put a `SECRET_KEY` in it. The app refuses to boot without one; generate yours with `python -c "import secrets; print(secrets.token_hex(32))"`
 * Run "pipenv install -r requirements.txt" to install dependencies
 * Run "pipenv shell" to run the virtual environment
 * Run "flask db upgrade" to create a local database
@@ -55,6 +56,22 @@ Running the frontend server:
 * Run "npm start" to boot up the frontend server and open a browser tab to the landing page
 
 ### Deploying
+
+Environment variables the deployed service needs:
+
+| Variable | Required | What it does |
+|---|---|---|
+| `SECRET_KEY` | yes | Signs the session cookie and CSRF tokens. Boot fails without it. Generate with `python -c "import secrets; print(secrets.token_hex(32))"`, and use a different value from your local one |
+| `DATABASE_URL` | yes | Postgres connection string. A `postgres://` prefix is rewritten to `postgresql://` for SQLAlchemy |
+| `APP_ENV` | yes | Set to `production`. Addresses `SCHEMA`, forces https, and marks the session cookie Secure and SameSite=Strict. `FLASK_ENV` is still read as a fallback, since Flask removed it in 2.3 |
+| `SCHEMA` | yes | The Postgres schema this app owns |
+| `S3_BUCKET`, `S3_KEY`, `S3_SECRET` | no | Photo uploads. Without them the photo dialogs fall back to pasting an image URL |
+| `RATELIMIT_STORAGE_URI` | no | Where the login/signup rate limit is counted. The default is in-process, so each worker gets its own allowance. Pointing it at Redis makes the limit mean one thing across workers, and needs the client too: install `flask-limiter[redis]` |
+| `TRUSTED_PROXY_HOPS` | no | How many reverse proxies stand in front of the app, so the real client address can be read from `X-Forwarded-For`. Defaults to 1 in production and 0 elsewhere. Leave it at 0 where nothing proxies: trusting that header without a proxy lets a caller spoof an address and walk around the rate limit |
+| `SQLALCHEMY_ECHO` | no | `1` logs every SQL statement. Development only, and ignored in production |
+
+The Python version is pinned in `.python-version`.
+
 Keep `flask db upgrade && flask seed all` in the build command. Migrations run on every deploy, and the seed step now does nothing once the database has data, so a redeploy no longer erases what users have added. Run `flask seed all --reset` only when you really want a fresh copy of the demo data.
 
 Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.

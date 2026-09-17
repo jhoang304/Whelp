@@ -74,7 +74,7 @@ def test_owner_can_promote_an_existing_photo_to_cover(client, ids):
     covers = previews(ids["restaurant"])
     assert len(covers) == 1
     assert covers[0].id == new_id
-    assert RestaurantImage.query.get(ids["image"]).preview is False
+    assert db.session.get(RestaurantImage, ids["image"]).preview is False
 
 
 def test_setting_the_current_cover_again_is_a_no_op(client, ids):
@@ -93,7 +93,7 @@ def test_only_the_owner_can_promote_a_photo(client, ids):
     login(client, "reviewer@test.io")
     res = client.put(f"/api/restaurant-images/{new_id}/cover")
     assert res.status_code == 403
-    assert RestaurantImage.query.get(new_id).preview is False
+    assert db.session.get(RestaurantImage, new_id).preview is False
 
 
 def test_promoting_requires_login_and_an_existing_image(client, ids):
@@ -123,7 +123,7 @@ def test_deleting_the_cover_promotes_another_photo(client, ids):
     covers = previews(ids["restaurant"])
     assert len(covers) == 1
     assert covers[0].id == second, "the oldest remaining photo takes over"
-    assert RestaurantImage.query.get(third).preview is False
+    assert db.session.get(RestaurantImage, third).preview is False
 
 
 def test_the_listing_keeps_a_cover_after_the_current_one_is_deleted(client, ids):
