@@ -4,11 +4,13 @@ logging that stays off, a password floor, and a login route that cannot be
 hammered.
 """
 import importlib
+import io
 import os
 import re
 import pathlib
 
 import pytest
+from dotenv import dotenv_values
 
 from app.config import Config
 from app.environment import current_environment, is_production
@@ -184,3 +186,42 @@ def test_a_forwarded_address_cannot_buy_a_fresh_allowance(client, rate_limited):
                           headers={"X-Forwarded-For": f"203.0.113.{attempt}"})
         statuses.append(res.status_code)
     assert 429 in statuses, statuses
+
+
+ENVIRONMENT_KEYS = {"APP_ENV", "FLASK_ENV"}
+
+
+def test_flaskenv_does_not_name_the_environment():
+    """
+    The flask CLI loads .flaskenv, and this file is committed -- so a value
+    here reaches the deployed service whenever it runs `flask db upgrade` or
+    `flask seed all`. APP_ENV=development in it beat the FLASK_ENV=production
+    that Render sets, which would have migrated the default schema while the
+    web process used the production one.
+
+    Read with the parser the CLI uses, so the check cannot disagree with it
+    about what the file says.
+    """
+    flaskenv = pathlib.Path(__file__).resolve().parents[1] / ".flaskenv"
+    named = sorted(ENVIRONMENT_KEYS & set(dotenv_values(flaskenv)))
+    assert not named, f".flaskenv must leave the environment to the deployment: {named}"
+
+
+@pytest.mark.parametrize("line", [
+    "APP_ENV=development",
+    "export APP_ENV=development",
+    "export FLASK_ENV='production'",
+])
+def test_the_guard_reads_every_form_the_cli_accepts(line):
+    """
+    The first version of the guard matched line prefixes, which `export
+    APP_ENV=development` walks straight past -- the bug back, with the test
+    still green. Parsing is what closes that.
+    """
+    assert ENVIRONMENT_KEYS & set(dotenv_values(stream=io.StringIO(line))), line
+
+
+def test_the_guard_leaves_similarly_named_keys_alone():
+    """Prefix matching also tripped over these, which name nothing."""
+    keys = set(dotenv_values(stream=io.StringIO("APP_ENV_LABEL=staging\nFLASK_ENVIRONMENT=x")))
+    assert not ENVIRONMENT_KEYS & keys
