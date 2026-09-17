@@ -5,7 +5,11 @@ does this service actually have, and does it accept us?
 import pytest
 from sqlalchemy.exc import OperationalError
 
-from app.cli import fingerprint
+import pathlib
+import re
+
+from app.cli import describe_database, fingerprint
+from sqlalchemy.engine.url import make_url
 from app.models import db
 
 
@@ -61,3 +65,31 @@ def refuse():
     raise OperationalError(
         "SELECT 1", {},
         Exception("FATAL:  password authentication failed for user 'neondb_owner'"))
+
+
+def test_the_description_is_shared_with_the_migration():
+    """
+    `flask db upgrade` prints these lines too, so a failed deploy says which
+    database it tried even when nobody added check-db to the build command.
+    """
+    url = make_url("postgresql://neondb_owner:sixteen-chars-x@ep-x-pooler.neon.tech:5432/neondb?sslmode=require")
+    lines = describe_database(url)
+
+    assert any("user=neondb_owner" in line and "host=ep-x-pooler.neon.tech" in line for line in lines)
+    assert any("password length=15" in line for line in lines)
+    assert not any("sixteen-chars-x" in line for line in lines)
+
+
+def test_the_migration_runner_executes_no_bare_strings():
+    """
+    SQLAlchemy 2.0 refuses a raw string, and the CREATE SCHEMA in env.py runs
+    only when APP_ENV is production -- so the SQLite suite never reaches it and
+    the first successful deploy would have been the one to find out.
+    """
+    source = (pathlib.Path(__file__).resolve().parents[1]
+              / "migrations" / "env.py").read_text(encoding="utf-8")
+    executes = [line.strip() for line in source.splitlines() if "connection.execute(" in line]
+
+    assert executes, "expected the migration runner to execute something"
+    for call in executes:
+        assert "connection.execute(text(" in call, f"{call} needs text()"
