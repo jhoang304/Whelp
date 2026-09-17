@@ -28,9 +28,26 @@ logger = logging.getLogger('alembic.env')
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from flask import current_app
-config.set_main_option(
-    'sqlalchemy.url',
-    str(current_app.extensions['migrate'].db.engine.url).replace('%', '%%'))
+
+
+def get_engine_url():
+    """
+    The database url, password included, for alembic to reconnect with.
+
+    Not str(url): SQLAlchemy 2.0 renders the password as *** there, and
+    alembic parses this string straight back into a url -- so the migration
+    would connect as neondb_owner with the literal password ***, and the
+    server would refuse it. SQLAlchemy 1.4 did include the password, which is
+    why this only broke when the dependencies moved.
+
+    The doubled %% is for the ini-file interpolation alembic reads this
+    through, not for the url itself.
+    """
+    url = current_app.extensions['migrate'].db.engine.url
+    return url.render_as_string(hide_password=False).replace('%', '%%')
+
+
+config.set_main_option('sqlalchemy.url', get_engine_url())
 target_metadata = current_app.extensions['migrate'].db.metadata
 
 # other values from the config, defined by the needs of env.py,
