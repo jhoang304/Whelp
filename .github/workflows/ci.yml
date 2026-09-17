@@ -30,10 +30,9 @@ jobs:
 
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
-          # Not the Pipfile's python_version: it says 3.9 while Render builds on
-          # 3.7 and this suite is developed on 3.11. Pinning the real runtime
-          # everywhere is #32; until then CI states which one it ran.
-          python-version: '3.11'
+          # One pin for the runtime: .python-version is what Render reads, and
+          # what the Pipfile now agrees with.
+          python-version-file: .python-version
           cache: pip
 
       - name: Install dependencies
@@ -47,10 +46,9 @@ jobs:
         run: pytest
 
       - name: Audit dependencies
-        # Advisory for now: #32 documents the known CVEs in the pinned Flask,
-        # Werkzeug and SQLAlchemy, so this would fail every run until that
-        # lands. Read the output, then make it blocking once it is green.
-        continue-on-error: true
+        # Blocking, now that the pinned set is clean: it was 63 advisories
+        # across 9 packages when this workflow was written, which is why the
+        # step started out advisory. A new one is something to answer.
         run: |
           pip install pip-audit
           pip-audit --requirement requirements.txt

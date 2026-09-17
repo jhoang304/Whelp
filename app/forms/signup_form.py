@@ -3,6 +3,10 @@ from wtforms import StringField
 from wtforms.validators import DataRequired, Email, ValidationError, Length
 from app.models import User
 
+# Mirrored in react-app/src/components/SignupFormPage, which checks it before
+# the round trip. Keep the two in step.
+PASSWORD_MIN_LENGTH = 8
+
 
 def user_exists(form, field):
     # Checking if user exists
@@ -42,4 +46,6 @@ class SignUpForm(FlaskForm):
         DataRequired(message="Last name is required."),
         Length(min=1, max=50, message="Last name must be 50 characters or fewer.")])
     password = StringField('password', validators=[
-        DataRequired(message="Password is required.")])
+        DataRequired(message="Password is required."),
+        Length(min=PASSWORD_MIN_LENGTH,
+               message=f"Password must be at least {PASSWORD_MIN_LENGTH} characters.")])

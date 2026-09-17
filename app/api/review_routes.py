@@ -31,7 +31,7 @@ def get_reviews_by_userId(id):
 @login_required
 def create_image_by_review_id(id):
 
-  review = Review.query.get(id)
+  review = db.session.get(Review, id)
   if not review:
     return {"errors": ["Review couldn't be found"]}, 404
 
@@ -58,7 +58,7 @@ def create_image_by_review_id(id):
 @login_required
 def edit_review(id):
 
-  review = Review.query.get(id)
+  review = db.session.get(Review, id)
 
   if not review:
     return {"errors": ["review couldn't be found"]}, 404
@@ -82,7 +82,7 @@ def edit_review(id):
 @review_routes.route('/<int:id>', methods=["DELETE"])
 @login_required
 def delete_review(id):
-  review = Review.query.get(id)
+  review = db.session.get(Review, id)
 
   if review is None:
     return {"errors": ["Review couldn't be found"]}, 404
@@ -105,7 +105,7 @@ def _load_review_for_owner(review_id):
   Return (review, None) when the review exists and the current user owns the
   restaurant it was left on; otherwise (None, (json, status)).
   """
-  review = Review.query.get(review_id)
+  review = db.session.get(Review, review_id)
   if not review:
     return None, ({"errors": ["Review couldn't be found"]}, 404)
   if not review.restaurant or review.restaurant.user_id != current_user.id:

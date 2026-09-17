@@ -3,7 +3,7 @@ Review create/edit failures must come back in the same shape as every other
 route: {"errors": [...]}, carrying the real WTForms messages. The UI reads that
 list to tell the user why a review was rejected (see issue #21).
 """
-from app.models import Review
+from app.models import Review, db
 from tests.conftest import login
 
 
@@ -52,7 +52,7 @@ def test_edit_review_validation_errors_are_a_list_of_messages(client, ids):
     assert isinstance(errors, list) and errors
     assert all(isinstance(message, str) for message in errors)
     # the copy-pasted "stars" key from another project is gone
-    assert Review.query.get(ids["review"]).review == "Solid."
+    assert db.session.get(Review, ids["review"]).review == "Solid."
 
 
 def test_edit_someone_elses_review_is_403(client, ids):
@@ -60,11 +60,11 @@ def test_edit_someone_elses_review_is_403(client, ids):
     res = client.put(f"/api/reviews/{ids['review']}", json={"review": "Nope.", "rating": 1})
     assert res.status_code == 403
     assert res.get_json()["errors"] == ["You can only edit your own reviews"]
-    assert Review.query.get(ids["review"]).review == "Solid."
+    assert db.session.get(Review, ids["review"]).review == "Solid."
 
 
 def test_owner_can_edit_their_own_review(client, ids):
     login(client, "reviewer@test.io")
     res = client.put(f"/api/reviews/{ids['review']}", json={"review": "Updated.", "rating": 5})
     assert res.status_code == 200, res.get_json()
-    assert Review.query.get(ids["review"]).review == "Updated."
+    assert db.session.get(Review, ids["review"]).review == "Updated."
