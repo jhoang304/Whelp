@@ -13,6 +13,7 @@ from .api.restaurant_routes import restaurant_routes
 from .api.restaurant_image_routes import resImage_routes
 from .api.review_routes import review_routes
 from .api.image_routes import image_routes
+from .cli import check_db
 from .seeds import seed_commands
 from .config import Config
 from .environment import is_production
@@ -32,6 +33,7 @@ def load_user(id):
 
 # Tell flask about our seed commands
 app.cli.add_command(seed_commands)
+app.cli.add_command(check_db)
 
 app.config.from_object(Config)
 app.register_blueprint(user_routes, url_prefix='/api/users')
