@@ -5,6 +5,7 @@ from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import LoginManager
 from werkzeug.exceptions import HTTPException, InternalServerError
+from werkzeug.middleware.proxy_fix import ProxyFix
 from .models import db, User
 from .api.user_routes import user_routes
 from .api.auth_routes import auth_routes
@@ -39,6 +40,11 @@ app.register_blueprint(restaurant_routes, url_prefix='/api/restaurants')
 app.register_blueprint(resImage_routes, url_prefix='/api/restaurant-images')
 app.register_blueprint(review_routes, url_prefix='/api/reviews')
 app.register_blueprint(image_routes, url_prefix='/api/images')
+# Before anything reads an address: the rate limit is keyed on one.
+if app.config["TRUSTED_PROXY_HOPS"]:
+    hops = app.config["TRUSTED_PROXY_HOPS"]
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=hops, x_proto=hops)
+
 db.init_app(app)
 Migrate(app, db)
 limiter.init_app(app)

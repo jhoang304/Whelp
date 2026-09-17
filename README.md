@@ -66,7 +66,8 @@ Environment variables the deployed service needs:
 | `APP_ENV` | yes | Set to `production`. Addresses `SCHEMA`, forces https, and marks the session cookie Secure and SameSite=Strict. `FLASK_ENV` is still read as a fallback, since Flask removed it in 2.3 |
 | `SCHEMA` | yes | The Postgres schema this app owns |
 | `S3_BUCKET`, `S3_KEY`, `S3_SECRET` | no | Photo uploads. Without them the photo dialogs fall back to pasting an image URL |
-| `RATELIMIT_STORAGE_URI` | no | Where the login/signup rate limit is counted. The default is in-process, so each worker gets its own allowance; point it at Redis to make the limit mean one thing |
+| `RATELIMIT_STORAGE_URI` | no | Where the login/signup rate limit is counted. The default is in-process, so each worker gets its own allowance. Pointing it at Redis makes the limit mean one thing across workers, and needs the client too: install `flask-limiter[redis]` |
+| `TRUSTED_PROXY_HOPS` | no | How many reverse proxies stand in front of the app, so the real client address can be read from `X-Forwarded-For`. Defaults to 1 in production and 0 elsewhere. Leave it at 0 where nothing proxies: trusting that header without a proxy lets a caller spoof an address and walk around the rate limit |
 | `SQLALCHEMY_ECHO` | no | `1` logs every SQL statement. Development only, and ignored in production |
 
 The Python version is pinned in `.python-version`.

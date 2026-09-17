@@ -146,3 +146,41 @@ def test_signup_is_rate_limited_too(client, rate_limited):
     statuses = [client.post("/api/auth/signup", json=signup_body("password")).status_code
                 for _ in range(11)]
     assert statuses.count(429) >= 1, statuses
+
+
+def test_the_proxy_hop_count_follows_the_environment(monkeypatch):
+    """
+    Behind Render's proxy the client address is in X-Forwarded-For, so the
+    limiter needs ProxyFix to see it -- and must not trust that header
+    anywhere a proxy does not actually stand.
+    """
+    import app.config
+
+    monkeypatch.setenv("APP_ENV", "production")
+    monkeypatch.delenv("TRUSTED_PROXY_HOPS", raising=False)
+    assert importlib.reload(app.config).Config.TRUSTED_PROXY_HOPS == 1
+
+    monkeypatch.setenv("APP_ENV", "development")
+    assert importlib.reload(app.config).Config.TRUSTED_PROXY_HOPS == 0
+
+    monkeypatch.setenv("TRUSTED_PROXY_HOPS", "2")
+    assert importlib.reload(app.config).Config.TRUSTED_PROXY_HOPS == 2
+
+    monkeypatch.delenv("TRUSTED_PROXY_HOPS")
+    importlib.reload(app.config)
+
+
+def test_a_forwarded_address_cannot_buy_a_fresh_allowance(client, rate_limited):
+    """
+    With no proxy in front, X-Forwarded-For is whatever the caller typed. If
+    it keyed the limit, a script would change it each request and never be
+    throttled at all.
+    """
+    client.get("/api/auth/")
+    statuses = []
+    for attempt in range(12):
+        res = client.post("/api/auth/login",
+                          json={"email": "owner@test.io", "password": "wrong"},
+                          headers={"X-Forwarded-For": f"203.0.113.{attempt}"})
+        statuses.append(res.status_code)
+    assert 429 in statuses, statuses
