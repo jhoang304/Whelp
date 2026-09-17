@@ -72,6 +72,8 @@ Environment variables the deployed service needs:
 
 The Python version is pinned in `.python-version`.
 
+If a deploy fails to reach the database, put `flask check-db` in the build command ahead of `flask db upgrade`. It prints which user, host and database the service actually received, the password's length and an eight-character fingerprint of it -- never the password itself -- and then either connects or reports the driver's one-line refusal. Running it locally against the same connection string and comparing fingerprints is what tells you whether the service holds the value you think it does.
+
 Keep `flask db upgrade && flask seed all` in the build command. Migrations run on every deploy, and the seed step now does nothing once the database has data, so a redeploy no longer erases what users have added. Run `flask seed all --reset` only when you really want a fresh copy of the demo data.
 
 Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.
