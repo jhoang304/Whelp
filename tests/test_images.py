@@ -162,11 +162,11 @@ def test_object_is_public_treats_only_403_as_private(monkeypatch):
     assert aws_helpers._object_is_public("https://whelp-test-bucket.s3.amazonaws.com/x.png") is True
 
 
-def test_remove_file_from_s3_only_touches_our_bucket(monkeypatch):
+def test_remove_key_from_s3_deletes_the_key_it_is_given(monkeypatch):
     fake = configure_s3(monkeypatch)
-    assert aws_helpers.remove_file_from_s3("https://whelp-test-bucket.s3.amazonaws.com/abc.png") is True
-    assert fake.deleted == [("whelp-test-bucket", "abc.png")]
-    assert aws_helpers.remove_file_from_s3("https://i.imgur.com/other.png") is False
+    assert aws_helpers.remove_key_from_s3("uploads/1/abc.png") is True
+    assert fake.deleted == [("whelp-test-bucket", "uploads/1/abc.png")]
+    assert aws_helpers.remove_key_from_s3(None) is False
     assert len(fake.deleted) == 1
 
 
@@ -187,20 +187,18 @@ def test_delete_restaurant_image_permissions(client, ids, monkeypatch):
 BUCKET_URL = "https://whelp-test-bucket.s3.amazonaws.com/"
 
 
-def test_remove_files_from_s3_batches_and_skips_foreign_urls(monkeypatch):
+def test_remove_keys_from_s3_batches(monkeypatch):
     fake = configure_s3(monkeypatch)
-    deleted = aws_helpers.remove_files_from_s3([
-        f"{BUCKET_URL}one.png",
-        "https://i.imgur.com/not-ours.png",
-        f"{BUCKET_URL}two.jpg",
-    ])
-    assert deleted == ["one.png", "two.jpg"]
-    assert fake.deleted == [("whelp-test-bucket", "one.png"), ("whelp-test-bucket", "two.jpg")]
+    deleted = aws_helpers.remove_keys_from_s3(["uploads/1/one.png", None, "uploads/1/two.jpg"])
+    assert deleted == ["uploads/1/one.png", "uploads/1/two.jpg"]
+    assert fake.deleted == [("whelp-test-bucket", "uploads/1/one.png"),
+                            ("whelp-test-bucket", "uploads/1/two.jpg")]
 
 
-def test_remove_files_from_s3_without_our_urls_makes_no_call(monkeypatch):
+def test_remove_keys_from_s3_without_keys_makes_no_call(monkeypatch):
+    """A row with no key -- hot-linked, or someone else's upload -- deletes nothing."""
     fake = configure_s3(monkeypatch)
-    assert aws_helpers.remove_files_from_s3(["https://i.imgur.com/other.png"]) == []
+    assert aws_helpers.remove_keys_from_s3([None, ""]) == []
     assert fake.deleted == []
 
 
@@ -209,9 +207,9 @@ def test_deleting_a_restaurant_removes_its_uploaded_photos(client, ids, monkeypa
     fake = configure_s3(monkeypatch)
     db.session.add_all([
         RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-1.png",
-                        preview=False, createdByUserId=ids["owner"]),
+                        s3_key="uploaded-1.png", preview=False, createdByUserId=ids["owner"]),
         RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}uploaded-2.png",
-                        preview=False, createdByUserId=ids["reviewer"]),
+                        s3_key="uploaded-2.png", preview=False, createdByUserId=ids["reviewer"]),
     ])
     db.session.commit()
 
@@ -261,21 +259,19 @@ def test_a_bucket_failure_does_not_fail_the_delete(client, ids, monkeypatch):
     assert db.session.get(Restaurant, ids["restaurant"]) is None
 
 
-def test_remove_files_from_s3_excludes_keys_s3_refused(monkeypatch):
+def test_remove_keys_from_s3_excludes_keys_s3_refused(monkeypatch):
     """DeleteObjects answers 200 with per-key Errors; those are not deleted."""
     fake = configure_s3(monkeypatch)
     fake.refused = {"locked.png"}
-    deleted = aws_helpers.remove_files_from_s3([
-        f"{BUCKET_URL}one.png", f"{BUCKET_URL}locked.png", f"{BUCKET_URL}two.jpg",
-    ])
+    deleted = aws_helpers.remove_keys_from_s3(["one.png", "locked.png", "two.jpg"])
     assert deleted == ["one.png", "two.jpg"]
     assert sorted(key for _, key in fake.deleted) == ["one.png", "two.jpg"]
 
 
 def test_delete_does_not_remove_an_object_another_row_still_shows(client, ids, monkeypatch):
     """
-    Image rows carry a URL the caller typed, not a key we minted, so two rows
-    can name the same object. Deleting one restaurant must not break the other.
+    One upload can be attached in two places by the user who owns it, so the
+    last row to go is the one that may delete the object.
     """
     fake = configure_s3(monkeypatch)
     shared = f"{BUCKET_URL}shared.png"
@@ -286,12 +282,12 @@ def test_delete_does_not_remove_an_object_another_row_still_shows(client, ids, m
     db.session.add(other)
     db.session.commit()
     db.session.add_all([
-        RestaurantImage(restaurant_id=ids["restaurant"], url=shared, preview=False,
-                        createdByUserId=ids["owner"]),
-        RestaurantImage(restaurant_id=other.id, url=shared, preview=False,
-                        createdByUserId=ids["owner"]),
-        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}only-mine.png",
+        RestaurantImage(restaurant_id=ids["restaurant"], url=shared, s3_key="shared.png",
                         preview=False, createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=other.id, url=shared, s3_key="shared.png",
+                        preview=False, createdByUserId=ids["owner"]),
+        RestaurantImage(restaurant_id=ids["restaurant"], url=f"{BUCKET_URL}only-mine.png",
+                        s3_key="only-mine.png", preview=False, createdByUserId=ids["owner"]),
     ])
     db.session.commit()
 

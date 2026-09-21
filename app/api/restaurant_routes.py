@@ -2,10 +2,11 @@ from flask import Blueprint, request
 from flask_login import login_required, current_user
 from sqlalchemy.orm import selectinload
 from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
-from app.api.aws_helpers import remove_files_from_s3
+from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
-    clear_other_previews, error_messages, restaurant_cards, reviews_with_details)
+    clear_other_previews, error_messages, key_still_referenced, restaurant_cards,
+    reviews_with_details)
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -125,6 +126,11 @@ def create_restaurant_image(restaurantId):
         restaurantImage = RestaurantImage(
             restaurant_id = int(restaurantId),
             url = form.data["url"],
+            # Only an object this caller uploaded gets a key, and only a key is
+            # ever deleted. Attaching a stranger's url still works -- it is a
+            # link like any other -- but it carries no authority over their
+            # object.
+            s3_key = key_uploaded_by(form.data["url"], current_user.id),
             preview = form.data["preview"],
             createdByUserId = current_user.id
         )
@@ -176,30 +182,6 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         return {"errors": error_messages(form.errors)}, 400
 
 
-def _still_referenced(image_url):
-    """
-    True when some remaining row still points at this object.
-
-    An image row carries a URL the caller typed, not a key this app minted, so
-    two rows can name the same object. Deleting it on behalf of one of them
-    would break the other's page — and because the attach route accepts any
-    URL, that is also how someone could aim this cleanup at a photo they do
-    not own.
-
-    This narrows that window; it does not close it. Nothing stops a row
-    naming the same URL from being inserted between this check and the
-    DeleteObjects call, and there is no row to lock against an insert that has
-    not happened yet — closing it properly would mean serialising every image
-    attach against every cleanup on the URL itself. The fix is to stop deriving
-    deletion authority from a caller-supplied URL at all: see issue #58, which
-    gives uploads an app-controlled key owned by exactly one row, and with it
-    this question stops being asked.
-    """
-    if RestaurantImage.query.filter(RestaurantImage.url == image_url).first():
-        return True
-    return ReviewImage.query.filter(ReviewImage.url == image_url).first() is not None
-
-
 # Delete a Restaurant
 @restaurant_routes.route('/<int:restaurantId>', methods=["DELETE"])
 @login_required
@@ -211,10 +193,10 @@ def delete_restaurant(restaurantId):
     if restaurant.user_id != current_user.id:
         return {"errors": ["You can only delete your own restaurants"]}, 403
 
-    # Read the URLs before the delete: the cascade drops the restaurant_images
+    # Read the keys before the delete: the cascade drops the restaurant_images
     # rows, and without this the objects would sit in the bucket forever,
     # costing storage and staying publicly readable after the user deleted them.
-    image_urls = [image.url for image in restaurant.restaurant_images]
+    object_keys = [image.s3_key for image in restaurant.restaurant_images if image.s3_key]
 
     db.session.delete(restaurant)
     db.session.commit()
@@ -222,7 +204,7 @@ def delete_restaurant(restaurantId):
     # not turn a successful delete into a 500. The reference check runs after
     # the commit so this restaurant's own rows are already gone and do not
     # count as references.
-    remove_files_from_s3([url for url in image_urls if not _still_referenced(url)])
+    remove_keys_from_s3([key for key in object_keys if not key_still_referenced(key)])
     return {"message": ["Restaurant Successfully deleted"]},200
 
 

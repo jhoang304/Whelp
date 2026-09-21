@@ -2,8 +2,8 @@ from flask import Blueprint, request
 from flask_login import login_required, current_user
 from app.models import RestaurantImage
 from app.models import db
-from app.api.aws_helpers import remove_file_from_s3
-from app.api.utils import clear_other_previews, lock_restaurant
+from app.api.aws_helpers import remove_key_from_s3
+from app.api.utils import clear_other_previews, key_still_referenced, lock_restaurant
 
 resImage_routes = Blueprint('restaurantImages', __name__)
 
@@ -42,7 +42,7 @@ def delete_res_image(imageId):
     if not image:
         return {"errors": ["Image couldn't be found"]}, 404
 
-    url = image.url
+    object_key = image.s3_key
     was_cover = bool(image.preview)
 
     db.session.delete(image)
@@ -62,7 +62,8 @@ def delete_res_image(imageId):
             replacement.preview = True
 
     db.session.commit()
-    remove_file_from_s3(url)
+    if not key_still_referenced(object_key):
+        remove_key_from_s3(object_key)
     return {"message": "Successfully deleted"}
 
 

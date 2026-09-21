@@ -4,8 +4,8 @@ from sqlalchemy.sql import func
 
 from app.models import User, db
 from app.forms import UserProfileForm
-from app.api.utils import error_messages, restaurant_cards
-from app.api.aws_helpers import remove_file_from_s3, is_s3_url
+from app.api.utils import error_messages, key_still_referenced, restaurant_cards
+from app.api.aws_helpers import key_uploaded_by, remove_key_from_s3
 
 user_routes = Blueprint('users', __name__)
 
@@ -91,13 +91,20 @@ def edit_profile(id):
     if last_name:
         profile.last_name = last_name
 
+    replaced_key = None
     if 'profile_image_url' in body:
         new_url = (data.get('profile_image_url') or '').strip() or None
-        old_url = profile.profile_image_url
+        old_key = profile.profile_image_key
         profile.profile_image_url = new_url
-        if old_url and old_url != new_url and is_s3_url(old_url):
-            remove_file_from_s3(old_url)
+        profile.profile_image_key = key_uploaded_by(new_url, profile.id) if new_url else None
+        if old_key and old_key != profile.profile_image_key:
+            replaced_key = old_key
 
     profile.updatedAt = func.now()
     db.session.commit()
+
+    # After the commit, and only for an object this user uploaded: pointing
+    # this at a url was two calls away from deleting a stranger's picture.
+    if replaced_key and not key_still_referenced(replaced_key):
+        remove_key_from_s3(replaced_key)
     return profile.to_dict()

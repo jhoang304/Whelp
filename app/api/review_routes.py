@@ -6,6 +6,7 @@ from sqlalchemy.sql import func
 from app.models import db, Review, ReviewImage, ReviewResponse
 from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
 from app.api.utils import error_messages, reviews_with_details
+from app.api.aws_helpers import key_uploaded_by
 
 review_routes = Blueprint('reviews', __name__)
 
@@ -45,7 +46,8 @@ def create_image_by_review_id(id):
   if form.validate_on_submit():
     reviewImage = ReviewImage(
       review_id = id,
-      url = form.data["url"]
+      url = form.data["url"],
+      s3_key = key_uploaded_by(form.data["url"], current_user.id)
     )
     db.session.add(reviewImage)
     db.session.commit()

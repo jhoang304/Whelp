@@ -10,6 +10,7 @@ class ReviewImage(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     review_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("reviews.id")), nullable=False)
+    s3_key = db.Column(db.String(255), nullable=True)
     url = db.Column(db.String(255), nullable=False)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
     updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
