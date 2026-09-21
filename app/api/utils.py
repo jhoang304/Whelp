@@ -209,3 +209,29 @@ def reviews_with_details(reviews, restaurant=None):
     previews = preview_image_urls(ids)
     return [review_with_details(review, restaurant=restaurant, previews=previews)
             for review in reviews]
+
+
+def key_still_referenced(object_key):
+    """
+    True when a remaining row still names this object.
+
+    A caller can attach one upload of theirs in two places, so the last row to
+    go is the one that may delete the object. This is the same question the
+    url-based check used to ask, but on a key this app minted rather than on
+    text a caller typed -- which is what stopped it being a way to delete
+    other people's images.
+
+    The narrow race the old check had remains: a row naming this key could be
+    written between here and the delete. It can now only cost you your own
+    object, because a key names its uploader.
+    """
+    from app.models import RestaurantImage, ReviewImage, User
+
+    if not object_key:
+        return True  # nothing to delete is the same as still in use
+
+    if RestaurantImage.query.filter(RestaurantImage.s3_key == object_key).first():
+        return True
+    if ReviewImage.query.filter(ReviewImage.s3_key == object_key).first():
+        return True
+    return User.query.filter(User.profile_image_key == object_key).first() is not None

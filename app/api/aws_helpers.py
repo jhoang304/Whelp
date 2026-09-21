@@ -65,9 +65,42 @@ def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
 
 
-def get_unique_filename(filename):
+UPLOAD_PREFIX = "uploads"
+
+
+def get_unique_filename(filename, user_id):
+    """
+    The key this app mints for an upload, scoped to whoever uploaded it.
+
+    The user segment is what makes an object's ownership readable later: a row
+    may only claim a key that names the caller, so attaching a stranger's URL
+    records no key and can never delete their object. Keys minted before this
+    (a bare uuid) name nobody, which is the safe answer.
+    """
     ext = filename.rsplit(".", 1)[1].lower()
-    return f"{uuid.uuid4().hex}.{ext}"
+    return f"{UPLOAD_PREFIX}/{user_id}/{uuid.uuid4().hex}.{ext}"
+
+
+def key_from_url(image_url):
+    """The object key a URL names, when the URL is one of ours."""
+    s = _settings()
+    if not (image_url and s["location"] and image_url.startswith(s["location"])):
+        return None
+    return image_url[len(s["location"]):] or None
+
+
+def key_uploaded_by(image_url, user_id):
+    """
+    The object key, but only when this app minted it for that user.
+
+    None for someone else's upload, an object older than user-scoped keys, or
+    a hot-linked image -- all of which a row then stores without a key, and so
+    can never delete.
+    """
+    key = key_from_url(image_url)
+    if key and key.startswith(f"{UPLOAD_PREFIX}/{user_id}/"):
+        return key
+    return None
 
 
 def upload_file_to_s3(file, acl="public-read"):
@@ -92,7 +125,9 @@ def upload_file_to_s3(file, acl="public-read"):
 
     if "url" in result and not _object_is_public(result["url"]):
         # Don't leave an unreadable object behind; tell the owner what to fix.
-        remove_file_from_s3(result["url"])
+        # By key, like every other delete -- file.filename is the key we just
+        # minted, so this needs no url to work backwards from.
+        remove_key_from_s3(file.filename)
         return {"errors": NOT_PUBLIC_MESSAGE}
 
     return result
@@ -141,19 +176,20 @@ def is_s3_url(image_url):
     return bool(image_url and s["location"] and image_url.startswith(s["location"]))
 
 
-def remove_files_from_s3(image_urls):
-    """Best-effort delete of several objects we uploaded, batched.
+def remove_keys_from_s3(object_keys):
+    """Best-effort delete of several objects we minted keys for, batched.
 
     S3 takes up to 1000 keys per delete_objects call, so a restaurant with
-    a handful of photos costs one request instead of one per photo. URLs
-    that are not ours (seeded or hot-linked images) are ignored. Returns the
-    keys S3 was asked to delete.
+    a handful of photos costs one request instead of one per photo. Takes keys
+    rather than urls: a url is whatever a caller typed, and deriving a key
+    from one made typing a stranger's url authority to delete their object.
+    Returns the keys S3 was asked to delete.
     """
     if not s3_configured():
         return []
 
     s = _settings()
-    keys = [url[len(s["location"]):] for url in image_urls if is_s3_url(url)]
+    keys = [key for key in object_keys if key]
     if not keys:
         return []
 
@@ -183,12 +219,12 @@ def remove_files_from_s3(image_urls):
     return deleted
 
 
-def remove_file_from_s3(image_url):
-    """Best-effort delete of an object we uploaded. Ignores URLs from other hosts."""
-    if not s3_configured() or not is_s3_url(image_url):
+def remove_key_from_s3(object_key):
+    """Best-effort delete of one object by the key this app minted for it."""
+    if not s3_configured() or not object_key:
         return False
     s = _settings()
-    key = image_url[len(s["location"]):]
+    key = object_key
     try:
         _client().delete_object(Bucket=s["bucket"], Key=key)
     except Exception as e:

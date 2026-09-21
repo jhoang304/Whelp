@@ -17,6 +17,7 @@ class User(db.Model, UserMixin):
     last_name = db.Column(db.String(50), nullable=False)
     # Optional avatar. Populated by the S3 upload flow (or any public image URL).
     profile_image_url = db.Column(db.String(255), nullable=True)
+    profile_image_key = db.Column(db.String(255), nullable=True)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
     updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
                           onupdate=func.now())
