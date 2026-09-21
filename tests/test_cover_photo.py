@@ -106,7 +106,7 @@ def test_restaurant_list_reports_the_current_cover(client, ids):
     login(client, "owner@test.io")
     add_image(client, ids["restaurant"], "https://example.com/new-cover.jpg", preview=True)
 
-    listing = client.get("/api/restaurants/").get_json()["Restaurants"]
+    listing = client.get("/api/restaurants/").get_json()["items"]
     entry = next(r for r in listing if r["id"] == ids["restaurant"])
     assert entry["previewImage"] == "https://example.com/new-cover.jpg"
 
@@ -131,7 +131,7 @@ def test_the_listing_keeps_a_cover_after_the_current_one_is_deleted(client, ids)
     add_image(client, ids["restaurant"], "https://example.com/b.jpg")
     client.delete(f"/api/restaurant-images/{ids['image']}")
 
-    listing = client.get("/api/restaurants/").get_json()["Restaurants"]
+    listing = client.get("/api/restaurants/").get_json()["items"]
     entry = next(r for r in listing if r["id"] == ids["restaurant"])
     assert entry["previewImage"] == "https://example.com/b.jpg"
 

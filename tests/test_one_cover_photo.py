@@ -71,5 +71,5 @@ def test_the_listing_reports_that_one_cover(client, ids):
     client.post(f"/api/restaurants/{ids['restaurant']}/images",
                 json={"url": "https://example.com/new.jpg", "preview": True})
 
-    card = client.get("/api/restaurants/").get_json()["Restaurants"][0]
+    card = client.get("/api/restaurants/").get_json()["items"][0]
     assert card["previewImage"] == "https://example.com/new.jpg"

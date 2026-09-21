@@ -1,8 +1,10 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useHistory } from "react-router-dom";
 import {
   fetchAllReviewsByRestaurantId,
   deleteReviewById,
+  REVIEW_SORTS,
+  ReviewSort,
 } from "../../../store/reviews";
 import { getSingleRestaurant } from "../../../store/restaurants";
 import { useAppDispatch, useAppSelector } from "../../../store";
@@ -32,14 +34,22 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   const currentRestaurant = useAppSelector((state) => state.Restaurants.singleRestaurant);
   const allReviews = useAppSelector((state) => state.reviews);
 
-  useEffect(() => {
-    dispatch(fetchAllReviewsByRestaurantId(restaurantId));
-  }, [dispatch, restaurantId]);
+  const [sort, setSort] = useState<ReviewSort>("newest");
+  const [order, setOrder] = useState<number[]>([]);
 
-  // Object keys come back in numeric order, so re-sort newest first.
-  const reviews: Review[] = Object.values(allReviews)
-    .filter((review) => String(review.restaurant_id) === String(restaurantId))
-    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime() || b.id - a.id);
+  useEffect(() => {
+    // The API decides the order now, and the store is keyed by id, so keep
+    // the ids it returned: re-sorting a page of "highest rated" by date here
+    // would quietly undo the sort the reader asked for.
+    dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort)).then((page) => {
+      if (page) setOrder(page.items.map((review) => review.id));
+    });
+  }, [dispatch, restaurantId, sort]);
+
+  const reviews: Review[] = order
+    .map((id) => allReviews[id])
+    .filter((review): review is Review =>
+      !!review && String(review.restaurant_id) === String(restaurantId));
 
   const isOwner = !!sessionUser && !!currentRestaurant && sessionUser.id === currentRestaurant.user_id;
   const hasReviewed = !!sessionUser && reviews.some((review) => review.user_id === sessionUser.id);
@@ -47,7 +57,8 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   const handleDelete = (reviewId: number) => async () => {
     if (!window.confirm("Delete your review? This cannot be undone.")) return;
     await dispatch(deleteReviewById(reviewId));
-    await dispatch(fetchAllReviewsByRestaurantId(restaurantId));
+    const page = await dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort));
+    if (page) setOrder(page.items.map((review) => review.id));
     dispatch(getSingleRestaurant(+restaurantId));
   };
 
@@ -57,7 +68,22 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
 
   return (
     <div className="reviews-container">
-      <h2>Reviews</h2>
+      <div className="reviews-heading">
+        <h2>Reviews</h2>
+        {reviews.length > 1 && (
+          <label className="reviews-sort">
+            Sort by
+            <select
+              value={sort}
+              onChange={(event) => setSort(event.target.value as ReviewSort)}
+            >
+              {REVIEW_SORTS.map((option) => (
+                <option key={option.value} value={option.value}>{option.label}</option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
 
       {reviews.length === 0 && (
         <p className="reviews-empty">No reviews yet. Be the first to share your experience.</p>

@@ -5,8 +5,8 @@ from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, d
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
-    clear_other_previews, error_messages, key_still_referenced, restaurant_cards,
-    reviews_with_details)
+    clear_other_previews, error_messages, key_still_referenced, page_response,
+    read_page_request, restaurant_cards, reviews_with_details)
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -14,8 +14,20 @@ restaurant_routes = Blueprint('restaurants', __name__)
 # Get all Restaurants
 @restaurant_routes.route('/')
 def restaurants():
-    """Every restaurant, as the cards the listing page shows."""
-    return {"Restaurants": restaurant_cards(Restaurant.query.all())}
+    """
+    A page of restaurants, as the cards the listing page shows.
+
+    Ordered by id, which is arbitrary but stable: without an ORDER BY, two
+    pages of an unordered query may repeat a row or skip one entirely.
+    """
+    page_request = read_page_request()
+    if page_request.error:
+        return {"errors": [page_request.error]}, 400
+
+    query = Restaurant.query.order_by(Restaurant.id)
+    total = query.count()
+    rows = query.limit(page_request.per_page).offset(page_request.offset).all()
+    return page_response(restaurant_cards(rows), page_request, total)
 
 
 # Get Single Restaurant by Id
@@ -214,6 +226,10 @@ def search_restaurant(keyword):
     if not keyword or len(keyword.strip()) == 0:
         return {"errors": ["Search keyword cannot be empty"]}, 400
     
+    page_request = read_page_request()
+    if page_request.error:
+        return {"errors": [page_request.error]}, 400
+
     # Sanitize keyword to prevent SQL injection
     sanitized_keyword = keyword.strip()
 
@@ -248,26 +264,50 @@ def search_restaurant(keyword):
         # Combine results with name matches first
         queried_restaurants = exact_name_matches + other_matches
 
-    return {"Restaurants": restaurant_cards(queried_restaurants)}
+    total = len(queried_restaurants)
+    page = queried_restaurants[page_request.offset:page_request.offset + page_request.per_page]
+    return page_response(restaurant_cards(page), page_request, total)
+
+
+REVIEW_ORDERS = {
+    "newest": (Review.createdAt.desc(), Review.id.desc()),
+    "highest": (Review.rating.desc(), Review.createdAt.desc(), Review.id.desc()),
+    "lowest": (Review.rating.asc(), Review.createdAt.desc(), Review.id.desc()),
+}
 
 
 # Get reviews by restaurant's id
 @restaurant_routes.route('/<int:id>/reviews', methods=['GET'])
 def get_reviews_by_restaurant_id(id):
     """
-    Returns every review for a restaurant, newest first, including the author,
-    review images, and any business-owner response.
+    A page of a restaurant's reviews, with the author, review images, and any
+    business-owner response.
+
+    `sort` is newest, highest or lowest; every order ends in createdAt and id
+    so equal ratings still come back in one settled order across pages.
     """
     restaurant = db.session.get(Restaurant, id)
     if not restaurant:
         return {"errors": ["restaurant couldn't be found"]}, 404
 
-    reviews = Review.query.options(
+    sort = request.args.get("sort", "newest")
+    if sort not in REVIEW_ORDERS:
+        return {"errors": [f"sort must be one of: {', '.join(REVIEW_ORDERS)}"]}, 400
+
+    page_request = read_page_request()
+    if page_request.error:
+        return {"errors": [page_request.error]}, 400
+
+    query = Review.query.options(
         selectinload(Review.user),
         selectinload(Review.review_images),
         selectinload(Review.response),
-    ).filter(Review.restaurant_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
-    return {"reviews": reviews_with_details(reviews, restaurant=restaurant)}
+    ).filter(Review.restaurant_id == id).order_by(*REVIEW_ORDERS[sort])
+
+    total = query.count()
+    reviews = query.limit(page_request.per_page).offset(page_request.offset).all()
+    return page_response(reviews_with_details(reviews, restaurant=restaurant),
+                         page_request, total)
 
 
 # Create a review by restaurant's id

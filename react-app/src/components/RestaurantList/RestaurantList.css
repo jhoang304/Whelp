@@ -95,3 +95,31 @@
     animation-fill-mode: forwards; /* Stay visible after animation */
     animation-delay: 0s; /* Default delay, will be overridden by inline style */
 }
+
+
+.restaurant-list-more {
+    display: flex;
+    justify-content: center;
+    padding: 24px 16px 48px;
+}
+
+.restaurant-list-more-button {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #d32323;
+    background: #fff;
+    border: 1px solid #d32323;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.restaurant-list-more-button:hover:not(:disabled) {
+    background: #d32323;
+    color: #fff;
+}
+
+.restaurant-list-more-button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}

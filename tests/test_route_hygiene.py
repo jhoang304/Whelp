@@ -37,7 +37,7 @@ def test_public_gets_do_not_depend_on_rule_ordering(client, ids):
 
     listing = client.get("/api/restaurants/")
     assert listing.status_code == 200
-    assert "Restaurants" in listing.get_json()
+    assert "items" in listing.get_json()
 
     detail = client.get(f"/api/restaurants/{ids['restaurant']}")
     assert detail.status_code == 200
@@ -45,7 +45,7 @@ def test_public_gets_do_not_depend_on_rule_ordering(client, ids):
 
     reviews = client.get(f"/api/restaurants/{ids['restaurant']}/reviews")
     assert reviews.status_code == 200
-    assert len(reviews.get_json()["reviews"]) == 1
+    assert len(reviews.get_json()["items"]) == 1
 
     own_reviews = client.get(f"/api/reviews/{ids['reviewer']}")
     assert own_reviews.status_code == 200

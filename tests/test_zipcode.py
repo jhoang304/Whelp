@@ -48,7 +48,7 @@ def test_leading_zero_survives_the_detail_and_list_endpoints(client):
     detail = client.get(f"/api/restaurants/{created['id']}").get_json()
     assert detail["zipcode"] == "02134"
 
-    listed = client.get("/api/restaurants/").get_json()["Restaurants"]
+    listed = client.get("/api/restaurants/").get_json()["items"]
     assert next(r for r in listed if r["id"] == created["id"])["zipcode"] == "02134"
 
 
