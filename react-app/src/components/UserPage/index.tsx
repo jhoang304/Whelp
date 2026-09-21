@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Link, useHistory, useParams } from "react-router-dom";
-import { AppDispatch } from "../../store";
-import { Restaurant, Review, RootState } from "../../types";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { Restaurant, Review } from "../../types";
 import { getProfileThunk } from "../../store/userProfile";
 import { deleteReviewById } from "../../store/reviews";
 import OpenModalButton from "../OpenModalButton";
@@ -31,12 +30,12 @@ const plural = (count: number, singular: string, pluralForm?: string): string =>
     `${count} ${count === 1 ? singular : pluralForm || `${singular}s`}`;
 
 export default function UserProfilePage(): React.JSX.Element {
-    const dispatch = useDispatch<AppDispatch>();
+    const dispatch = useAppDispatch();
     const history = useHistory();
     const { userId } = useParams<{ userId: string }>();
 
-    const sessionUser = useSelector((state: RootState) => state.session.user);
-    const { profile, reviews } = useSelector((state: RootState) => state.user);
+    const sessionUser = useAppSelector((state) => state.session.user);
+    const { profile, reviews } = useAppSelector((state) => state.user);
 
     const [status, setStatus] = useState<Status>("loading");
     const [loadErrors, setLoadErrors] = useState<string[]>([]);
@@ -46,7 +45,7 @@ export default function UserProfilePage(): React.JSX.Element {
         let cancelled = false;
         setStatus("loading");
         setActiveTab("reviews");
-        dispatch(getProfileThunk(userId) as any).then((errors: string[] | null) => {
+        dispatch(getProfileThunk(userId)).then((errors: string[] | null) => {
             if (cancelled) return;
             if (errors) {
                 setLoadErrors(errors);
@@ -64,8 +63,8 @@ export default function UserProfilePage(): React.JSX.Element {
 
     const handleDeleteReview = async (review: Review) => {
         if (!window.confirm("Delete your review? This cannot be undone.")) return;
-        await dispatch(deleteReviewById(review.id) as any);
-        dispatch(getProfileThunk(userId) as any);
+        await dispatch(deleteReviewById(review.id));
+        dispatch(getProfileThunk(userId));
     };
 
     if (status === "loading") {

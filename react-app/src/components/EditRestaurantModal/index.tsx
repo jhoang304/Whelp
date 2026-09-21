@@ -1,21 +1,24 @@
 import "./EditRestaurant.css"
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { updateRestaurantThunk } from "../../store/restaurants"
-import { AppDispatch } from "../../store";
-import { RootState } from "../../types";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { SingleRestaurantResponse } from "../../types";
 import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
 
+type EditableRestaurant = Pick<SingleRestaurantResponse,
+    "id" | "user_id" | "name" | "price" | "address" | "city" | "state" |
+    "zipcode" | "country" | "phone_number" | "website" | "description">;
+
 interface EditRestaurantProps {
-    singleRestaurant: any;
+    singleRestaurant: EditableRestaurant;
 }
 
 export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps): React.JSX.Element {
-    const dispatch = useDispatch<AppDispatch>();
+    const dispatch = useAppDispatch();
     // Declared before handleUpdate rather than after it: the handler reads it,
     // and the old file only got away with that because of closure timing.
-    const sessionUser = useSelector((rootState: RootState) => rootState.session.user);
+    const sessionUser = useAppSelector((rootState) => rootState.session.user);
 
     const [name, setName] = useState<string>(singleRestaurant.name);
     const [price, setPrice] = useState<string>(singleRestaurant.price)
@@ -69,7 +72,7 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
                 phone_number,
                 description,
                 website,
-            }) as any);
+            }));
         } catch (unexpected) {
             failures = ["Something went wrong saving your changes. Please try again."];
         }

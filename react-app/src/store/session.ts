@@ -1,10 +1,14 @@
+import { AnyAction } from "redux";
+
+import { SessionState, User } from "../types";
+import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
 
 // constants
 const SET_USER = "session/SET_USER";
 const REMOVE_USER = "session/REMOVE_USER";
 
-export const setUser = (user: any) => ({
+export const setUser = (user: User) => ({
 	type: SET_USER,
 	payload: user,
 });
@@ -15,7 +19,7 @@ const removeUser = () => ({
 
 const initialState = { user: null };
 
-export const authenticate = () => async (dispatch: any) => {
+export const authenticate = () => async (dispatch: AppDispatch) => {
 	const response = await fetch("/api/auth/", {
 		headers: {
 			"Content-Type": "application/json",
@@ -26,7 +30,7 @@ export const authenticate = () => async (dispatch: any) => {
 	}
 };
 
-export const login = (email: any, password: any) => async (dispatch: any) => {
+export const login = (email: string, password: string) => async (dispatch: AppDispatch) => {
 	const response = await fetch("/api/auth/login", {
 		method: "POST",
 		headers: {
@@ -46,7 +50,7 @@ export const login = (email: any, password: any) => async (dispatch: any) => {
 	return parseErrors(response, "An error occurred. Please try again.");
 };
 
-export const logout = () => async (dispatch: any) => {
+export const logout = () => async (dispatch: AppDispatch) => {
 	const response = await fetch("/api/auth/logout", {
 		headers: {
 			"Content-Type": "application/json",
@@ -59,7 +63,7 @@ export const logout = () => async (dispatch: any) => {
 };
 
 
-export const signUp = (username: any, email: any, first_name: any, last_name: any, password: any) => async (dispatch: any) => {
+export const signUp = (username: string, email: string, first_name: string, last_name: string, password: string) => async (dispatch: AppDispatch) => {
 	const response = await fetch("/api/auth/signup", {
 	  method: "POST",
 	  headers: {
@@ -82,7 +86,7 @@ export const signUp = (username: any, email: any, first_name: any, last_name: an
 	return parseErrors(response, "An error occurred. Please try again.");
   };
 
-export default function reducer(state: any = initialState, action: any) {
+export default function reducer(state: SessionState = initialState, action: AnyAction): SessionState {
 	switch (action.type) {
 		case SET_USER:
 			return { user: action.payload };

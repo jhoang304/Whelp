@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useDispatch } from "react-redux";
-import { AppDispatch } from "../../store";
+import { useAppDispatch } from "../../store";
 import { UserProfile } from "../../types";
 import { editProfileThunk, ProfileUpdates } from "../../store/userProfile";
 import { useModal } from "../../context/Modal";
@@ -17,7 +16,7 @@ type ImageMode = "upload" | "url";
 const URL_PATTERN = /^https?:\/\/.+/i;
 
 export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.Element {
-    const dispatch = useDispatch<AppDispatch>();
+    const dispatch = useAppDispatch();
     const { closeModal } = useModal();
 
     const [username, setUsername] = useState<string>(user.username);
@@ -106,7 +105,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
             updates.profile_image_url = imageUrl.trim();
         }
 
-        const result: string[] | null = await dispatch(editProfileThunk(updates, user.id) as any);
+        const result: string[] | null = await dispatch(editProfileThunk(updates, user.id));
         setIsSaving(false);
 
         if (result) {

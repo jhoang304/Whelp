@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
 import { updateOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
-import { AppDispatch } from "../../../store";
-import { RootState } from "../../../types";
+import { useAppDispatch, useAppSelector } from "../../../store";
 import './UpdateReview.css'
 
 /** Matches the `review` column and ReviewForm's Length validator. */
@@ -17,9 +15,9 @@ interface UpdateReviewParams {
 
 function UpdateReview(): React.JSX.Element {
   const { reviewId, restaurantId } = useParams<UpdateReviewParams>();
-  const oldReview = useSelector((state: RootState) => state.reviews[+reviewId]);
+  const oldReview = useAppSelector((state) => state.reviews[+reviewId]);
 
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const history = useHistory();
 
   // The review may not be in the store yet (e.g. arriving from the profile page).
@@ -29,8 +27,8 @@ function UpdateReview(): React.JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect( () => {
-    dispatch(getSingleRestaurant(+restaurantId) as any);
-    if (!oldReview) dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
+    dispatch(getSingleRestaurant(+restaurantId));
+    if (!oldReview) dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
   }, [dispatch, restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -66,7 +64,7 @@ function UpdateReview(): React.JSX.Element {
     let failures: string[] | null;
     try {
       failures = await dispatch(
-        updateOneReview({ review: trimmed, rating }, reviewId) as any
+        updateOneReview({ review: trimmed, rating: Number(rating) }, reviewId)
       );
     } catch (unexpected) {
       failures = ["Something went wrong saving your review. Please try again."];
@@ -82,8 +80,8 @@ function UpdateReview(): React.JSX.Element {
     // here, the restaurant page loads for itself and reports its own errors,
     // which beats stranding the user on a disabled form.
     try {
-      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
-      await dispatch(getSingleRestaurant(+restaurantId) as any);
+      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
+      await dispatch(getSingleRestaurant(+restaurantId));
     } catch (refreshError) {
       // fall through to the restaurant page
     }

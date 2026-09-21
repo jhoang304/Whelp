@@ -1,5 +1,7 @@
 import { getSingleRestaurant } from "./restaurants";
-import { RestaurantImage } from "../types";
+import { AnyAction } from "redux";
+
+import { PhotosState, RestaurantImage } from "../types";
 import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
 
@@ -22,7 +24,7 @@ export const getRestaurantRestaurantImages = (restaurantId: string | number) => 
 
 
 //Add a photo
-export const addRestaurantImage = (newRestaurantImage: any, restaurantId: string | number) => async (dispatch: AppDispatch) => {
+export const addRestaurantImage = (newRestaurantImage: { url: string; preview?: boolean }, restaurantId: string | number) => async (dispatch: AppDispatch) => {
     let response: Response
     try {
         response = await fetch(`/api/restaurants/${restaurantId}/images`, {
@@ -36,7 +38,7 @@ export const addRestaurantImage = (newRestaurantImage: any, restaurantId: string
         return [NETWORK_ERROR]
     }
     if (response.ok) {
-        dispatch(getSingleRestaurant(+restaurantId) as any)
+        dispatch(getSingleRestaurant(+restaurantId))
         return null
     }
     // Return a list of messages so the modal can show them.
@@ -61,7 +63,7 @@ export const setCoverPhotoThunk = (photoId: string | number, restaurantId: strin
     }
     if (res.ok) {
         await dispatch(getRestaurantRestaurantImages(restaurantId))
-        dispatch(getSingleRestaurant(+restaurantId) as any)
+        dispatch(getSingleRestaurant(+restaurantId))
         return null
     }
     return parseErrors(res, "Could not set the cover photo. Please try again.")
@@ -91,7 +93,7 @@ export const deleteRestaurantImageThunk = (photoId: string | number, restaurantI
     }
     if (res.ok) {
         await dispatch(deleteRestaurantImage(photoId))
-        dispatch(getSingleRestaurant(+restaurantId) as any)
+        dispatch(getSingleRestaurant(+restaurantId))
         return null
     }
     return parseErrors(res, "Could not remove the photo. Please try again.")
@@ -100,7 +102,7 @@ export const deleteRestaurantImageThunk = (photoId: string | number, restaurantI
 
 const initialState = {}
 
-export default function photoReducer(state: any = initialState, action: any): any {
+export default function photoReducer(state: PhotosState = initialState, action: AnyAction): PhotosState {
     switch (action.type) {
         case LOADPHOTO:
             const newRestaurantImages: { [key: string]: RestaurantImage } = {}
@@ -114,9 +116,13 @@ export default function photoReducer(state: any = initialState, action: any): an
                 }
             };
         case DELETE_PHOTO: {
-            const deleteRestaurantImageState = { ...state }
-            delete deleteRestaurantImageState.allRestaurantImages[action.photoId]
-            return deleteRestaurantImageState
+            // The images may not have been loaded into the store at all, in
+            // which case there is nothing to remove -- indexing through the
+            // undefined was a crash waiting for the right order of events.
+            if (!state.allRestaurantImages) return state
+            const remaining = { ...state.allRestaurantImages }
+            delete remaining[action.photoId]
+            return { ...state, allRestaurantImages: remaining }
         }
         default:
             return state

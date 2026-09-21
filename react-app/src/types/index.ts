@@ -129,7 +129,7 @@ export interface RestaurantsState {
 }
 
 export interface PhotosState {
-  [key: string]: any; // To be defined based on actual usage
+  allRestaurantImages?: { [id: number]: RestaurantImage };
 }
 
 export interface ReviewsState {

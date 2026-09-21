@@ -1,13 +1,12 @@
 import "./DisplayPhotos.css";
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { getRestaurantRestaurantImages, deleteRestaurantImageThunk, setCoverPhotoThunk } from "../../store/restaurantPhoto";
-import { RootState } from "../../types";
-import { AppDispatch } from "../../store";
+import { useAppDispatch, useAppSelector } from "../../store";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
+import { RestaurantImage, SingleRestaurantResponse } from "../../types";
 
 interface DisplayPhotosProps {
-    singleRestaurant: any;
+    singleRestaurant: SingleRestaurantResponse;
 }
 
 function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Element {
@@ -16,35 +15,28 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
     const [errors, setErrors] = useState<string[]>([]);
     const [busyPhotoId, setBusyPhotoId] = useState<number | null>(null);
-    const sessionUser = useSelector((state: RootState) => state.session.user);
-    const dispatch = useDispatch<AppDispatch>()
+    const sessionUser = useAppSelector((state) => state.session.user);
+    const dispatch = useAppDispatch()
 
     // The API lets the uploader *or* the restaurant owner delete a photo, and
     // only the owner choose the cover. Mirror both rules here.
     const isOwner = !!sessionUser && sessionUser.id === singleRestaurant.user_id;
-    const canDelete = (photo: any) =>
+    const canDelete = (photo: RestaurantImage) =>
         !!sessionUser && (isOwner || photo.createdByUserId === sessionUser.id);
 
     useEffect(() => {
         async function fetchData() {
-            await dispatch(getRestaurantRestaurantImages(singleRestaurant.id) as any);
+            await dispatch(getRestaurantRestaurantImages(singleRestaurant.id));
             setIsLoaded(true);
         }
         fetchData();
     }, [dispatch, singleRestaurant.id]);
 
-    const allResPhotoState = useSelector((state: RootState) => {
+    const allResPhotoState = useAppSelector((state) => {
         return state.photos
     })
-    let allResPhotoObj: any;
-    if (allResPhotoState) {
-        allResPhotoObj = (allResPhotoState as any).allRestaurantImages
-    }
-
-    let allResPhotoArray: any[] = [];
-    if (allResPhotoObj) {
-        allResPhotoArray = Object.values(allResPhotoObj)
-    }
+    const allResPhotoArray: RestaurantImage[] =
+        Object.values(allResPhotoState?.allRestaurantImages ?? {})
 
     const navigatePhoto = (direction: 'prev' | 'next') => {
         if (direction === 'prev') {
@@ -66,11 +58,11 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     // Both handlers clear busyPhotoId in a finally: this modal stays mounted
     // either way, and an unhandled rejection would otherwise leave the button
     // disabled with nothing to explain why.
-    const handleSetCover = async (photo: any) => {
+    const handleSetCover = async (photo: RestaurantImage) => {
         setErrors([]);
         setBusyPhotoId(photo.id);
         try {
-            const failures: string[] | null = await dispatch(setCoverPhotoThunk(photo.id, singleRestaurant.id) as any);
+            const failures: string[] | null = await dispatch(setCoverPhotoThunk(photo.id, singleRestaurant.id));
             if (failures) setErrors(failures);
         } catch (unexpected) {
             setErrors(["Something went wrong setting the cover photo. Please try again."]);
@@ -79,16 +71,16 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
         }
     };
 
-    const handleRemove = async (photo: any) => {
+    const handleRemove = async (photo: RestaurantImage) => {
         setErrors([]);
         setBusyPhotoId(photo.id);
         try {
-            const failures: string[] | null = await dispatch(deleteRestaurantImageThunk(photo.id, photo.restaurant_id) as any);
+            const failures: string[] | null = await dispatch(deleteRestaurantImageThunk(photo.id, photo.restaurant_id));
             if (failures) {
                 setErrors(failures);
                 return;
             }
-            await dispatch(getRestaurantRestaurantImages(singleRestaurant.id) as any);
+            await dispatch(getRestaurantRestaurantImages(singleRestaurant.id));
         } catch (unexpected) {
             setErrors(["Something went wrong removing the photo. Please try again."]);
         } finally {
@@ -109,7 +101,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                 </ul>
             )}
             <ul className="photo-container">
-                {allResPhotoArray.map((photo: any, index: number) => {
+                {allResPhotoArray.map((photo: RestaurantImage, index: number) => {
                     const isDefaultPhoto = photo.url === DEFAULT_RESTAURANT_IMAGE;
                     const isBusy = busyPhotoId === photo.id;
                     const showSetCover = isOwner && !photo.preview && !isDefaultPhoto;

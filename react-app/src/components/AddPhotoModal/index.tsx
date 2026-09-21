@@ -1,10 +1,8 @@
 import "./AddPhoto.css"
 import React, { useEffect, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { addRestaurantImage } from "../../store/restaurantPhoto";
-import { AppDispatch } from "../../store";
-import { RootState } from "../../types";
+import { useAppDispatch, useAppSelector } from "../../store";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 
 interface AddPhotoModalProps {
@@ -16,7 +14,7 @@ type ImageMode = "upload" | "url";
 const URL_PATTERN = /^https?:\/\/.+/i;
 
 function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element {
-    const dispatch = useDispatch<AppDispatch>();
+    const dispatch = useAppDispatch();
     const { closeModal } = useModal();
 
     const [mode, setMode] = useState<ImageMode>("upload");
@@ -29,8 +27,8 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
 
     // Only the business owner may choose the cover photo; the API rejects it
     // from anyone else, so the checkbox is hidden rather than left to fail.
-    const sessionUser = useSelector((state: RootState) => state.session.user);
-    const restaurant = useSelector((state: RootState) => state.Restaurants.singleRestaurant);
+    const sessionUser = useAppSelector((state) => state.session.user);
+    const restaurant = useAppSelector((state) => state.Restaurants.singleRestaurant);
     const isOwner = !!sessionUser && !!restaurant && restaurant.user_id === sessionUser.id;
 
     // Show a local preview of the chosen file and release it when it changes.
@@ -81,7 +79,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
             imageUrl = upload.url;
         }
 
-        const result: string[] | null = await dispatch(addRestaurantImage({ url: imageUrl, preview: isOwner && isCover }, restaurantId) as any);
+        const result: string[] | null = await dispatch(addRestaurantImage({ url: imageUrl, preview: isOwner && isCover }, restaurantId));
         setIsSubmitting(false);
 
         if (result) {

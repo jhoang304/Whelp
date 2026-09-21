@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { Route, Switch } from "react-router-dom";
-import { AppDispatch } from "./store";
+import { useAppDispatch } from "./store";
 import SignupFormPage from "./components/SignupFormPage";
 import LoginFormPage from "./components/LoginFormPage";
 import { authenticate } from "./store/session";
@@ -16,16 +15,16 @@ import RestaurantBySearch from "./components/SearchBar";
 import HomePage from "./components/HomePage";
 
 function App(): React.JSX.Element {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
   
   useEffect(() => {
-    dispatch(authenticate() as any).then(() => setIsLoaded(true));
+    dispatch(authenticate()).then(() => setIsLoaded(true));
   }, [dispatch]);
 
   return (
     <>
-      <Navigation isLoaded={isLoaded} />
+      <Navigation />
       {isLoaded && (
         <>
           <Switch>

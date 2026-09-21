@@ -1,9 +1,8 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
 import { useHistory, useParams } from "react-router-dom";
 import { createOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
-import { AppDispatch } from "../../../store";
+import { useAppDispatch } from "../../../store";
 import './CreateNewReview.css'
 
 /** Matches the `review` column and ReviewForm's Length validator. */
@@ -15,7 +14,7 @@ interface CreateNewReviewParams {
 
 function CreateNewReview(): React.JSX.Element {
   const { restaurantId } = useParams<CreateNewReviewParams>();
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const history = useHistory();
 
   const [review, setReview] = useState<string>("");
@@ -48,7 +47,7 @@ function CreateNewReview(): React.JSX.Element {
     let failures: string[] | null;
     try {
       failures = await dispatch(
-        createOneReview({ review: trimmed, rating }, +restaurantId) as any
+        createOneReview({ review: trimmed, rating: Number(rating) }, +restaurantId)
       );
     } catch (unexpected) {
       failures = ["Something went wrong posting your review. Please try again."];
@@ -64,8 +63,8 @@ function CreateNewReview(): React.JSX.Element {
     // here, the restaurant page loads for itself and reports its own errors,
     // which beats stranding the user on a disabled form.
     try {
-      await dispatch(getSingleRestaurant(+restaurantId) as any);
-      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId) as any);
+      await dispatch(getSingleRestaurant(+restaurantId));
+      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
     } catch (refreshError) {
       // fall through to the restaurant page
     }

@@ -72,7 +72,7 @@ afterEach(() => {
 
 test("the modal stays open until the PUT resolves, then closes", async () => {
   const put = deferred<any>();
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = jest.fn((_url: string, options: any = {}) => {
     if (options.method === "PUT") return put.promise;
     return Promise.resolve(okJson(restaurant)); // the refetch after a save
   });

@@ -1,17 +1,12 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { useSelector } from 'react-redux';
 import ProfileButton from './ProfileButton';
 import './Navigation.css';
 import SearchBar from './searchBar';
-import { RootState } from '../../types';
+import { useAppSelector } from "../../store";
 
-interface NavigationProps {
-	isLoaded: boolean;
-}
-
-function Navigation({ isLoaded }: NavigationProps): React.JSX.Element {
-	const sessionUser = useSelector((state: RootState) => state.session.user);
+function Navigation(): React.JSX.Element {
+	const sessionUser = useAppSelector((state) => state.session.user);
 
 	return (
 		<nav className='navBar-container'>

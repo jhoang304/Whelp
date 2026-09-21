@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from "react";
 import { login } from "../../store/session";
-import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
-import { RootState } from "../../types";
-import { AppDispatch } from "../../store";
+import { useAppDispatch, useAppSelector } from "../../store";
 import './LoginForm.css';
 
 function LoginFormPage(): React.JSX.Element {
   // --- Hooks must be called first ---
-  const dispatch = useDispatch<AppDispatch>();
-  const sessionUser = useSelector((state: RootState) => state.session.user);
+  const dispatch = useAppDispatch();
+  const sessionUser = useAppSelector((state) => state.session.user);
   const [email_address, setEmail_Address] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -37,7 +35,7 @@ function LoginFormPage(): React.JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const data = await dispatch(login(email_address, password) as any);
+    const data = await dispatch(login(email_address, password));
     if (data) {
       setErrors(data);
     } else {
@@ -46,7 +44,7 @@ function LoginFormPage(): React.JSX.Element {
   };
 
   const handleDemoLogin = () => {
-    dispatch(login('demo@aa.io', 'password') as any).then((data: string[] | null) => {
+    dispatch(login('demo@aa.io', 'password')).then((data: string[] | null) => {
       if (data) {
         setErrors(data);
       } else {
