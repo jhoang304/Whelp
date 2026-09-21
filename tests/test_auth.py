@@ -112,4 +112,4 @@ def test_creating_a_restaurant_requires_login(client):
         "description": "Should never be written.",
     })
     assert res.status_code in (302, 401)
-    assert db.session.query(Restaurant).count() == 1, "only the seeded one"
+    assert db.session.query(Restaurant).filter_by(name="Uninvited").first() is None
