@@ -19,7 +19,7 @@ function Navigation({ isLoaded }: NavigationProps): React.JSX.Element {
 				<div className='nav-left'>
 					<div className='nav-logo'>
 						<NavLink to="/">
-							<img className="logo-img" src="https://i.imgur.com/c7KuGow.png" alt="Whelp Logo" />
+							<img className="logo-img" src="/whelp-logo.png" alt="Whelp" />
 						</NavLink>
 					</div>
 					<div className='nav-links'>

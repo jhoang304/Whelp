@@ -19,7 +19,12 @@
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "types": ["node", "react", "react-dom"],
+    "types": [
+      "node",
+      "react",
+      "react-dom",
+      "jest"
+    ],
     "noImplicitAny": true,
     "noImplicitReturns": true,
     "noUnusedLocals": true,
