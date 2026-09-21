@@ -1,13 +1,12 @@
 import React, { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useHistory } from "react-router-dom";
 import {
   fetchAllReviewsByRestaurantId,
   deleteReviewById,
 } from "../../../store/reviews";
 import { getSingleRestaurant } from "../../../store/restaurants";
-import { AppDispatch } from "../../../store";
-import { Review, RootState } from "../../../types";
+import { useAppDispatch, useAppSelector } from "../../../store";
+import { Review } from "../../../types";
 import RatingStar from "../../RatingStar";
 import OwnerResponse from "../OwnerResponse";
 import { avatarUrl, onAvatarError } from "../../../utils/images";
@@ -26,15 +25,15 @@ const whiteStar = (
 );
 
 function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const history = useHistory();
 
-  const sessionUser = useSelector((state: RootState) => state.session.user);
-  const currentRestaurant = useSelector((state: RootState) => state.Restaurants.singleRestaurant);
-  const allReviews = useSelector((state: RootState) => state.reviews);
+  const sessionUser = useAppSelector((state) => state.session.user);
+  const currentRestaurant = useAppSelector((state) => state.Restaurants.singleRestaurant);
+  const allReviews = useAppSelector((state) => state.reviews);
 
   useEffect(() => {
-    dispatch(fetchAllReviewsByRestaurantId(restaurantId) as any);
+    dispatch(fetchAllReviewsByRestaurantId(restaurantId));
   }, [dispatch, restaurantId]);
 
   // Object keys come back in numeric order, so re-sort newest first.
@@ -47,9 +46,9 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
 
   const handleDelete = (reviewId: number) => async () => {
     if (!window.confirm("Delete your review? This cannot be undone.")) return;
-    await dispatch(deleteReviewById(reviewId) as any);
-    await dispatch(fetchAllReviewsByRestaurantId(restaurantId) as any);
-    dispatch(getSingleRestaurant(+restaurantId) as any);
+    await dispatch(deleteReviewById(reviewId));
+    await dispatch(fetchAllReviewsByRestaurantId(restaurantId));
+    dispatch(getSingleRestaurant(+restaurantId));
   };
 
   const handleUpdate = (reviewId: number) => () => {

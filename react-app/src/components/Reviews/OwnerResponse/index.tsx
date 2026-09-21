@@ -1,7 +1,6 @@
 import React, { useState } from "react";
-import { useDispatch } from "react-redux";
 import { Link } from "react-router-dom";
-import { AppDispatch } from "../../../store";
+import { useAppDispatch } from "../../../store";
 import { Review } from "../../../types";
 import {
   createReviewResponse,
@@ -33,7 +32,7 @@ function formatDate(value: string): string {
  * except the owner, who can post, edit, and delete their response inline.
  */
 function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps): React.JSX.Element | null {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const response = review.response || null;
 
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -70,7 +69,7 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
     const action = response
       ? updateReviewResponse(review.id, trimmed)
       : createReviewResponse(review.id, trimmed);
-    const result: string[] | null = await dispatch(action as any);
+    const result: string[] | null = await dispatch(action);
     setIsSaving(false);
 
     if (result) {
@@ -83,7 +82,7 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
 
   const handleDelete = async () => {
     if (!window.confirm("Delete your response to this review?")) return;
-    const result: string[] | null = await dispatch(deleteReviewResponse(review.id) as any);
+    const result: string[] | null = await dispatch(deleteReviewResponse(review.id));
     if (result) setErrors(result);
   };
 

@@ -1,17 +1,17 @@
 import "./CreateRestaurantModal.css"
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';
 import { addRestaurantThunk } from "../../store/restaurants";
 import { parseErrors } from "../../utils/parseErrors";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
+import { useAppDispatch } from "../../store";
 
 type ImageMode = "upload" | "url";
 
 function CreateRestaurantModal() {
-    const dispatch = useDispatch();
+    const dispatch = useAppDispatch();
     const history = useHistory();
     const [name, setName] = useState("");
     const [price, setPrice] = useState("$")
@@ -29,10 +29,9 @@ function CreateRestaurantModal() {
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
-    const sessionUser = useSelector((state: any) => state.session.user)
 
 
-    const handleSubmit = async (e: any) => {
+    const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         setIsSubmitting(true);
         setErrors([]); // Clear previous errors
@@ -65,8 +64,9 @@ function CreateRestaurantModal() {
             imageUrl = upload.url;
         }
 
+      // No user_id: the API takes the owner from the session, and trusting a
+      // body field for it would be a bug rather than a convenience.
       const newRestaurant = {
-        user_id: sessionUser.id,
         name,
         price,
         address,
@@ -81,14 +81,16 @@ function CreateRestaurantModal() {
       };
 
         try {
-            const createdRestaurantId = await (dispatch as any)(addRestaurantThunk(newRestaurant));
+            const createdRestaurantId = await dispatch(addRestaurantThunk(newRestaurant));
             closeModal();
             history.push(`/single/${createdRestaurantId}`);
-        } catch (res: any) {
+        } catch (thrown: unknown) {
             // addRestaurantThunk throws the failed response itself; a dropped
             // connection throws a TypeError from fetch instead.
-            setErrors(typeof res?.json === "function"
-                ? await parseErrors(res, "An error occurred while creating the restaurant. Please try again.")
+            const isResponse = (value: unknown): value is Response =>
+                typeof (value as Response | undefined)?.json === "function";
+            setErrors(isResponse(thrown)
+                ? await parseErrors(thrown, "An error occurred while creating the restaurant. Please try again.")
                 : ["Network error. Please check your connection and try again."]);
         } finally {
             setIsSubmitting(false);

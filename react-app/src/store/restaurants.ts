@@ -1,12 +1,31 @@
 
-import { 
-    RestaurantsState, 
-    RestaurantActionTypes, 
-    Restaurant, 
-    RestaurantsResponse
+import {
+    RestaurantsState,
+    RestaurantActionTypes,
+    Restaurant,
+    RestaurantsResponse,
+    SingleRestaurantResponse
 } from '../types';
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
+
+/** What the create and edit modals send. The API owns id and user_id. */
+export interface RestaurantDraft {
+    name: string;
+    price: string;
+    address: string;
+    city: string;
+    state: string;
+    zipcode: string;
+    country: string;
+    phone_number: string;
+    website: string;
+    description: string;
+    /** create only: the cover photo, uploaded or pasted */
+    url?: string;
+    id?: number;
+    user_id?: number;
+}
 
 //Load all restaurants
 const LOAD = "restaurants/loadRestaurants";
@@ -85,7 +104,7 @@ export const clearSearch = () => (dispatch: AppDispatch) => {
 // Load a single restaurant
 const LOADSINGLE = "singleRestaurant/loadSingleRestaurant"
 const CLEARSINGLE = "singleRestaurant/clearSingleRestaurant"
-export const loadSingleRestaurant = (detailObj: any) => ({
+export const loadSingleRestaurant = (detailObj: SingleRestaurantResponse) => ({
     type: LOADSINGLE,
     singleRestaurant: detailObj
 })
@@ -107,7 +126,7 @@ let latestRequestedId: number | null = null
  * error messages on failure, so the page can tell "not found" apart from
  * "still loading" instead of spinning forever.
  */
-export const getSingleRestaurant = (restaurantId: number) => async (dispatch: any) => {
+export const getSingleRestaurant = (restaurantId: number) => async (dispatch: AppDispatch) => {
     latestRequestedId = restaurantId
 
     const superseded = () => latestRequestedId !== restaurantId
@@ -136,7 +155,7 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: an
             : ["Something went wrong loading this restaurant."])
     }
 
-    let detail: any
+    let detail: SingleRestaurantResponse
     try {
         detail = await response.json()
     } catch (parseError) {
@@ -149,7 +168,7 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: an
 }
 
 //Create a restaurant
-export const addRestaurantThunk = (newRestaurant: any) => async (dispatch: any) => {
+export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () => {
     let createdRestaurantId;
     const response = await fetch("/api/restaurants/", {
         method: "POST",
@@ -193,7 +212,7 @@ export const addRestaurantThunk = (newRestaurant: any) => async (dispatch: any) 
  * messages, the contract createReviewResponse uses, so the modal can show
  * what went wrong instead of closing over a failed PUT.
  */
-export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) => {
+export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number }) => async (dispatch: AppDispatch) => {
     const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website } = restaurant
 
     let res: Response
@@ -225,7 +244,7 @@ export const updateRestaurantThunk = (restaurant: any) => async (dispatch: any) 
 
 
 //Delete a restaurant
-export const deleteRestaurantThunk = (id: number) => async (dispatch: any) => {
+export const deleteRestaurantThunk = (id: number) => async (dispatch: AppDispatch) => {
 
     const res = await fetch(`/api/restaurants/${id}`, {
         method: "DELETE"
@@ -286,14 +305,14 @@ export default function restaurantsReducer(
                 searchedRestaurants: {}
             };
         case SEARCH_RESTAURANTS:
-            const newState = { 
-                ...state, 
+            const newState: RestaurantsState = {
+                ...state,
                 searchedRestaurants: {},
                 searchLoading: false,
                 searchError: null
             };
             action.restaurants.Restaurants.forEach((restaurant) => {
-                (newState.searchedRestaurants as any)[restaurant.id] = restaurant;
+                newState.searchedRestaurants![restaurant.id] = restaurant;
             });
             return newState;
         case CLEAR_SEARCH_RESULTS:

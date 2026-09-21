@@ -1,5 +1,17 @@
 import { Review, ReviewResponse, ReviewsState } from '../types';
+import { AnyAction } from 'redux';
+
+import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
+
+/** What a review form sends: the API fills in the author and the restaurant. */
+export interface ReviewDraft {
+    review: string;
+    rating: number;
+    url?: string;
+}
+
+type Id = number | string;
 
 export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
 
@@ -12,7 +24,7 @@ const  loadAllReviewsByRestaurantId = (reviews: Review[]) => {
     }
 }
 
-export const fetchAllReviewsByRestaurantId = (restaurantId: any) => async(dispatch: any) => {
+export const fetchAllReviewsByRestaurantId = (restaurantId: Id) => async (dispatch: AppDispatch) => {
     const res = await fetch(`/api/restaurants/${restaurantId}/reviews`)
     if(res.ok){
         const reviews = await res.json();
@@ -29,7 +41,7 @@ const loadUserIdRev = (reviews: Review[]) => ({
   reviews
 })
 
-export const getAllReviewsByUserId = (user_id: any) => async(dispatch: any) => {
+export const getAllReviewsByUserId = (user_id: Id) => async (dispatch: AppDispatch) => {
   const response = await fetch(`/api/reviews/${user_id}`)
   if(response.ok){
     const data = await response.json()
@@ -41,14 +53,14 @@ export const getAllReviewsByUserId = (user_id: any) => async(dispatch: any) => {
 
 // Delete a review
 const DELETE_REVIEW = 'reviews/DELETE_REVIEW'
-const deleteReview = (reviewId: any) => {
+const deleteReview = (reviewId: Id) => {
     return {
         type:DELETE_REVIEW,
         reviewId
     }
 }
 
-export const deleteReviewById = (reviewId: any) => async (dispatch: any) => {
+export const deleteReviewById = (reviewId: Id) => async (dispatch: AppDispatch) => {
     const res = await fetch(`/api/reviews/${reviewId}`, {
         method:"DELETE"
     })
@@ -59,14 +71,14 @@ export const deleteReviewById = (reviewId: any) => async (dispatch: any) => {
 
 // Create a review
 const CREATE_REVIEW = 'reviews/CREATE_REVIEW'
-const createReview = (review: any) => {
+const createReview = (review: Review) => {
     return {
         type:CREATE_REVIEW,
         review
     }
 }
 /** Post a new review. Returns null on success or a list of error messages. */
-export const createOneReview = (newReview: any, restaurantId: any) => async (dispatch: any) => {
+export const createOneReview = (newReview: ReviewDraft, restaurantId: Id) => async (dispatch: AppDispatch) => {
     let res: Response
     try {
         res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
@@ -90,14 +102,14 @@ export const createOneReview = (newReview: any, restaurantId: any) => async (dis
 
 //update a review
 const UPDATE_REVIEW = 'reviews/UPDATE_REVIEW'
-const updateReview = (review: any) => {
+const updateReview = (review: Review) => {
     return {
         type:UPDATE_REVIEW,
         review
     }
 }
 /** Save an edited review. Returns null on success or a list of error messages. */
-export const updateOneReview = (newReview: any, reviewId: any) => async (dispatch: any) => {
+export const updateOneReview = (newReview: ReviewDraft, reviewId: Id) => async (dispatch: AppDispatch) => {
     let res: Response
     try {
         res = await fetch(`/api/reviews/${reviewId}`, {
@@ -134,7 +146,7 @@ const removeReviewResponse = (reviewId: number) => ({
 })
 
 /** Post the owner's reply. Returns null on success or a list of error messages. */
-export const createReviewResponse = (reviewId: number, response: string) => async (dispatch: any) => {
+export const createReviewResponse = (reviewId: number, response: string) => async (dispatch: AppDispatch) => {
     const res = await fetch(`/api/reviews/${reviewId}/response`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -148,7 +160,7 @@ export const createReviewResponse = (reviewId: number, response: string) => asyn
 }
 
 /** Edit the owner's reply. Returns null on success or a list of error messages. */
-export const updateReviewResponse = (reviewId: number, response: string) => async (dispatch: any) => {
+export const updateReviewResponse = (reviewId: number, response: string) => async (dispatch: AppDispatch) => {
     const res = await fetch(`/api/reviews/${reviewId}/response`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -162,7 +174,7 @@ export const updateReviewResponse = (reviewId: number, response: string) => asyn
 }
 
 /** Remove the owner's reply. Returns null on success or a list of error messages. */
-export const deleteReviewResponse = (reviewId: number) => async (dispatch: any) => {
+export const deleteReviewResponse = (reviewId: number) => async (dispatch: AppDispatch) => {
     const res = await fetch(`/api/reviews/${reviewId}/response`, { method: "DELETE" })
     if (res.ok) {
         dispatch(removeReviewResponse(reviewId))
@@ -171,8 +183,20 @@ export const deleteReviewResponse = (reviewId: number) => async (dispatch: any) 
     return parseErrors(res, "Could not delete your response. Please try again.")
 }
 
+type ReviewAction =
+    | { type: typeof LOAD_ALL_REVIEWS_BY_RESTAURANTID; reviews: Review[] }
+    | { type: typeof LoadUserReviews; reviews: Review[] }
+    | { type: typeof DELETE_REVIEW; reviewId: Id }
+    | { type: typeof CREATE_REVIEW; review: Review }
+    | { type: typeof UPDATE_REVIEW; review: Review }
+    | { type: typeof SET_REVIEW_RESPONSE; reviewId: number; response: ReviewResponse }
+    | { type: typeof REMOVE_REVIEW_RESPONSE; reviewId: number };
+
 const initialState: ReviewsState = {}
-const reviewReducer = (state: ReviewsState = initialState, action: any): ReviewsState => {
+const reviewReducer = (state: ReviewsState = initialState, incoming: AnyAction): ReviewsState => {
+    // The store carries other stores' actions and redux's own; those fall
+    // through to default. Naming ours here is what lets the switch narrow.
+    const action = incoming as ReviewAction;
     let newState: ReviewsState
     switch (action.type) {
         case LOAD_ALL_REVIEWS_BY_RESTAURANTID:

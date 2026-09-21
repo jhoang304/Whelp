@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from "react";
-import { useDispatch } from "react-redux";
 import { logout } from "../../store/session";
 import OpenModalButton from "../OpenModalButton";
 import LoginFormModal from "../LoginFormModal";
 import SignupFormModal from "../SignupFormModal";
 import CreateRestaurantModal from "../CreateRestaurantModal";
 import { useHistory } from "react-router-dom";
-import { AppDispatch } from "../../store";
+import { useAppDispatch } from "../../store";
 import { User } from "../../types";
 import { onAvatarError } from "../../utils/images";
 
@@ -15,7 +14,7 @@ interface ProfileButtonProps {
 }
 
 function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
-  const dispatch = useDispatch<AppDispatch>();
+  const dispatch = useAppDispatch();
   const history = useHistory();
 
   const [showMenu, setShowMenu] = useState<boolean>(false);
@@ -42,7 +41,7 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
 
   const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
-    dispatch(logout() as any);
+    dispatch(logout());
     history.push('/');
     closeMenu();
   };

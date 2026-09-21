@@ -1,24 +1,22 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom"
-import { useDispatch, useSelector } from "react-redux";
 import "./RestaurantList.css"
 import Restaurant from "../Restaurant"
 import { getAllRestaurants } from "../../store/restaurants";
-import { RootState } from "../../types";
-import { AppDispatch } from "../../store";
+import { useAppDispatch, useAppSelector } from "../../store";
 
 function RestaurantList(): React.JSX.Element {
-    const allRestaurantObj = useSelector((state: RootState) => {
+    const allRestaurantObj = useAppSelector((state) => {
         return state.Restaurants.allRestaurants
     });
 
     const allRestaurants = allRestaurantObj ? Object.values(allRestaurantObj) : [];
 
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
-    const dispatch = useDispatch<AppDispatch>();
+    const dispatch = useAppDispatch();
     
     useEffect(() => {
-        dispatch(getAllRestaurants() as any).then(() => setIsLoaded(true));
+        dispatch(getAllRestaurants()).then(() => setIsLoaded(true));
     }, [dispatch]);
 
     if (!isLoaded) {

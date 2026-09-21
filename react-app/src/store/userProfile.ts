@@ -1,4 +1,7 @@
 import { Review, UserProfile, UserProfileState } from '../types';
+import { AnyAction } from 'redux';
+
+import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { setUser } from './session';
 
@@ -18,7 +21,7 @@ export const clearProfile = () => ({ type: CLEAR_PROFILE });
  * with every review they have written. Returns null on success or a list of
  * error messages on failure.
  */
-export const getProfileThunk = (userId: string | number) => async (dispatch: any) => {
+export const getProfileThunk = (userId: string | number) => async (dispatch: AppDispatch) => {
     const [profileRes, reviewsRes] = await Promise.all([
         fetch(`/api/users/get/${userId}`),
         fetch(`/api/reviews/${userId}`),
@@ -50,7 +53,7 @@ export interface ProfileUpdates {
  * refreshed (so the nav bar updates) and the profile is reloaded.
  * Returns null on success or a list of error messages.
  */
-export const editProfileThunk = (updates: ProfileUpdates, userId: string | number) => async (dispatch: any) => {
+export const editProfileThunk = (updates: ProfileUpdates, userId: string | number) => async (dispatch: AppDispatch) => {
     const response = await fetch(`/api/users/${userId}/edit`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -67,7 +70,7 @@ export const editProfileThunk = (updates: ProfileUpdates, userId: string | numbe
 
 const initialState: UserProfileState = { profile: null, reviews: [] };
 
-export default function userProfileReducer(state: UserProfileState = initialState, action: any): UserProfileState {
+export default function userProfileReducer(state: UserProfileState = initialState, action: AnyAction): UserProfileState {
     switch (action.type) {
         case LOAD_PROFILE:
             return { profile: action.profile, reviews: action.reviews };

@@ -101,10 +101,21 @@ def test_a_long_enough_password_is_accepted(client):
 def test_the_client_and_server_password_rules_are_the_same():
     """A client looser than the server sends a doomed request; stricter lies."""
     source = (pathlib.Path(__file__).resolve().parents[1] / "react-app" / "src"
-              / "components" / "SignupFormPage" / "index.tsx").read_text(encoding="utf-8")
+              / "utils" / "password.ts").read_text(encoding="utf-8")
     declared = re.search(r"PASSWORD_MIN_LENGTH = (\d+);", source)
-    assert declared, "the signup page should declare the minimum it checks"
+    assert declared, "the client should declare the minimum it checks"
     assert int(declared.group(1)) == PASSWORD_MIN_LENGTH
+
+
+def test_both_signup_forms_check_the_password_length():
+    """
+    The page had the check and the modal did not, so the same password was
+    refused in one and sent to fail server-side in the other.
+    """
+    components = pathlib.Path(__file__).resolve().parents[1] / "react-app" / "src" / "components"
+    for form in ("SignupFormPage", "SignupFormModal"):
+        source = (components / form / "index.tsx").read_text(encoding="utf-8")
+        assert "PASSWORD_MIN_LENGTH" in source, form
 
 
 @pytest.fixture()

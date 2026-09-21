@@ -1,17 +1,13 @@
 import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { Redirect } from "react-router-dom";
+import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from "../../utils/password";
 import { signUp } from "../../store/session";
-import { RootState } from "../../types";
-import { AppDispatch } from "../../store";
+import { useAppDispatch, useAppSelector } from "../../store";
 import './SignupForm.css';
 
-// Mirrored from app/forms/signup_form.py; tests/test_auth.py checks they agree.
-const PASSWORD_MIN_LENGTH = 8;
-
 function SignupFormPage(): React.JSX.Element {
-  const dispatch = useDispatch<AppDispatch>();
-  const sessionUser = useSelector((state: RootState) => state.session.user);
+  const dispatch = useAppDispatch();
+  const sessionUser = useAppSelector((state) => state.session.user);
   const [email, setEmail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [first_name, setFirst_Name] = useState<string>("");
@@ -25,9 +21,9 @@ function SignupFormPage(): React.JSX.Element {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (password.length < PASSWORD_MIN_LENGTH) {
-      setErrors([`Password must be at least ${PASSWORD_MIN_LENGTH} characters.`]);
+      setErrors([PASSWORD_TOO_SHORT]);
     } else if (password === confirmPassword) {
-      const data = await dispatch(signUp(username, email, first_name, last_name, password) as any);
+      const data = await dispatch(signUp(username, email, first_name, last_name, password));
       if (data) {
         setErrors(data);
       } else {

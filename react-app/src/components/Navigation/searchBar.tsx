@@ -1,11 +1,10 @@
 import React, { useState } from 'react';
-import { useDispatch } from 'react-redux';
 import { useHistory } from "react-router-dom";
 import { search_restaurants } from '../../store/restaurants';
-import { AppDispatch } from '../../store';
+import { useAppDispatch } from "../../store";
 
 function SearchBar(): React.JSX.Element {
-    const dispatch = useDispatch<AppDispatch>();
+    const dispatch = useAppDispatch();
     const history = useHistory();
     const [keyword, setKeyword] = useState<string>("");
     const [isFocused, setIsFocused] = useState<boolean>(false);
@@ -22,7 +21,7 @@ function SearchBar(): React.JSX.Element {
       setIsSearching(true);
       
       try {
-        const response = await dispatch(search_restaurants(trimmedKeyword) as any);
+        const response = await dispatch(search_restaurants(trimmedKeyword));
         if (response) {
           history.push(`/search/${encodeURIComponent(trimmedKeyword)}`);
         }

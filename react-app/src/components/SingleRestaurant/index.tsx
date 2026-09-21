@@ -1,7 +1,6 @@
 import "./SingleRestaurant.css"
 import React, { useEffect } from "react";
 import { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router-dom";
 import { Link, useParams } from 'react-router-dom';
 import { getSingleRestaurant, deleteRestaurantThunk, getAllRestaurants } from "../../store/restaurants"
@@ -13,8 +12,7 @@ import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
 import DisplayPhotos from "../DisplayPhotos";
 import { onRestaurantImageError } from "../../utils/images";
-import { RootState } from "../../types";
-import { AppDispatch } from "../../store";
+import { useAppDispatch, useAppSelector } from "../../store";
 
 
 function getMap(str: string): string {
@@ -31,11 +29,11 @@ function SingleRestaurant(): React.JSX.Element {
     const history = useHistory();
     const { restaurantId } = useParams<SingleRestaurantParams>()
 
-    const singleRestaurant = useSelector((state: RootState) => {
+    const singleRestaurant = useAppSelector((state) => {
         return state.Restaurants.singleRestaurant
     })
 
-    const dispatch = useDispatch<AppDispatch>()
+    const dispatch = useAppDispatch()
     const [status, setStatus] = useState<Status>("loading");
     const [loadErrors, setLoadErrors] = useState<string[]>([]);
 
@@ -43,7 +41,7 @@ function SingleRestaurant(): React.JSX.Element {
         if (!restaurantId) return;
         let cancelled = false;
         setStatus("loading");
-        dispatch(getSingleRestaurant(+restaurantId) as any).then((errors: string[] | null) => {
+        dispatch(getSingleRestaurant(+restaurantId)).then((errors: string[] | null) => {
             if (cancelled) return;
             if (errors) {
                 setLoadErrors(errors);
@@ -57,12 +55,12 @@ function SingleRestaurant(): React.JSX.Element {
         };
     }, [dispatch, restaurantId])
 
-    const sessionUser = useSelector((state: RootState) => state.session.user);
+    const sessionUser = useAppSelector((state) => state.session.user);
 
     const handleDelete = () => {
         if (restaurantId) {
-            dispatch(deleteRestaurantThunk(+restaurantId) as any)
-                .then(() => dispatch(getAllRestaurants() as any))
+            dispatch(deleteRestaurantThunk(+restaurantId))
+                .then(() => dispatch(getAllRestaurants()))
                 .then(() => history.push("/"));
         }
     };
