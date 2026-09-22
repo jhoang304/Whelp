@@ -11,6 +11,8 @@ import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
 import CategoryChips from "../CategoryChips";
+import OpenStatus from "../OpenStatus";
+import OpeningHoursTable from "../OpeningHoursTable";
 import DisplayPhotos from "../DisplayPhotos";
 import { onRestaurantImageError } from "../../utils/images";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -71,6 +73,15 @@ function SingleRestaurant(): React.JSX.Element {
     const reservationIcon = (<svg width="24" height="24" className="icon_svg"><path d="M22 3a1 1 0 011 1v16a3 3 0 01-3 3H4a3 3 0 01-3-3V4a1 1 0 011-1h4.5V2a1 1 0 012 0v1h7V2a1 1 0 012 0v1H22zM6.5 5H3v4h18V5h-3.5v1a1 1 0 11-2 0V5h-7v1a1 1 0 11-2 0V5zM20 21a1 1 0 001-1v-9H3v9a1 1 0 001 1h16zm-2-8a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4a1 1 0 011-1h4zm-1 4v-2h-2v2h2z"></path></svg>)
     const creditCardIcon = (<svg width="24" height="24" className="icon_svg"><path d="M9.46 17.52a1 1 0 01-.71-.29l-4-4a1.004 1.004 0 111.42-1.42l3.25 3.26 8.33-8.34a1.004 1.004 0 011.42 1.42l-9 9a1 1 0 01-.71.37z"></path></svg>)
 
+    // The page already draws these; each now belongs to an amenity rather than
+    // to a line of text that was true of every restaurant.
+    const AMENITY_ICONS: { [slug: string]: React.JSX.Element } = {
+        "reservations": reservationIcon,
+        "delivery": deliveryIcon,
+        "takeout": takeoutIcon,
+        "credit-cards": creditCardIcon,
+    };
+
     const websiteIcon = (<svg width="24" height="24" className="icon_svg"><path d="M20.47 3.07a.5.5 0 01.53.46v6a.5.5 0 01-.39.49.58.58 0 01-.19 0 .47.47 0 01-.35-.15L17.8 7.6l-5 5a1 1 0 01-1.41 0 1 1 0 010-1.41l5-5-2.27-2.27a.5.5 0 01.35-.85h6zM20 21H4a1 1 0 01-1-1V4a1 1 0 011-1h6a1 1 0 010 2H5v14h14v-5a1 1 0 012 0v6a1 1 0 01-1 1z"></path></svg>)
     const phoneIcon = (<svg width="24" height="24" className="icon_svg"><path d="M13.59 23.07A7 7 0 018.64 21L3 15.36a7 7 0 010-9.9l1.39-1.41a1 1 0 011.42 0l5 5a1 1 0 010 1.41 2.001 2.001 0 002.83 2.83 1 1 0 011.41 0l4.95 5a1 1 0 010 1.42L18.54 21a7 7 0 01-4.95 2.07zM5.1 6.17l-.71.71a5 5 0 000 7.07l5.66 5.66a5 5 0 007.07 0l.71-.71-3.63-3.63a4 4 0 01-4.86-.61 4 4 0 01-.61-4.86L5.1 6.17zm12.78 5.95a1 1 0 01-1-1 4 4 0 00-4-4 1 1 0 010-2 6 6 0 016 6 1 1 0 01-1 1zm4.19 0a1 1 0 01-1-1 8.19 8.19 0 00-8.19-8.19 1 1 0 010-2c5.625.006 10.184 4.565 10.19 10.19a1 1 0 01-1 1z"></path></svg>)
     const addressIcon = (<svg width="24" height="24" viewBox="0 0 22 22" className="address-icon_svg"><path d="M11 22a3 3 0 01-2.12-.88l-8-8a3 3 0 010-4.24l8-8a3 3 0 014.24 0l8 8a3 3 0 010 4.24l-8 8A3 3 0 0111 22zm0-20a1 1 0 00-.71.29l-8 8a1 1 0 000 1.42l8 8a1 1 0 001.42 0l8-8a1 1 0 000-1.42l-8-8A1 1 0 0011 2zm4.85 8.15a.48.48 0 010 .66l-3 3a.47.47 0 01-.35.15.43.43 0 01-.19 0 .5.5 0 01-.31-.46v-2.05a1 1 0 01-.25.05h-2a1 1 0 00-1 1v1a1 1 0 11-2 0v-1a3 3 0 013-3h2a1 1 0 01.25.05V7.5a.5.5 0 01.31-.5.47.47 0 01.54.15l3 3z"></path></svg>)
@@ -126,7 +137,10 @@ function SingleRestaurant(): React.JSX.Element {
                                 categories={singleRestaurant.categories}
                                 className="single-restaurant-chips"
                             />
-                            <div className="price"><span className="single-green-word">Open</span> until 9:30PM</div>
+                            <OpenStatus
+                                status={singleRestaurant.openStatus}
+                                className="single-restaurant-status"
+                            />
                         </div>
                         <div className="see-all-photos">
                         <OpenModalButton
@@ -165,14 +179,24 @@ function SingleRestaurant(): React.JSX.Element {
                                 </>
                             )}
                             <div className="restaurant-details">
-                                <h2>Amenities and More</h2>
-                                <div className="amenities">
-                                    <div className="indi-amenity">{reservationIcon}<span>Takes Reservations</span></div>
-                                    <div className="indi-amenity">{deliveryIcon}<span>Offers Delivery</span></div>
-                                    <div className="indi-amenity">{takeoutIcon} <span>Offers Takeout</span></div>
-                                    <div className="indi-amenity">{creditCardIcon}<span>Accepts Credit Cards</span></div>
-                                </div>
-                                <hr></hr>
+                                {singleRestaurant.amenities?.length > 0 && (
+                                    <>
+                                        <h2>Amenities and More</h2>
+                                        <div className="amenities">
+                                            {singleRestaurant.amenities.map((amenity) => (
+                                                <div className="indi-amenity" key={amenity.id}>
+                                                    {AMENITY_ICONS[amenity.slug] || creditCardIcon}
+                                                    <span>{amenity.name}</span>
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <hr></hr>
+                                    </>
+                                )}
+                                <OpeningHoursTable
+                                    hours={singleRestaurant.hours}
+                                    timezone={singleRestaurant.timezone}
+                                />
                                 <h2>About the Business</h2>
                                 <div className="restaurant-description">{singleRestaurant.description}</div>
                                 <hr></hr>

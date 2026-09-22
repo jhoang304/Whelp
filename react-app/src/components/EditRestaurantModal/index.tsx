@@ -5,12 +5,14 @@ import { updateRestaurantThunk } from "../../store/restaurants"
 import { useAppDispatch, useAppSelector } from "../../store";
 import { SingleRestaurantResponse } from "../../types";
 import { RestaurantFields, validateRestaurant } from "../../utils/restaurantValidation";
+import { validateHours } from "../../utils/hours";
+import { OpeningHours } from "../../types";
 import RestaurantForm from "../RestaurantForm";
 
 type EditableRestaurant = Pick<SingleRestaurantResponse,
     "id" | "user_id" | "name" | "price" | "address" | "city" | "state" |
     "zipcode" | "country" | "phone_number" | "website" | "description"> &
-    Partial<Pick<SingleRestaurantResponse, "categories">>;
+    Partial<Pick<SingleRestaurantResponse, "categories" | "amenities" | "hours" | "timezone">>;
 
 interface EditRestaurantProps {
     singleRestaurant: EditableRestaurant;
@@ -38,6 +40,10 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
     });
     const [categoryIds, setCategoryIds] = useState<number[]>(
         (singleRestaurant.categories || []).map((category) => category.id))
+    const [amenityIds, setAmenityIds] = useState<number[]>(
+        (singleRestaurant.amenities || []).map((amenity) => amenity.id))
+    const [hours, setHours] = useState<OpeningHours[]>(singleRestaurant.hours || [])
+    const [timezone, setTimezone] = useState<string | null>(singleRestaurant.timezone ?? null)
     const [errors, setErrors] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const { closeModal } = useModal();
@@ -45,7 +51,7 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
     const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const validationErrors = validateRestaurant(fields);
+        const validationErrors = [...validateRestaurant(fields), ...validateHours(hours)];
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
@@ -71,6 +77,9 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
                 // The server keeps the existing owner; never try to reassign it.
                 user_id: singleRestaurant.user_id,
                 category_ids: categoryIds,
+                amenity_ids: amenityIds,
+                hours,
+                timezone,
             }));
         } catch (unexpected) {
             failures = ["Something went wrong saving your changes. Please try again."];
@@ -103,6 +112,12 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
                     onChange={setFields}
                     categoryIds={categoryIds}
                     onCategoryIdsChange={setCategoryIds}
+                    amenityIds={amenityIds}
+                    onAmenityIdsChange={setAmenityIds}
+                    hours={hours}
+                    onHoursChange={setHours}
+                    timezone={timezone}
+                    onTimezoneChange={setTimezone}
                     errors={errors}
                     busy={isSaving}
                     submitLabel="Submit"

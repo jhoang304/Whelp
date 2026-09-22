@@ -1,0 +1,22 @@
+/*
+ * The same green the card used for its hard-coded "Open", so a restaurant that
+ * really is open still looks the way the page always did.
+ */
+.open-now {
+    color: rgb(0, 128, 85);
+    font-weight: var(--font-bold);
+}
+
+.closed-now {
+    color: var(--color-error);
+    font-weight: var(--font-bold);
+}
+
+.open-status-detail {
+    color: inherit;
+}
+
+/* On the detail page the line sits with the price and reads a size larger. */
+.open-status.single-restaurant-status .open-now {
+    color: var(--color-success);
+}

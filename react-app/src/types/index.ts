@@ -8,6 +8,32 @@ export interface Category {
   slug: string;
 }
 
+/** One thing a restaurant offers, from the list at /api/amenities. */
+export interface Amenity {
+  id: number;
+  name: string;
+  slug: string;
+}
+
+/** A day a restaurant opens. A weekday with no entry is a day it is closed. */
+export interface OpeningHours {
+  /** 0 is Monday, as in Python's date.weekday() */
+  weekday: number;
+  /** "HH:MM" */
+  opens: string;
+  closes: string;
+}
+
+/**
+ * Whether a restaurant is open, worked out by the API against the clock where
+ * the restaurant is. Null means it has no hours or no timezone -- "nobody has
+ * said", which is not "closed" and must not be shown as one.
+ */
+export type OpenStatus =
+  | { isOpen: true; until: string }
+  | { isOpen: false; opensAt?: string; opensWeekday?: number; opensDay?: string }
+  | null;
+
 export interface Restaurant {
   id: number;
   user_id: number;
@@ -26,6 +52,8 @@ export interface Restaurant {
   previewImage: string | null;
   oneReview?: string | null;
   categories?: Category[];
+  amenities?: Amenity[];
+  openStatus?: OpenStatus;
 }
 
 export interface RestaurantImage {
@@ -131,6 +159,10 @@ export interface SingleRestaurantResponse {
   numReviews: number;
   avgStarRating: number;
   categories: Category[];
+  amenities: Amenity[];
+  hours: OpeningHours[];
+  openStatus: OpenStatus;
+  timezone: string | null;
 }
 
 // Redux State Types
@@ -153,10 +185,12 @@ export interface RestaurantsState {
   listError?: string | null;
 }
 
+/** The closed lists the filter bar and the restaurant form pick from. */
 export interface CategoriesState {
   list: Category[];
   /** the cities with a restaurant in them, for the city filter */
   cities: string[];
+  amenities: Amenity[];
 }
 
 export interface PhotosState {

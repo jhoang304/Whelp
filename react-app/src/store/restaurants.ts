@@ -1,5 +1,6 @@
 
 import {
+    OpeningHours,
     RestaurantsState,
     RestaurantActionTypes,
     Restaurant,
@@ -26,6 +27,10 @@ export interface RestaurantDraft {
     url?: string;
     /** omitted leaves a restaurant's cuisines alone; [] clears them */
     category_ids?: number[];
+    amenity_ids?: number[];
+    /** the days it opens; a day left out is a day it is closed */
+    hours?: OpeningHours[];
+    timezone?: string | null;
     id?: number;
     user_id?: number;
 }
@@ -263,7 +268,8 @@ export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () =
  * what went wrong instead of closing over a failed PUT.
  */
 export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number }) => async (dispatch: AppDispatch) => {
-    const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website, category_ids } = restaurant
+    const { id, user_id, name, price, address, city, state, zipcode, country, phone_number,
+        description, website, category_ids, amenity_ids, hours, timezone } = restaurant
 
     let res: Response
     try {
@@ -274,7 +280,7 @@ export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number
             },
             body: JSON.stringify({
                 user_id, name, price, address, city, state, zipcode, country, phone_number,
-                description, website, category_ids
+                description, website, category_ids, amenity_ids, hours, timezone
             })
         })
     } catch (networkError) {

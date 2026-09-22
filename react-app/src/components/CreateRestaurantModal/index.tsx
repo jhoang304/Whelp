@@ -6,6 +6,8 @@ import { addRestaurantThunk } from "../../store/restaurants";
 import { parseErrors } from "../../utils/parseErrors";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 import { RestaurantFields, validateRestaurant } from "../../utils/restaurantValidation";
+import { validateHours } from "../../utils/hours";
+import { OpeningHours } from "../../types";
 import { useAppDispatch } from "../../store";
 import RestaurantForm from "../RestaurantForm";
 
@@ -34,6 +36,11 @@ function CreateRestaurantModal() {
     const [imageMode, setImageMode] = useState<ImageMode>("upload")
     const [imageFile, setImageFile] = useState<File | null>(null)
     const [categoryIds, setCategoryIds] = useState<number[]>([])
+    const [amenityIds, setAmenityIds] = useState<number[]>([])
+    const [hours, setHours] = useState<OpeningHours[]>([])
+    // Set from the state on the server when it is left alone; the form
+    // only carries one once an owner has chosen it.
+    const [timezone, setTimezone] = useState<string | null>(null)
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
@@ -46,7 +53,7 @@ function CreateRestaurantModal() {
 
         // The field rules live in utils/restaurantValidation so this form and
         // the edit modal cannot drift apart again; the cover photo is ours.
-        const validationErrors: string[] = validateRestaurant(fields);
+        const validationErrors: string[] = [...validateRestaurant(fields), ...validateHours(hours)];
 
         if (imageMode === "upload" && !imageFile) validationErrors.push("Choose a cover photo for the restaurant");
         if (imageMode === "url" && !url.trim()) validationErrors.push("Cover photo URL is required");
@@ -77,6 +84,9 @@ function CreateRestaurantModal() {
             zipcode: fields.zipcode.trim(),
             url: imageUrl,
             category_ids: categoryIds,
+            amenity_ids: amenityIds,
+            hours,
+            timezone,
         };
 
         try {
@@ -106,6 +116,12 @@ function CreateRestaurantModal() {
                 onChange={setFields}
                 categoryIds={categoryIds}
                 onCategoryIdsChange={setCategoryIds}
+                amenityIds={amenityIds}
+                onAmenityIdsChange={setAmenityIds}
+                hours={hours}
+                onHoursChange={setHours}
+                timezone={timezone}
+                onTimezoneChange={setTimezone}
                 errors={errors}
                 busy={isSubmitting}
                 submitClassName="add-business-button"
