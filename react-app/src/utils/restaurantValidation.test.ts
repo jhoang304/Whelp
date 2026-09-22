@@ -1,3 +1,4 @@
+import { PHONE_MESSAGE } from "./phone";
 import {
   MAX_DESCRIPTION_LENGTH,
   MAX_WEBSITE_LENGTH,
@@ -68,6 +69,22 @@ describe("phone number", () => {
     expect(validateRestaurant(fields({ phone_number: "call me" }))).toContain(
       "Phone number must include at least one digit"
     );
+  });
+
+  // The loosening above went one step too far: "contains a digit" also
+  // accepts a real number with junk typed onto the end of it.
+  it.each([
+    "(346) 571-7931asdf",
+    "5551234 please",
+    "1-800-FLOWERS",
+  ])("rejects %s", (phone_number) => {
+    expect(validateRestaurant(fields({ phone_number }))).toContain(PHONE_MESSAGE);
+  });
+
+  it("says one thing about a number with no digits at all", () => {
+    // Not both messages: "no digits" is the more useful of the two.
+    const errors = validateRestaurant(fields({ phone_number: "call me" }));
+    expect(errors).not.toContain(PHONE_MESSAGE);
   });
 });
 
