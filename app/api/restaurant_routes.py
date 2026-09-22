@@ -1,8 +1,13 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
+from sqlalchemy import case, or_
 from sqlalchemy.orm import selectinload
-from app.models import Restaurant, Review, RestaurantImage, ReviewImage, User, db
+from app.models import (
+    Category, Restaurant, Review, RestaurantImage, ReviewImage, User, db,
+    restaurant_categories)
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
+from app.api.categories import read_categories
+from app.api.filters import filtered_restaurants, read_filters
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
     clear_other_previews, error_messages, key_still_referenced, page_response,
@@ -11,23 +16,55 @@ from app.api.utils import (
 restaurant_routes = Blueprint('restaurants', __name__)
 
 
+def with_categories(restaurant):
+    """
+    One restaurant and its cuisines, for the two routes that write one.
+
+    Not in Restaurant.to_dict: the listing calls that once per card and reads
+    every card's categories in a single batched query instead, which a lazy
+    relationship on the dict would quietly undo.
+    """
+    return {**restaurant.to_dict(),
+            "categories": [category.to_dict() for category in restaurant.categories]}
+
+
 # Get all Restaurants
 @restaurant_routes.route('/')
 def restaurants():
     """
     A page of restaurants, as the cards the listing page shows.
 
-    Ordered by id, which is arbitrary but stable: without an ORDER BY, two
-    pages of an unordered query may repeat a row or skip one entirely.
+    `category`, `price` (repeatable), `min_rating` and `city` narrow it, and
+    `sort` is rating, reviews or newest. Unsorted it comes back by id, which
+    is arbitrary but stable: without an ORDER BY, two pages of the same query
+    may repeat a row or skip one entirely.
     """
     page_request = read_page_request()
     if page_request.error:
         return {"errors": [page_request.error]}, 400
 
-    query = Restaurant.query.order_by(Restaurant.id)
+    filters = read_filters()
+    if filters.error:
+        return {"errors": [filters.error]}, 400
+
+    query = filtered_restaurants(filters)
     total = query.count()
     rows = query.limit(page_request.per_page).offset(page_request.offset).all()
     return page_response(restaurant_cards(rows), page_request, total)
+
+
+# The cities restaurants are actually in
+@restaurant_routes.route('/cities')
+def cities():
+    """
+    Every city with a restaurant in it, in one column.
+
+    The city filter matches a whole name, so the filter bar offers this list
+    rather than a text box: "Hous" and "Houston, TX" are both reasonable
+    things to type and neither of them is a city this database knows.
+    """
+    rows = db.session.query(Restaurant.city).distinct().order_by(Restaurant.city).all()
+    return {"items": [city for (city,) in rows]}
 
 
 # Get Single Restaurant by Id
@@ -77,6 +114,7 @@ def restaurants_by_id(id):
             "preview": image.preview} for image in images],
        "numReviews": numReviews,
        "avgStarRating": round(avgStarRating,2),
+       "categories": [category.to_dict() for category in SingleRestaurant.categories],
     }
 
     return data
@@ -91,6 +129,13 @@ def create_restaurant():
     form["csrf_token"].data = request.cookies.get("csrf_token")
 
     if form.validate_on_submit():
+        # Read before writing anything: a body naming a category that does not
+        # exist is a 400, not a restaurant created with one cuisine fewer than
+        # the owner chose.
+        categories, category_error = read_categories(request.get_json())
+        if category_error:
+            return {"errors": [category_error]}, 400
+
         restaurant = Restaurant(
             user_id = int(current_user.id),
             name = request.get_json()["name"],
@@ -107,10 +152,13 @@ def create_restaurant():
             description = request.get_json()["description"],
         )
 
+        if categories is not None:
+            restaurant.categories = categories
+
         db.session.add(restaurant)
         db.session.commit()
 
-        return restaurant.to_dict()
+        return with_categories(restaurant)
 
     else:
         return {"errors": error_messages(form.errors)}, 400
@@ -174,6 +222,9 @@ def edit_restaurant_by_restaurant_id(restaurantId):
     form["csrf_token"].data = request.cookies.get("csrf_token")
 
     if form.validate_on_submit():
+        categories, category_error = read_categories(request.get_json())
+        if category_error:
+            return {"errors": [category_error]}, 400
 
         restaurant.name = request.get_json()["name"]
         restaurant.price = request.get_json()["price"]
@@ -185,9 +236,13 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         restaurant.phone_number = request.get_json()["phone_number"]
         restaurant.website = request.get_json()["website"]
         restaurant.description = request.get_json()["description"]
+        # None means the body never mentioned categories, which is what every
+        # client written before this feature sends; [] means clear them.
+        if categories is not None:
+            restaurant.categories = categories
 
         db.session.commit()
-        return restaurant.to_dict()
+        return with_categories(restaurant)
 
 
     else:
@@ -223,50 +278,62 @@ def delete_restaurant(restaurantId):
 # Search Restaurants
 @restaurant_routes.route("/search/<keyword>")
 def search_restaurant(keyword):
+    """
+    A page of the restaurants matching `keyword`, name matches first, then
+    cuisines, then a mention anywhere else.
+
+    Takes the same filters and sort as the listing. The whole thing is one
+    query: it used to load every match into Python and slice the list, so a
+    search on a real table read the table to show twenty rows.
+    """
     if not keyword or len(keyword.strip()) == 0:
         return {"errors": ["Search keyword cannot be empty"]}, 400
-    
+
     page_request = read_page_request()
     if page_request.error:
         return {"errors": [page_request.error]}, 400
 
-    # Sanitize keyword to prevent SQL injection
+    filters = read_filters()
+    if filters.error:
+        return {"errors": [filters.error]}, 400
+
     sanitized_keyword = keyword.strip()
+    pattern = f"%{sanitized_keyword}%"
+    name_match = Restaurant.name.ilike(pattern)
+    # "Italian" is what people type into a search box, and this page used to
+    # invite it while nothing recorded what a restaurant served -- so it found
+    # only the owners who had written the word into their description.
+    category_match = Restaurant.id.in_(
+        db.session.query(restaurant_categories.c.restaurant_id).join(
+            Category, Category.id == restaurant_categories.c.category_id
+        ).filter(Category.name.ilike(pattern))
+    )
 
-    # Improved search strategy with prioritization
     if len(sanitized_keyword) < 3:
-        # For short keywords (1-2 characters), only search name and city
-        queried_restaurants = Restaurant.query.filter(
-            db.or_(
-                Restaurant.name.ilike(f"%{sanitized_keyword}%"),
-                Restaurant.city.ilike(f"%{sanitized_keyword}%")
-            )
-        ).all()
+        # One or two characters match too much of a description to be useful.
+        matches = or_(name_match, Restaurant.city.ilike(pattern))
+        relevance = case((name_match, 0), else_=1)
     else:
-        # For longer keywords, search all fields but prioritize exact matches
-        # First get exact name matches
-        exact_name_matches = Restaurant.query.filter(
-            Restaurant.name.ilike(f"%{sanitized_keyword}%")
-        ).all()
+        matches = or_(
+            name_match,
+            category_match,
+            Restaurant.city.ilike(pattern),
+            Restaurant.description.ilike(pattern),
+            Restaurant.state.ilike(pattern),
+        )
+        # A restaurant named for the word beats one that serves it, which
+        # beats one that merely mentions it somewhere.
+        relevance = case((name_match, 0), (category_match, 1), else_=2)
 
-        # Then get other matches
-        other_matches = Restaurant.query.filter(
-            db.and_(
-                ~Restaurant.name.ilike(f"%{sanitized_keyword}%"),  # Exclude exact name matches
-                db.or_(
-                    Restaurant.city.ilike(f"%{sanitized_keyword}%"),
-                    Restaurant.description.ilike(f"%{sanitized_keyword}%"),
-                    Restaurant.state.ilike(f"%{sanitized_keyword}%")
-                )
-            )
-        ).all()
+    query = filtered_restaurants(
+        filters,
+        base=Restaurant.query.filter(matches),
+        relevance=relevance,
+    )
 
-        # Combine results with name matches first
-        queried_restaurants = exact_name_matches + other_matches
-
-    total = len(queried_restaurants)
-    page = queried_restaurants[page_request.offset:page_request.offset + page_request.per_page]
-    return page_response(restaurant_cards(page), page_request, total)
+    total = query.count()
+    rows = query.limit(page_request.per_page).offset(page_request.offset).all()
+    return page_response(restaurant_cards(rows), page_request, total)
 
 
 REVIEW_ORDERS = {

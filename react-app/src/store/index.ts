@@ -9,13 +9,15 @@ import restaurantsReducer from './restaurants';
 import photoReducer from"./restaurantPhoto";
 import reviewReducer from './reviews';
 import userProfileReducer from './userProfile';
+import categoriesReducer from './categories';
 
 const rootReducer = combineReducers({
   session,
   Restaurants: restaurantsReducer,
   photos: photoReducer,
   reviews: reviewReducer,
-  user: userProfileReducer
+  user: userProfileReducer,
+  categories: categoriesReducer
 });
 
 // Define types for dispatch

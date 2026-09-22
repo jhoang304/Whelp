@@ -8,6 +8,7 @@ import {
 } from '../types';
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
+import { NO_FILTERS, RestaurantFilters, filterParams } from '../utils/filters';
 
 /** What the create and edit modals send. The API owns id and user_id. */
 export interface RestaurantDraft {
@@ -23,6 +24,8 @@ export interface RestaurantDraft {
     description: string;
     /** create only: the cover photo, uploaded or pasted */
     url?: string;
+    /** omitted leaves a restaurant's cuisines alone; [] clears them */
+    category_ids?: number[];
     id?: number;
     user_id?: number;
 }
@@ -40,18 +43,40 @@ export const loadRestaurants = (page: RestaurantsResponse, append: boolean) => (
 
 export const PER_PAGE = 20;
 
+export const LOAD_ERROR = "restaurants/loadError";
+
+const loadError = (error: string) => ({
+    type: LOAD_ERROR,
+    error
+});
+
 /**
- * Load one page of restaurants. `append` keeps what is already in the store,
- * which is what the listing's "Show more" wants; without it a second page
- * would replace the first.
+ * Load one page of restaurants, narrowed by `filters`. `append` keeps what is
+ * already in the store, which is what the listing's "Show more" wants;
+ * without it a second page would replace the first.
+ *
+ * A refused filter is kept as a message rather than swallowed: an empty
+ * listing and a rejected one look identical otherwise, and only one of them
+ * is worth clearing the filters over.
  */
-export const getAllRestaurants = (page = 1) => async (dispatch: AppDispatch) => {
-    const response = await fetch(`/api/restaurants?page=${page}&per_page=${PER_PAGE}`);
+export const getAllRestaurants = (
+    page = 1,
+    filters: RestaurantFilters = NO_FILTERS,
+) => async (dispatch: AppDispatch) => {
+    const params = filterParams(filters);
+    params.set("page", String(page));
+    params.set("per_page", String(PER_PAGE));
+
+    // With the trailing slash: without it every listing costs a 308 to the
+    // rule that has one, and then the request again.
+    const response = await fetch(`/api/restaurants/?${params.toString()}`);
     if (response.ok) {
         const body: RestaurantsResponse = await response.json();
         dispatch(loadRestaurants(body, page > 1));
         return body;
     }
+    const messages = await parseErrors(response, "Something went wrong loading restaurants.");
+    dispatch(loadError(messages[0]));
     return null;
 };
 
@@ -80,7 +105,11 @@ const clearSearchResults = () => ({
     type: CLEAR_SEARCH_RESULTS
 });
 
-export const search_restaurants = (keyword: string, page = 1) => async (dispatch: AppDispatch) => {
+export const search_restaurants = (
+    keyword: string,
+    page = 1,
+    filters: RestaurantFilters = NO_FILTERS,
+) => async (dispatch: AppDispatch) => {
     if (!keyword || keyword.trim().length === 0) {
         dispatch(searchError("Search keyword cannot be empty"));
         return null;
@@ -88,17 +117,24 @@ export const search_restaurants = (keyword: string, page = 1) => async (dispatch
 
     dispatch(searchLoading());
 
+    const params = filterParams(filters);
+    params.set("page", String(page));
+    params.set("per_page", String(PER_PAGE));
+
     try {
         const response = await fetch(
             `/api/restaurants/search/${encodeURIComponent(keyword.trim())}`
-            + `?page=${page}&per_page=${PER_PAGE}`);
-        
+            + `?${params.toString()}`);
+
         if (response.ok) {
             const data = await response.json();
             dispatch(search(data, page > 1));
             return data;
         } else if (response.status === 400) {
-            dispatch(searchError("Invalid search query"));
+            // The API says which filter it disliked; "Invalid search query"
+            // sent someone hunting through their keyword for the problem.
+            const messages = await parseErrors(response, "Invalid search query");
+            dispatch(searchError(messages[0]));
             return null;
         } else {
             dispatch(searchError("Search failed. Please try again."));
@@ -227,7 +263,7 @@ export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () =
  * what went wrong instead of closing over a failed PUT.
  */
 export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number }) => async (dispatch: AppDispatch) => {
-    const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website } = restaurant
+    const { id, user_id, name, price, address, city, state, zipcode, country, phone_number, description,  website, category_ids } = restaurant
 
     let res: Response
     try {
@@ -237,7 +273,8 @@ export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                user_id, name, price, address, city, state, zipcode, country, phone_number, description, website
+                user_id, name, price, address, city, state, zipcode, country, phone_number,
+                description, website, category_ids
             })
         })
     } catch (networkError) {
@@ -289,7 +326,8 @@ export default function restaurantsReducer(
                 ...state,
                 allRestaurants: loaded,
                 totalRestaurants: action.total,
-                loadedPage: action.page
+                loadedPage: action.page,
+                listError: null
             };
         }
         case LOADSINGLE: {
@@ -337,6 +375,11 @@ export default function restaurantsReducer(
                 searchError: null
             };
         }
+        case LOAD_ERROR:
+            return {
+                ...state,
+                listError: action.error
+            };
         case CLEAR_SEARCH_RESULTS:
             return {
                 ...state,

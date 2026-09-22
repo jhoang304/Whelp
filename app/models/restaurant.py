@@ -1,6 +1,7 @@
 from .db import db, environment, SCHEMA, add_prefix_for_prod
 from sqlalchemy.sql import func
 from .user import User
+from .category import Category, restaurant_categories
 
 class Restaurant(db.Model):
     __tablename__ = 'restaurants'
@@ -27,6 +28,9 @@ class Restaurant(db.Model):
     user = db.relationship("User", back_populates="restaurants")
     reviews = db.relationship("Review", back_populates="restaurant", cascade="all, delete-orphan")
     restaurant_images = db.relationship("RestaurantImage", back_populates="restaurant", cascade="all, delete-orphan")
+    categories = db.relationship(
+        "Category", secondary=restaurant_categories, back_populates="restaurants",
+        order_by=Category.name)
 
     def to_dict(self):
         return {

@@ -1,0 +1,155 @@
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: var(--space-4);
+    max-width: 940px;
+    margin: var(--space-6) auto var(--space-2);
+    padding: var(--space-4) var(--space-5);
+    background-color: #fff;
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+}
+
+.filter-control {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.filter-label {
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-gray-500);
+}
+
+.filter-control select {
+    font-family: inherit;
+    font-size: var(--text-sm);
+    color: var(--color-gray-700);
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    background-color: #fff;
+    cursor: pointer;
+    min-width: 140px;
+}
+
+.filter-control select:focus-visible,
+.filter-prices button:focus-visible,
+.filter-clear:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 1px;
+}
+
+.filter-prices {
+    display: flex;
+}
+
+.filter-prices button {
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-700);
+    background-color: #fff;
+    border: 1px solid var(--color-gray-300);
+    border-right-width: 0;
+    padding: var(--space-2) var(--space-3);
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.filter-prices button:first-child {
+    border-top-left-radius: var(--radius-base);
+    border-bottom-left-radius: var(--radius-base);
+}
+
+.filter-prices button:last-child {
+    border-right-width: 1px;
+    border-top-right-radius: var(--radius-base);
+    border-bottom-right-radius: var(--radius-base);
+}
+
+.filter-prices button:hover {
+    background-color: var(--color-gray-100);
+}
+
+.filter-prices button.active {
+    background-color: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+}
+
+.filter-summary {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    margin-left: auto;
+    padding-bottom: var(--space-2);
+}
+
+.filter-count {
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+}
+
+.filter-clear {
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+}
+
+/* What the page says when the filters have left nothing, or when the API
+   refused them. */
+.filter-empty {
+    max-width: 940px;
+    margin: var(--space-8) auto;
+    padding: var(--space-8);
+    text-align: center;
+    color: var(--color-gray-600);
+    background-color: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+}
+
+.filter-empty h3 {
+    margin: 0 0 var(--space-2);
+    color: var(--color-gray-700);
+}
+
+.filter-empty button {
+    font-family: inherit;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    margin-top: var(--space-4);
+    padding: var(--space-2) var(--space-5);
+    color: #fff;
+    background-color: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+}
+
+.filter-empty button:hover {
+    background-color: var(--color-primary-dark);
+}
+
+@media (max-width: 900px) {
+    .filter-bar {
+        margin-left: var(--space-4);
+        margin-right: var(--space-4);
+    }
+
+    .filter-summary {
+        margin-left: 0;
+    }
+}

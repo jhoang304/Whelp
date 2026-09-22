@@ -2,6 +2,7 @@ import click
 from flask.cli import AppGroup
 from .users import seed_users, undo_users
 from .restaurants import seed_restaurants, undo_restaurants
+from .categories import ensure_categories, seed_restaurant_categories, undo_categories
 from .restaurant_images import seed_restaurantImages, undo_restaurantImages
 from .reviews import seed_reviews, undo_reviews
 from .review_images import seed_reviewImages, undo_reviewImages
@@ -21,6 +22,7 @@ def _undo_all():
     undo_reviewImages()
     undo_reviews()
     undo_restaurantImages()
+    undo_categories()
     undo_restaurants()
     undo_users()
 
@@ -28,6 +30,7 @@ def _undo_all():
 def _seed_all():
     seed_users()
     seed_restaurants()
+    seed_restaurant_categories()
     seed_restaurantImages()
     seed_reviews()
     seed_reviewImages()
@@ -53,7 +56,15 @@ def seed(reset):
     """
     if reset:
         _undo_all()
-    elif _has_data():
+
+    # Before the skip below, not after it: the category list is reference data
+    # a restaurant picks from, so a cuisine added to it has to reach the
+    # databases that already have restaurants in them -- which is all of them.
+    added = ensure_categories()
+    if added:
+        click.echo(f"Added {added} categor{'y' if added == 1 else 'ies'} to the taxonomy.")
+
+    if not reset and _has_data():
         click.echo("Database already contains data; skipping seed. "
                    "Run `flask seed all --reset` to wipe it and reseed.")
         return

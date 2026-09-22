@@ -3,6 +3,7 @@ import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
 import restaurantsReducer from "../../store/restaurants";
+import categoriesReducer from "../../store/categories";
 import EditRestaurant from "./index";
 
 /**
@@ -40,6 +41,8 @@ function renderModal(userId: number | null = OWNER_ID) {
     combineReducers({
       session: (state = { user: userId === null ? null : { id: userId } }) => state,
       Restaurants: restaurantsReducer,
+      // The form carries a category picker, which reads this slice.
+      categories: categoriesReducer,
     }),
     applyMiddleware(thunk)
   );
@@ -154,7 +157,10 @@ test("client-side validation blocks the request entirely", async () => {
   expect(
     await screen.findByText("Please enter a valid website URL (e.g., example.com)")
   ).toBeInTheDocument();
-  expect((global as any).fetch).not.toHaveBeenCalled();
+  // Not "fetch was never called": the form reads the cuisine list when it
+  // opens. What must not happen is the save.
+  const sent = ((global as any).fetch as jest.Mock).mock.calls;
+  expect(sent.every(([, options]) => options?.method !== "PUT")).toBe(true);
   expect(mockCloseModal).not.toHaveBeenCalled();
 });
 

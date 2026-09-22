@@ -13,7 +13,8 @@ Whelp is a platform where users can search for businesses and leave reviews for 
 * User authentication and authorization
 * Creating, reading, updating, and deleting businesses
 * Creating, reading, updating, and deleting reviews
-* Searching businesses by name, city, state, or description
+* Searching businesses by name, cuisine, city, state, or description
+* Filtering the listing and the search by cuisine, price, minimum rating and city, and sorting by rating, review count or newest -- the filters live in the URL, so a filtered page can be shared and reloaded
 * User profile pages with an avatar, the reviews a user has written, and the businesses they own
 * Business owners can publicly respond to reviews left on their restaurants (one response per review, editable and deletable)
 * Photo uploads (restaurant photos and profile pictures) stored in AWS S3, with a paste-a-URL fallback

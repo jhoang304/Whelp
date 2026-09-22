@@ -157,13 +157,13 @@ def test_a_bug_in_a_route_is_still_the_documented_shape(client, app, monkeypatch
     monkeypatch.setitem(app.config, "TESTING", False)
     monkeypatch.setitem(app.config, "PROPAGATE_EXCEPTIONS", False)
 
-    class Boom:
-        class query:
-            @staticmethod
-            def all():
-                raise RuntimeError("boom")
+    def boom(*args, **kwargs):
+        raise RuntimeError("boom")
 
-    monkeypatch.setattr("app.api.restaurant_routes.Restaurant", Boom)
+    # Break what the route calls, not what it reads: the listing builds its
+    # query in app.api.filters now, and a Restaurant stubbed out here would
+    # simply not be consulted -- leaving this passing for the wrong reason.
+    monkeypatch.setattr("app.api.restaurant_routes.restaurant_cards", boom)
 
     res = client.get("/api/restaurants/")
     assert res.status_code == 500

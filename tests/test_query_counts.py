@@ -62,6 +62,9 @@ def add_restaurants(owner_id, reviewer_id, count):
     "/api/restaurants/",
     "/api/restaurants/search/t",       # the short-keyword branch
     "/api/restaurants/search/diner",   # the name-then-other-fields branch
+    # Filtering and sorting join one aggregate over the reviews table, rather
+    # than reading a rating per row to decide which rows qualify.
+    "/api/restaurants/?min_rating=1&sort=rating",
 ])
 def test_listing_queries_do_not_grow_with_the_table(client, ids, url):
     add_restaurants(ids["owner"], ids["reviewer"], 1)
