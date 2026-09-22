@@ -39,11 +39,15 @@ function CategoryPicker({ selected, onChange }: CategoryPickerProps): React.JSX.
     return (
         <div className="category-picker">
             <div className="category-picker-heading">
-                <span>Cuisines</span>
+                <span className="category-picker-title">Cuisines</span>
                 <span className="category-picker-hint">
                     {selected.length} of {MAX_CATEGORIES} chosen
                 </span>
             </div>
+            {/* Each chip carries its own class rather than being styled as a
+                bare `button`: this picker sits inside forms whose CSS styles
+                every button they contain, and the edit form's submit button
+                is 150x56 and red. */}
             <div className="category-picker-options">
                 {categories.map((category) => {
                     const chosen = selected.includes(category.id);
@@ -52,7 +56,7 @@ function CategoryPicker({ selected, onChange }: CategoryPickerProps): React.JSX.
                             key={category.id}
                             type="button"
                             aria-pressed={chosen}
-                            className={chosen ? "chosen" : ""}
+                            className={`category-picker-option${chosen ? " chosen" : ""}`}
                             disabled={!chosen && full}
                             title={!chosen && full
                                 ? `Remove one first: a restaurant lists up to ${MAX_CATEGORIES}`

@@ -1,3 +1,10 @@
+/*
+ * The picker is dropped into the create and edit forms, and both of those
+ * style their descendants by element -- `.update-restaurant-form button` is
+ * 150x56 and red, `.update-restaurant-form span` is a 100px label column.
+ * Every rule here is written to out-specify those, so the chips look like
+ * chips wherever the picker is used.
+ */
 .category-picker {
     display: flex;
     flex-direction: column;
@@ -5,7 +12,7 @@
     width: 100%;
 }
 
-.category-picker-heading {
+.category-picker .category-picker-heading {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -14,13 +21,23 @@
     color: var(--color-gray-700);
 }
 
-.category-picker-hint {
+.category-picker .category-picker-title {
+    display: inline;
+    width: auto;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-700);
+}
+
+.category-picker .category-picker-hint {
+    display: inline;
+    width: auto;
     font-weight: var(--font-normal);
     color: var(--color-gray-500);
     font-size: var(--text-xs);
 }
 
-.category-picker-options {
+.category-picker .category-picker-options {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
@@ -32,10 +49,15 @@
     background-color: var(--color-gray-50);
 }
 
-.category-picker-options button {
+.category-picker .category-picker-option {
+    display: inline-block;
+    width: auto;
+    height: auto;
+    margin: 0;
     font-family: inherit;
     font-size: var(--text-xs);
     font-weight: var(--font-semibold);
+    line-height: var(--leading-normal);
     color: var(--color-gray-700);
     background-color: #fff;
     border: 1px solid var(--color-gray-300);
@@ -45,17 +67,17 @@
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.category-picker-options button:hover:not(:disabled) {
+.category-picker .category-picker-option:hover:not(:disabled) {
     border-color: var(--color-gray-500);
 }
 
-.category-picker-options button.chosen {
+.category-picker .category-picker-option.chosen {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
     color: #fff;
 }
 
-.category-picker-options button:disabled {
+.category-picker .category-picker-option:disabled {
     opacity: 0.45;
     cursor: not-allowed;
 }

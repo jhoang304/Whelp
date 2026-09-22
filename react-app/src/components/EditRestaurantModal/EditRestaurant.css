@@ -118,3 +118,10 @@
     opacity: 0.7;
     cursor: not-allowed;
 }
+
+/* The picker is not a labelled field, so it needs the same gutter the
+   labels above and below it have, or it sits flush against the modal edge. */
+.update-restaurant-form .category-picker {
+    margin: 20px 50px;
+    width: auto;
+}
