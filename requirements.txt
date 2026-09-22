@@ -27,5 +27,6 @@ python-dateutil==2.9.0.post0
 python-dotenv==1.2.3
 six==1.17.0
 sqlalchemy==2.0.54
+tzdata==2026.4
 werkzeug==3.1.8
 wtforms==3.2.2

@@ -1,5 +1,8 @@
-from app.models import Category, Restaurant, Review, ReviewResponse, User, db
+from app.models import (
+    Amenity, Category, Restaurant, RestaurantHours, Review, ReviewResponse, User, db)
+from app.seeds.amenities import AMENITIES
 from app.seeds.categories import ASSIGNMENTS, CATEGORIES
+from app.seeds.hours import HOURS
 
 SEEDED_USERS = 6
 SEEDED_RESTAURANTS = 10
@@ -63,6 +66,35 @@ def test_the_demo_restaurants_get_their_cuisines(app):
     for name, slugs in ASSIGNMENTS.items():
         restaurant = Restaurant.query.filter_by(name=name).one()
         assert sorted(category.slug for category in restaurant.categories) == sorted(slugs), name
+
+
+def test_the_demo_restaurants_get_their_hours_and_a_timezone(app):
+    runner = app.test_cli_runner()
+
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+
+    assert Amenity.query.count() == len(AMENITIES)
+    for name, shifts in HOURS.items():
+        restaurant = Restaurant.query.filter_by(name=name).one()
+        days = {weekday for group, _, _ in shifts for weekday in group}
+        assert {row.weekday for row in restaurant.hours} == days, name
+        assert restaurant.timezone, f"{name} needs a timezone to be open in"
+
+    # The four the demo spans, which is the point of storing one at all.
+    zones = {r.timezone for r in Restaurant.query.all()}
+    assert zones == {"America/Chicago", "America/Los_Angeles", "America/New_York"}
+
+
+def test_seeding_twice_does_not_double_the_hours(app):
+    """`restaurant.hours = [...]` replaces; appending would break the one-row-
+    per-day constraint on the second run."""
+    runner = app.test_cli_runner()
+
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+    first = RestaurantHours.query.count()
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+
+    assert RestaurantHours.query.count() == first
 
 
 def test_a_new_category_reaches_a_database_that_is_skipped(app):

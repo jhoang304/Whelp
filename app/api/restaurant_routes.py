@@ -3,10 +3,13 @@ from flask_login import login_required, current_user
 from sqlalchemy import case, or_
 from sqlalchemy.orm import selectinload
 from app.models import (
-    Category, Restaurant, Review, RestaurantImage, ReviewImage, User, db,
-    restaurant_categories)
+    Category, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage,
+    User, db, restaurant_categories)
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
+from app.api.amenities import read_amenities
 from app.api.categories import read_categories
+from app.api.hours import (
+    hours_to_dicts, open_status, read_hours, read_timezone)
 from app.api.filters import filtered_restaurants, read_filters
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
@@ -16,16 +19,21 @@ from app.api.utils import (
 restaurant_routes = Blueprint('restaurants', __name__)
 
 
-def with_categories(restaurant):
+def with_details(restaurant):
     """
-    One restaurant and its cuisines, for the two routes that write one.
+    One restaurant, its cuisines, what it offers and when it is open, for the
+    two routes that write one.
 
     Not in Restaurant.to_dict: the listing calls that once per card and reads
     every card's categories in a single batched query instead, which a lazy
     relationship on the dict would quietly undo.
     """
+    rows = [(row.weekday, row.opens, row.closes) for row in restaurant.hours]
     return {**restaurant.to_dict(),
-            "categories": [category.to_dict() for category in restaurant.categories]}
+            "categories": [category.to_dict() for category in restaurant.categories],
+            "amenities": [amenity.to_dict() for amenity in restaurant.amenities],
+            "hours": hours_to_dicts(sorted(rows)),
+            "openStatus": open_status(rows, restaurant.timezone)}
 
 
 # Get all Restaurants
@@ -75,6 +83,7 @@ def restaurants_by_id(id):
         return {"errors": ["Restaurant couldn't be found"]}, 404
 
     theUser=db.session.get(User, SingleRestaurant.user_id)
+    hour_rows = [(row.weekday, row.opens, row.closes) for row in SingleRestaurant.hours]
     images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).all()
 
     reviews=Review.query.filter(Review.restaurant_id==id).all()
@@ -115,6 +124,10 @@ def restaurants_by_id(id):
        "numReviews": numReviews,
        "avgStarRating": round(avgStarRating,2),
        "categories": [category.to_dict() for category in SingleRestaurant.categories],
+       "amenities": [amenity.to_dict() for amenity in SingleRestaurant.amenities],
+       "timezone": SingleRestaurant.timezone,
+       "hours": hours_to_dicts(sorted(hour_rows)),
+       "openStatus": open_status(hour_rows, SingleRestaurant.timezone),
     }
 
     return data
@@ -136,6 +149,18 @@ def create_restaurant():
         if category_error:
             return {"errors": [category_error]}, 400
 
+        amenities, amenity_error = read_amenities(request.get_json())
+        if amenity_error:
+            return {"errors": [amenity_error]}, 400
+
+        hours, hours_error = read_hours(request.get_json())
+        if hours_error:
+            return {"errors": [hours_error]}, 400
+
+        timezone, timezone_error = read_timezone(request.get_json(), form.data["state"])
+        if timezone_error:
+            return {"errors": [timezone_error]}, 400
+
         restaurant = Restaurant(
             user_id = int(current_user.id),
             name = request.get_json()["name"],
@@ -150,15 +175,21 @@ def create_restaurant():
             phone_number = request.get_json()["phone_number"],
             website = request.get_json()["website"],
             description = request.get_json()["description"],
+            timezone = timezone,
         )
 
         if categories is not None:
             restaurant.categories = categories
+        if amenities is not None:
+            restaurant.amenities = amenities
+        if hours is not None:
+            restaurant.hours = [RestaurantHours(weekday=weekday, opens=opens, closes=closes)
+                                for weekday, opens, closes in hours]
 
         db.session.add(restaurant)
         db.session.commit()
 
-        return with_categories(restaurant)
+        return with_details(restaurant)
 
     else:
         return {"errors": error_messages(form.errors)}, 400
@@ -226,6 +257,21 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         if category_error:
             return {"errors": [category_error]}, 400
 
+        amenities, amenity_error = read_amenities(request.get_json())
+        if amenity_error:
+            return {"errors": [amenity_error]}, 400
+
+        hours, hours_error = read_hours(request.get_json())
+        if hours_error:
+            return {"errors": [hours_error]}, 400
+
+        # A restaurant that has never had one gets the timezone its state
+        # suggests; one that has keeps it unless the body says otherwise.
+        timezone, timezone_error = read_timezone(
+            request.get_json(), form.data["state"])
+        if timezone_error:
+            return {"errors": [timezone_error]}, 400
+
         restaurant.name = request.get_json()["name"]
         restaurant.price = request.get_json()["price"]
         restaurant.address = request.get_json()["address"]
@@ -240,9 +286,22 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         # client written before this feature sends; [] means clear them.
         if categories is not None:
             restaurant.categories = categories
+        if amenities is not None:
+            restaurant.amenities = amenities
+        if hours is not None:
+            # Clear and flush before writing the new days. One row per
+            # (restaurant, weekday) is a database constraint, and replacing a
+            # Tuesday in a single step has SQLAlchemy insert the new one
+            # before deleting the old, which the constraint refuses.
+            restaurant.hours = []
+            db.session.flush()
+            restaurant.hours = [RestaurantHours(weekday=weekday, opens=opens, closes=closes)
+                                for weekday, opens, closes in hours]
+        if timezone is not None:
+            restaurant.timezone = timezone
 
         db.session.commit()
-        return with_categories(restaurant)
+        return with_details(restaurant)
 
 
     else:

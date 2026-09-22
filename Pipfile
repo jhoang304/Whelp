@@ -25,6 +25,10 @@ sqlalchemy = "==2.0.54"
 werkzeug = "==3.1.8"
 wtforms = "==3.2.2"
 email-validator = "==2.3.0"
+# zoneinfo reads the operating system's tz database, which Windows does not
+# have: without this, every "open now" lookup raises ZoneInfoNotFoundError on
+# a developer machine while passing on the Linux CI runner.
+tzdata = "==2026.4"
 # Was pinned to 1.33.13, the last release supporting the Python 3.7 that Render
 # was building on. The runtime is pinned in .python-version now, so this can
 # track current.

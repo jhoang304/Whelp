@@ -11,6 +11,7 @@ from .api.user_routes import user_routes
 from .api.auth_routes import auth_routes
 from .api.restaurant_routes import restaurant_routes
 from .api.category_routes import category_routes
+from .api.amenity_routes import amenity_routes
 from .api.restaurant_image_routes import resImage_routes
 from .api.review_routes import review_routes
 from .api.image_routes import image_routes
@@ -41,6 +42,7 @@ app.register_blueprint(user_routes, url_prefix='/api/users')
 app.register_blueprint(auth_routes, url_prefix='/api/auth')
 app.register_blueprint(restaurant_routes, url_prefix='/api/restaurants')
 app.register_blueprint(category_routes, url_prefix='/api/categories')
+app.register_blueprint(amenity_routes, url_prefix='/api/amenities')
 app.register_blueprint(resImage_routes, url_prefix='/api/restaurant-images')
 app.register_blueprint(review_routes, url_prefix='/api/reviews')
 app.register_blueprint(image_routes, url_prefix='/api/images')
