@@ -8,6 +8,8 @@
   justify-content: center;
   align-items: center;
   z-index: 1100;
+  /* So a full-height modal never sits flush against the window edges. */
+  padding: var(--space-4);
 }
 
 #modal-background {
@@ -20,7 +22,16 @@
 }
 
 #modal-content {
-  position: absolute;
+  /*
+   * In flow rather than absolutely positioned, so the centring above can
+   * bound it. Absolutely positioned, it ignored the window entirely: the Add
+   * Restaurant form is around 1350px tall and was centred on an 800px window
+   * with its first field 286px above the top of the screen and its Create
+   * button 270px below the bottom, both out of reach and neither scrollable.
+   */
+  position: relative;
+  max-height: calc(100vh - var(--space-8));
+  overflow-y: auto;
   background-color:white;
   border-radius: 20px;
 }
