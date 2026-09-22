@@ -4,6 +4,7 @@
  * columns in `app/models/restaurant.py` and the validators in
  * `app/forms/restaurant_form.py`; the server remains the authority.
  */
+import { isValidPhone, PHONE_MESSAGE } from "./phone";
 import { isValidPostcode, POSTCODE_MESSAGE } from "./postcode";
 
 export const MAX_NAME_LENGTH = 100;
@@ -75,6 +76,7 @@ export function validateRestaurant(fields: RestaurantFields): string[] {
     if (state && state.length !== 2) errors.push("State must be exactly 2 characters (e.g., CA, NY)");
     if (zipcode && !isValidPostcode(zipcode)) errors.push(POSTCODE_MESSAGE);
     if (phone_number && !/\d/.test(phone_number)) errors.push("Phone number must include at least one digit");
+    else if (phone_number && !isValidPhone(phone_number)) errors.push(PHONE_MESSAGE);
     if (website && !website.includes(".")) errors.push("Please enter a valid website URL (e.g., example.com)");
     if (price && !/^\$+$/.test(price)) errors.push("Price range must be between $ and $$$$$");
 

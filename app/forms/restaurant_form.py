@@ -2,6 +2,7 @@ from flask_wtf import FlaskForm
 from wtforms import StringField
 from wtforms.validators import DataRequired, Length, Regexp
 
+from .phone import phone_format
 from .postcode import (
     coerce_to_text, postcode_type,
     POSTCODE_MAX, POSTCODE_MESSAGE, POSTCODE_MIN, POSTCODE_REGEX,
@@ -39,7 +40,8 @@ class RestaurantForm(FlaskForm):
         Length(min=1, max=56, message="Country must be 56 characters or fewer.")])
     phone_number = StringField("phone_number", validators=[
         DataRequired(message="Phone number is required."),
-        Length(min=1, max=20, message="Phone number must be 20 characters or fewer.")])
+        Length(min=1, max=20, message="Phone number must be 20 characters or fewer."),
+        phone_format])
     website = StringField("website", validators=[
         DataRequired(message="Website is required."),
         Length(min=1, max=70, message="Website must be 70 characters or fewer.")])
