@@ -119,9 +119,11 @@
     cursor: not-allowed;
 }
 
-/* The picker is not a labelled field, so it needs the same gutter the
-   labels above and below it have, or it sits flush against the modal edge. */
+/* Lined up with the field column rather than the whole modal: the labels sit
+   in a 50px gutter, the label column is 100px, and the inputs start 40px
+   after it and run 506px wide. A full-width picker under a 506px input made
+   the form look like it had come apart. */
 .update-restaurant-form .category-picker {
-    margin: 20px 50px;
-    width: auto;
+    margin: 20px 50px 20px 190px;
+    width: 506px;
 }
