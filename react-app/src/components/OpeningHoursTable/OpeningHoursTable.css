@@ -1,0 +1,40 @@
+.opening-hours {
+    width: 100%;
+    max-width: 420px;
+    border-collapse: collapse;
+    font-size: var(--text-sm);
+    color: var(--color-gray-700);
+}
+
+.opening-hours th {
+    text-align: left;
+    font-weight: var(--font-normal);
+    padding: var(--space-1) 0;
+    width: 140px;
+}
+
+.opening-hours td {
+    padding: var(--space-1) 0;
+}
+
+/* Today in bold, so the week can be read at a glance against the
+   "Open until ..." line at the top of the page. */
+.opening-hours tr.today th,
+.opening-hours tr.today td {
+    font-weight: var(--font-bold);
+}
+
+.opening-hours-closed {
+    color: var(--color-gray-500);
+}
+
+.opening-hours-overnight {
+    color: var(--color-gray-500);
+    font-size: var(--text-xs);
+}
+
+.opening-hours-timezone {
+    margin: var(--space-2) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}

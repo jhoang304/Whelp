@@ -1,7 +1,11 @@
-import React from "react";
+import React, { useEffect } from "react";
 
 import "./RestaurantForm.css";
-import CategoryPicker from "../CategoryPicker";
+import ChipPicker from "../ChipPicker";
+import HoursEditor from "../HoursEditor";
+import { getAmenities, getCategories, MAX_CATEGORIES } from "../../store/categories";
+import { useAppDispatch, useAppSelector } from "../../store";
+import { OpeningHours } from "../../types";
 import { MAX_DESCRIPTION_LENGTH, RestaurantFields } from "../../utils/restaurantValidation";
 
 /**
@@ -27,6 +31,12 @@ interface RestaurantFormProps {
     onChange: (next: RestaurantFields) => void;
     categoryIds: number[];
     onCategoryIdsChange: (ids: number[]) => void;
+    amenityIds: number[];
+    onAmenityIdsChange: (ids: number[]) => void;
+    hours: OpeningHours[];
+    onHoursChange: (hours: OpeningHours[]) => void;
+    timezone: string | null;
+    onTimezoneChange: (timezone: string | null) => void;
     labels: FieldLabels;
     errors: string[];
     busy: boolean;
@@ -63,10 +73,22 @@ const PRICE_AFTER = "name";
 export const PRICE_OPTIONS = ["$", "$$", "$$$", "$$$$", "$$$$$"];
 
 function RestaurantForm({
-    value, onChange, categoryIds, onCategoryIdsChange, labels, errors, busy,
+    value, onChange, categoryIds, onCategoryIdsChange, amenityIds, onAmenityIdsChange,
+    hours, onHoursChange, timezone, onTimezoneChange, labels, errors, busy,
     submitLabel, busyLabel, submitClassName, onSubmit, className, children,
 }: RestaurantFormProps): React.JSX.Element {
     const inline = labels === "inline";
+    const dispatch = useAppDispatch();
+    const categories = useAppSelector((state) => state.categories.list);
+    const amenities = useAppSelector((state) => state.categories.amenities);
+
+    useEffect(() => {
+        // Two closed lists, shared by every form that offers them, so they are
+        // fetched once and kept.
+        if (categories.length === 0) dispatch(getCategories());
+        if (amenities.length === 0) dispatch(getAmenities());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [dispatch]);
 
     // Only the create form has ever marked its inputs required, and the two
     // validations would talk over each other: the browser's bubble appears
@@ -146,7 +168,27 @@ function RestaurantForm({
 
             {description}
 
-            <CategoryPicker selected={categoryIds} onChange={onCategoryIdsChange} />
+            <ChipPicker
+                title="Cuisines"
+                options={categories}
+                selected={categoryIds}
+                onChange={onCategoryIdsChange}
+                max={MAX_CATEGORIES}
+            />
+
+            <ChipPicker
+                title="Amenities"
+                options={amenities}
+                selected={amenityIds}
+                onChange={onAmenityIdsChange}
+            />
+
+            <HoursEditor
+                value={hours}
+                onChange={onHoursChange}
+                timezone={timezone}
+                onTimezoneChange={onTimezoneChange}
+            />
 
             {children}
 

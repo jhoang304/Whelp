@@ -1,18 +1,18 @@
 /*
- * The picker is dropped into the create and edit forms, and both of those
+ * The picker is dropped into the restaurant forms, and both of those
  * style their descendants by element -- `.update-restaurant-form button` is
  * 150x56 and red, `.update-restaurant-form span` is a 100px label column.
  * Every rule here is written to out-specify those, so the chips look like
  * chips wherever the picker is used.
  */
-.category-picker {
+.chip-picker {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
     width: 100%;
 }
 
-.category-picker .category-picker-heading {
+.chip-picker .chip-picker-heading {
     display: flex;
     justify-content: space-between;
     align-items: baseline;
@@ -21,7 +21,7 @@
     color: var(--color-gray-700);
 }
 
-.category-picker .category-picker-title {
+.chip-picker .chip-picker-title {
     display: inline;
     width: auto;
     font-size: var(--text-sm);
@@ -29,7 +29,7 @@
     color: var(--color-gray-700);
 }
 
-.category-picker .category-picker-hint {
+.chip-picker .chip-picker-hint {
     display: inline;
     width: auto;
     font-weight: var(--font-normal);
@@ -37,7 +37,7 @@
     font-size: var(--text-xs);
 }
 
-.category-picker .category-picker-options {
+.chip-picker .chip-picker-options {
     display: flex;
     flex-wrap: wrap;
     gap: var(--space-2);
@@ -49,7 +49,7 @@
     background-color: var(--color-gray-50);
 }
 
-.category-picker .category-picker-option {
+.chip-picker .chip-picker-option {
     display: inline-block;
     width: auto;
     height: auto;
@@ -67,17 +67,17 @@
     transition: background-color 0.15s ease, color 0.15s ease;
 }
 
-.category-picker .category-picker-option:hover:not(:disabled) {
+.chip-picker .chip-picker-option:hover:not(:disabled) {
     border-color: var(--color-gray-500);
 }
 
-.category-picker .category-picker-option.chosen {
+.chip-picker .chip-picker-option.chosen {
     background-color: var(--color-primary);
     border-color: var(--color-primary);
     color: #fff;
 }
 
-.category-picker .category-picker-option:disabled {
+.chip-picker .chip-picker-option:disabled {
     opacity: 0.45;
     cursor: not-allowed;
 }

@@ -227,7 +227,8 @@ button.add-business-button:hover {
 
 /* Line the picker up with the field column: the inputs are 500px inset by
    space-20, and a full-width picker under them looks like a mistake. */
-.add-restaurant-form .category-picker {
+.add-restaurant-form .chip-picker,
+.add-restaurant-form .hours-editor {
     width: 500px;
     margin: 0px var(--space-20);
 }

@@ -103,7 +103,8 @@
    in a 50px gutter, the label column is 100px, and the inputs start 40px
    after it and run 506px wide. A full-width picker under a 506px input made
    the form look like it had come apart. */
-.update-restaurant-form .category-picker {
+.update-restaurant-form .chip-picker,
+.update-restaurant-form .hours-editor {
     margin: 20px 50px 20px 190px;
     width: 506px;
 }

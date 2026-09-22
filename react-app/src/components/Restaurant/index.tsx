@@ -2,6 +2,7 @@ import React from "react";
 import "./Restaurant.css"
 import RatingStar from "../RatingStar"
 import CategoryChips from "../CategoryChips"
+import OpenStatus from "../OpenStatus"
 import { RestaurantProps } from "../../types";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 
@@ -22,8 +23,10 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
         <div className="restaurant-card">
             <img className="square" src={restaurant.previewImage || DEFAULT_RESTAURANT_IMAGE} alt={restaurant.name} onError={onRestaurantImageError}/>
             <div className="summary">
+                {/* No id prefix: it was standing in for a list number and
+                    read 1, 2, 5, 9 as soon as anything was deleted. */}
                 <span className="bold-name">
-                    {restaurant.id}. {restaurant.name}
+                    {restaurant.name}
                 </span>
                 <div className="stars-home">
                     <RatingStar size="20" rating={restaurant.avgRating} />
@@ -33,17 +36,20 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
                         {restaurant.price} <b>·</b> {restaurant.city}
                     </div>
                     <CategoryChips categories={restaurant.categories} />
-                    <div>
-                        <span className="green-word">Open</span> until 9:30PM
-                    </div>
+                    <OpenStatus status={restaurant.openStatus} />
                     <div>
                         {reviewBubble} {restaurant.oneReview}
                     </div>
-                    <div className="three-tick">
-                        <span className="delivery">{tick}Outdoor seating</span>
-                        <span className="delivery">{tick}Delivery</span>
-                        <span className="delivery">{tick}Takeout</span>
-                    </div>
+                    {restaurant.amenities && restaurant.amenities.length > 0 && (
+                        <div className="three-tick">
+                            {/* What this restaurant actually offers, three at
+                                most: the card had the same three typed into
+                                it for every business on the site. */}
+                            {restaurant.amenities.slice(0, 3).map((amenity) => (
+                                <span className="delivery" key={amenity.id}>{tick}{amenity.name}</span>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
         </div>
