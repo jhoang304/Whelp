@@ -1,0 +1,47 @@
+/*
+ * The error list both restaurant forms show. It used to live in
+ * CreateRestaurantModal.css, unscoped, which is why the edit modal could have
+ * picked it up at any time and never did -- it had a plainer list of its own.
+ * One form component, one error block, one place to style it.
+ */
+/* Error styling */
+.error-container {
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-base);
+    padding: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.error-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-error);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+}
+
+.error-header i {
+    font-size: var(--text-base);
+}
+
+.error-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.error-item {
+    color: #b91c1c;
+    font-size: var(--text-sm);
+    padding: var(--space-1) 0;
+    border-left: 3px solid var(--color-error);
+    padding-left: var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.error-item:last-child {
+    margin-bottom: 0;
+}

@@ -4,8 +4,8 @@ import { useModal } from "../../context/Modal";
 import { updateRestaurantThunk } from "../../store/restaurants"
 import { useAppDispatch, useAppSelector } from "../../store";
 import { SingleRestaurantResponse } from "../../types";
-import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
-import CategoryPicker from "../CategoryPicker";
+import { RestaurantFields, validateRestaurant } from "../../utils/restaurantValidation";
+import RestaurantForm from "../RestaurantForm";
 
 type EditableRestaurant = Pick<SingleRestaurantResponse,
     "id" | "user_id" | "name" | "price" | "address" | "city" | "state" |
@@ -22,16 +22,20 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
     // and the old file only got away with that because of closure timing.
     const sessionUser = useAppSelector((rootState) => rootState.session.user);
 
-    const [name, setName] = useState<string>(singleRestaurant.name);
-    const [price, setPrice] = useState<string>(singleRestaurant.price)
-    const [address, setAddress] = useState<string>(singleRestaurant.address)
-    const [city, setCity] = useState<string>(singleRestaurant.city)
-    const [state, setState] = useState<string>(singleRestaurant.state)
-    const [zipcode, setZipcode] = useState<string>(String(singleRestaurant.zipcode ?? ""))
-    const [country, setCountry] = useState<string>(singleRestaurant.country)
-    const [phone_number, setPhone_number] = useState<string>(singleRestaurant.phone_number)
-    const [description, setDescription] = useState<string>(singleRestaurant.description)
-    const [website, setWebsite] = useState<string>(singleRestaurant.website)
+    const [fields, setFields] = useState<RestaurantFields>({
+        name: singleRestaurant.name,
+        price: singleRestaurant.price,
+        address: singleRestaurant.address,
+        city: singleRestaurant.city,
+        state: singleRestaurant.state,
+        // Zipcodes are text now, but one loaded from an older payload can
+        // still arrive as a number.
+        zipcode: String(singleRestaurant.zipcode ?? ""),
+        country: singleRestaurant.country,
+        phone_number: singleRestaurant.phone_number,
+        website: singleRestaurant.website,
+        description: singleRestaurant.description,
+    });
     const [categoryIds, setCategoryIds] = useState<number[]>(
         (singleRestaurant.categories || []).map((category) => category.id))
     const [errors, setErrors] = useState<string[]>([]);
@@ -41,9 +45,7 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
     const handleUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        const validationErrors = validateRestaurant({
-            name, price, address, city, state, zipcode, country, phone_number, website, description,
-        });
+        const validationErrors = validateRestaurant(fields);
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
@@ -63,19 +65,11 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
         let failures: string[] | null;
         try {
             failures = await dispatch(updateRestaurantThunk({
+                ...fields,
+                zipcode: fields.zipcode.trim(),
                 id: singleRestaurant.id,
                 // The server keeps the existing owner; never try to reassign it.
                 user_id: singleRestaurant.user_id,
-                name,
-                price,
-                address,
-                city,
-                state,
-                zipcode: zipcode.trim(),
-                country,
-                phone_number,
-                description,
-                website,
                 category_ids: categoryIds,
             }));
         } catch (unexpected) {
@@ -102,117 +96,19 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
         const restaurantOwnerId = singleRestaurant.user_id
         if (currentUserId === restaurantOwnerId) {
             sessionLinks = (
-                <>
-                    <form
-                        className="update-restaurant-form"
-                        onSubmit={handleUpdate}
-                    >
-                        <ul className="update-restaurant-errors">
-                            {errors.map((error, idx) => (
-                                <li key={idx}>{error}</li>
-                            ))}
-                        </ul>
-                        <label>
-                            <span>Name</span>
-                            <input
-                                type="text"
-                                value={name}
-                                onChange={(e) => setName(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>Address</span>
-                            <input
-                                type="text"
-                                value={address}
-                                onChange={(e) => setAddress(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>City</span>
-                            <input
-                                type="text"
-                                value={city}
-                                onChange={(e) => setCity(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>State</span>
-                            <input
-                                type="text"
-                                value={state}
-                                onChange={(e) => setState(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>Country</span>
-                            <input
-                                type="text"
-                                value={country}
-                                onChange={(e) => setCountry(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>Zipcode</span>
-                            <input
-                                type="text"
-                                value={zipcode}
-                                onChange={(e) => setZipcode(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>Description</span>
-                            <div className="description-field">
-                                <textarea
-                                    value={description}
-                                    onChange={(e) => setDescription(e.target.value)}
-                                    rows={4}
-                                    maxLength={MAX_DESCRIPTION_LENGTH}
-                                />
-                                <span className={`description-count${description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}>
-                                    {description.length}/{MAX_DESCRIPTION_LENGTH}
-                                </span>
-                            </div>
-                        </label>
-                        <label>
-                            <span>Price Range</span>
-                            <select
-                            className="price-selector"
-                            onChange={(e) => setPrice(e.target.value)}
-                            value={price}
-                            >
-                            <option value="$">$</option>
-                            <option value="$$">$$</option>
-                            <option value="$$$">$$$</option>
-                            <option value="$$$$">$$$$</option>
-                            <option value="$$$$$">$$$$$</option>
-                            </select>
-                        </label>
-                        {/* Not wrapped in a label: the picker is buttons, and a
-                            click inside a label fires the label as well. */}
-                        <CategoryPicker selected={categoryIds} onChange={setCategoryIds} />
-                        <label>
-                            <span>Phone Number</span>
-                            <input
-                                type="text"
-                                value={phone_number}
-                                onChange={(e) => setPhone_number(e.target.value)}
-                            />
-                        </label>
-                        <label>
-                            <span>Website</span>
-                            <input
-                                type="text"
-                                value={website}
-                                onChange={(e) => setWebsite(e.target.value)}
-                            />
-                        </label>
-                        <button
-                            type="submit"
-                            disabled={isSaving}
-                        >{isSaving ? "Saving..." : "Submit"}</button>
-                    </form>
-                </>
+                <RestaurantForm
+                    className="update-restaurant-form"
+                    labels="inline"
+                    value={fields}
+                    onChange={setFields}
+                    categoryIds={categoryIds}
+                    onCategoryIdsChange={setCategoryIds}
+                    errors={errors}
+                    busy={isSaving}
+                    submitLabel="Submit"
+                    busyLabel="Saving..."
+                    onSubmit={handleUpdate}
+                />
             )
         } else if ((currentUserId !== restaurantOwnerId)) {
             sessionLinks = (

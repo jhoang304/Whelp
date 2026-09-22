@@ -50,7 +50,7 @@
     color:rgb(45,46,47)
 }
 
-.price-selector {
+.update-restaurant-form .price-selector {
     width: 500px;
     height: 40px;
     border-radius: 5px;
@@ -94,26 +94,6 @@
 }
 
 /* Server and client errors, shown above the fields */
-.update-restaurant-errors {
-    list-style: none;
-    margin: 0 50px;
-    padding: 0;
-    color: rgb(202, 20, 25);
-    font-size: 14px;
-}
-
-.update-restaurant-errors:empty {
-    display: none;
-}
-
-.update-restaurant-errors li {
-    margin-bottom: 8px;
-    padding: 8px 12px;
-    background-color: #f8d7da;
-    border: 1px solid #f5c6cb;
-    border-radius: 4px;
-}
-
 .update-restaurant-form button:disabled {
     opacity: 0.7;
     cursor: not-allowed;

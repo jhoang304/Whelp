@@ -77,48 +77,6 @@ button.add-business-button:hover {
     transform: translateY(-1px);
 }
 
-/* Error styling */
-.error-container {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: var(--radius-base);
-    padding: var(--space-4);
-    margin-bottom: var(--space-5);
-}
-
-.error-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--color-error);
-    font-weight: var(--font-semibold);
-    font-size: var(--text-sm);
-    margin-bottom: var(--space-3);
-}
-
-.error-header i {
-    font-size: var(--text-base);
-}
-
-.error-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.error-item {
-    color: #b91c1c;
-    font-size: var(--text-sm);
-    padding: var(--space-1) 0;
-    border-left: 3px solid var(--color-error);
-    padding-left: var(--space-3);
-    margin-bottom: var(--space-2);
-}
-
-.error-item:last-child {
-    margin-bottom: 0;
-}
-
 /* Button loading state */
 .add-business-button:disabled {
     background-color: var(--color-gray-400);
