@@ -1,4 +1,13 @@
 // API Response Types
+
+/** One cuisine or kind of place, from the taxonomy at /api/categories. */
+export interface Category {
+  id: number;
+  name: string;
+  /** what a URL carries: ?category=breakfast-brunch */
+  slug: string;
+}
+
 export interface Restaurant {
   id: number;
   user_id: number;
@@ -16,6 +25,7 @@ export interface Restaurant {
   numReviews?: number;
   previewImage: string | null;
   oneReview?: string | null;
+  categories?: Category[];
 }
 
 export interface RestaurantImage {
@@ -120,6 +130,7 @@ export interface SingleRestaurantResponse {
   restaurantImages: RestaurantImage[];
   numReviews: number;
   avgStarRating: number;
+  categories: Category[];
 }
 
 // Redux State Types
@@ -138,6 +149,14 @@ export interface RestaurantsState {
   searchedPage?: number;
   searchLoading?: boolean;
   searchError?: string | null;
+  /** why the last listing request came back empty-handed, if it did */
+  listError?: string | null;
+}
+
+export interface CategoriesState {
+  list: Category[];
+  /** the cities with a restaurant in them, for the city filter */
+  cities: string[];
 }
 
 export interface PhotosState {
@@ -156,6 +175,7 @@ export interface UserProfileState {
 export interface RootState {
   session: SessionState;
   Restaurants: RestaurantsState;
+  categories: CategoriesState;
   photos: PhotosState;
   reviews: ReviewsState;
   user: UserProfileState;
@@ -214,6 +234,11 @@ export interface ClearSearchAction {
   type: 'restaurants/clearSearchResults';
 }
 
+export interface LoadRestaurantsErrorAction {
+  type: 'restaurants/loadError';
+  error: string;
+}
+
 export type RestaurantActionTypes =
   | LoadRestaurantsAction
   | LoadSingleRestaurantAction
@@ -221,4 +246,5 @@ export type RestaurantActionTypes =
   | SearchRestaurantsAction
   | SearchLoadingAction
   | SearchErrorAction
-  | ClearSearchAction;
+  | ClearSearchAction
+  | LoadRestaurantsErrorAction;

@@ -5,10 +5,12 @@ import { updateRestaurantThunk } from "../../store/restaurants"
 import { useAppDispatch, useAppSelector } from "../../store";
 import { SingleRestaurantResponse } from "../../types";
 import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
+import CategoryPicker from "../CategoryPicker";
 
 type EditableRestaurant = Pick<SingleRestaurantResponse,
     "id" | "user_id" | "name" | "price" | "address" | "city" | "state" |
-    "zipcode" | "country" | "phone_number" | "website" | "description">;
+    "zipcode" | "country" | "phone_number" | "website" | "description"> &
+    Partial<Pick<SingleRestaurantResponse, "categories">>;
 
 interface EditRestaurantProps {
     singleRestaurant: EditableRestaurant;
@@ -30,6 +32,8 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
     const [phone_number, setPhone_number] = useState<string>(singleRestaurant.phone_number)
     const [description, setDescription] = useState<string>(singleRestaurant.description)
     const [website, setWebsite] = useState<string>(singleRestaurant.website)
+    const [categoryIds, setCategoryIds] = useState<number[]>(
+        (singleRestaurant.categories || []).map((category) => category.id))
     const [errors, setErrors] = useState<string[]>([]);
     const [isSaving, setIsSaving] = useState<boolean>(false);
     const { closeModal } = useModal();
@@ -72,6 +76,7 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
                 phone_number,
                 description,
                 website,
+                category_ids: categoryIds,
             }));
         } catch (unexpected) {
             failures = ["Something went wrong saving your changes. Please try again."];
@@ -183,6 +188,9 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
                             <option value="$$$$$">$$$$$</option>
                             </select>
                         </label>
+                        {/* Not wrapped in a label: the picker is buttons, and a
+                            click inside a label fires the label as well. */}
+                        <CategoryPicker selected={categoryIds} onChange={setCategoryIds} />
                         <label>
                             <span>Phone Number</span>
                             <input

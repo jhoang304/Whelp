@@ -1,6 +1,8 @@
 from flask import request
 from sqlalchemy import func
 
+from app.api.categories import categories_by_restaurant
+
 DEFAULT_PER_PAGE = 20
 MAX_PER_PAGE = 50
 
@@ -204,9 +206,9 @@ def restaurant_cards(restaurants):
     """
     The card payload the listing, the search results and a profile's business
     list all show: the restaurant, its rating, how many reviews it has, its
-    cover photo, and one review's text.
+    cover photo, its cuisines, and one review's text.
 
-    Three queries whatever the number of restaurants -- though the ids go into
+    Four queries whatever the number of restaurants -- though the ids go into
     an IN list, so the statement grows with the page even where the count of
     them does not. That is the argument for paginating the listing (#42), not
     for going back to a query per row.
@@ -220,6 +222,7 @@ def restaurant_cards(restaurants):
     stats = review_stats(ids)
     previews = preview_image_urls(ids)
     latest = latest_review_texts(ids)
+    categories = categories_by_restaurant(ids)
 
     cards = []
     for restaurant in restaurants:
@@ -229,6 +232,7 @@ def restaurant_cards(restaurants):
         card["numReviews"] = count
         card["previewImage"] = previews.get(restaurant.id)
         card["oneReview"] = latest.get(restaurant.id)
+        card["categories"] = categories.get(restaurant.id, [])
         cards.append(card)
     return cards
 

@@ -10,6 +10,7 @@ import EditRestaurant from "../EditRestaurantModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
+import CategoryChips from "../CategoryChips";
 import DisplayPhotos from "../DisplayPhotos";
 import { onRestaurantImageError } from "../../utils/images";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -121,6 +122,10 @@ function SingleRestaurant(): React.JSX.Element {
                                 <span className="num-reviews">{singleRestaurant.numReviews} reviews</span>
                             </div>
                             <div className="price">Claimed <b>·</b> {singleRestaurant.price}</div>
+                            <CategoryChips
+                                categories={singleRestaurant.categories}
+                                className="single-restaurant-chips"
+                            />
                             <div className="price"><span className="single-green-word">Open</span> until 9:30PM</div>
                         </div>
                         <div className="see-all-photos">

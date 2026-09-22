@@ -7,6 +7,7 @@ import { parseErrors } from "../../utils/parseErrors";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 import { MAX_DESCRIPTION_LENGTH, validateRestaurant } from "../../utils/restaurantValidation";
 import { useAppDispatch } from "../../store";
+import CategoryPicker from "../CategoryPicker";
 
 type ImageMode = "upload" | "url";
 
@@ -26,6 +27,7 @@ function CreateRestaurantModal() {
     const [url, setUrl] = useState("")
     const [imageMode, setImageMode] = useState<ImageMode>("upload")
     const [imageFile, setImageFile] = useState<File | null>(null)
+    const [categoryIds, setCategoryIds] = useState<number[]>([])
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
@@ -78,6 +80,7 @@ function CreateRestaurantModal() {
         description,
         website,
         url: imageUrl,
+        category_ids: categoryIds,
       };
 
         try {
@@ -230,6 +233,7 @@ function CreateRestaurantModal() {
                             />
                         )}
                     </div>
+                    <CategoryPicker selected={categoryIds} onChange={setCategoryIds} />
                     <div className="description-field">
                         <textarea
                             placeholder="Description"

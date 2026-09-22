@@ -1,6 +1,7 @@
 import React from "react";
 import "./Restaurant.css"
 import RatingStar from "../RatingStar"
+import CategoryChips from "../CategoryChips"
 import { RestaurantProps } from "../../types";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 
@@ -31,6 +32,7 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
                     <div>
                         {restaurant.price} <b>·</b> {restaurant.city}
                     </div>
+                    <CategoryChips categories={restaurant.categories} />
                     <div>
                         <span className="green-word">Open</span> until 9:30PM
                     </div>

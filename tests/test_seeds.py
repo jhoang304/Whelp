@@ -1,4 +1,5 @@
-from app.models import Restaurant, Review, ReviewResponse, User
+from app.models import Category, Restaurant, Review, ReviewResponse, User, db
+from app.seeds.categories import ASSIGNMENTS, CATEGORIES
 
 SEEDED_USERS = 6
 SEEDED_RESTAURANTS = 10
@@ -51,3 +52,43 @@ def test_seed_all_populates_an_empty_database(app):
     assert "Seeded the database" in result.output
     assert User.query.count() == SEEDED_USERS
     assert ReviewResponse.query.count() == SEEDED_RESPONSES
+
+
+def test_the_demo_restaurants_get_their_cuisines(app):
+    runner = app.test_cli_runner()
+
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+
+    assert Category.query.count() == len(CATEGORIES)
+    for name, slugs in ASSIGNMENTS.items():
+        restaurant = Restaurant.query.filter_by(name=name).one()
+        assert sorted(category.slug for category in restaurant.categories) == sorted(slugs), name
+
+
+def test_a_new_category_reaches_a_database_that_is_skipped(app):
+    """
+    The taxonomy is reference data, not demo data. Every database this command
+    would skip is one someone is using, and a cuisine added to the list has to
+    reach those -- otherwise the filter bar offers it and nothing has it.
+    """
+    runner = app.test_cli_runner()
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+    Category.query.filter_by(slug=CATEGORIES[0][1]).delete()
+    db.session.commit()
+
+    result = runner.invoke(args=["seed", "all"])
+
+    assert result.exit_code == 0, result.output
+    assert "skipping seed" in result.output, "the demo data is still left alone"
+    assert Category.query.filter_by(slug=CATEGORIES[0][1]).one()
+    assert "Added 1 category to the taxonomy" in result.output
+
+
+def test_undo_clears_the_taxonomy_too(app):
+    runner = app.test_cli_runner()
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+
+    assert runner.invoke(args=["seed", "undo"]).exit_code == 0
+
+    assert Category.query.count() == 0
+    assert Restaurant.query.count() == 0
