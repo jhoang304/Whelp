@@ -34,7 +34,12 @@
     position: absolute;
     font-weight: var(--font-bold);
     color: white;
-    top: 150px;
+    /* Anchored to the foot of the photo strip rather than 150px from its top:
+       the strip is a fixed 435px, so a block pinned by its top grows downward
+       out of it. The cuisine chips are one more line of it, and a long name
+       that wraps is another -- this way the last line stays where it is and
+       the extra height goes up into the photo. */
+    bottom: 0;
     margin: var(--space-12);
 }
 
