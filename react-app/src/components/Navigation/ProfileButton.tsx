@@ -19,24 +19,33 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
 
   const [showMenu, setShowMenu] = useState<boolean>(false);
   const ulRef = useRef<HTMLUListElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
 
-  const openMenu = () => {
-    if (showMenu) return;
-    setShowMenu(true);
-  };
+  const closeMenu = () => setShowMenu(false);
+
+  const toggleMenu = () => setShowMenu((open) => !open);
 
   useEffect(() => {
     if (!showMenu) return;
 
-    const closeMenu = (e: MouseEvent) => {
-      if (ulRef.current && !ulRef.current.contains(e.target as Node)) {
+    const closeOnOutsideClick = (e: MouseEvent) => {
+      const target = e.target as Node;
+      // The click that opened the menu can reach this listener: React 18
+      // flushes this effect while that same click is still on its way up to
+      // the document, so the listener is already attached by the time it
+      // arrives. Ignoring clicks on the button itself is what makes the menu
+      // stay open -- and it holds whenever the effect runs, rather than
+      // relying on it running late. The button toggles, so a second click
+      // still closes the menu.
+      if (buttonRef.current?.contains(target)) return;
+      if (ulRef.current && !ulRef.current.contains(target)) {
         setShowMenu(false);
       }
     };
 
-    document.addEventListener("click", closeMenu);
+    document.addEventListener("click", closeOnOutsideClick);
 
-    return () => document.removeEventListener("click", closeMenu);
+    return () => document.removeEventListener("click", closeOnOutsideClick);
   }, [showMenu]);
 
   const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -55,11 +64,16 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
   };
 
   const ulClassName = "profile-dropdown" + (showMenu ? "" : " hidden");
-  const closeMenu = () => setShowMenu(false);
 
   return (
     <>
-      <button onClick={openMenu} className='profileButton' aria-label="User menu">
+      <button
+        ref={buttonRef}
+        onClick={toggleMenu}
+        className='profileButton'
+        aria-label="User menu"
+        aria-expanded={showMenu}
+      >
         {user && user.profile_image_url ? (
           <img className="profileButton-avatar" src={user.profile_image_url} alt="" onError={onAvatarError} />
         ) : (
