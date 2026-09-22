@@ -1,7 +1,7 @@
 def search(client, keyword):
     res = client.get(f"/api/restaurants/search/{keyword}")
     assert res.status_code == 200, res.get_json()
-    return res.get_json()["Restaurants"]
+    return res.get_json()["items"]
 
 
 def test_search_matches_a_name(client, ids):
@@ -71,8 +71,8 @@ def test_the_teaser_is_the_review_the_feed_puts_first(client, ids):
     db.session.add(backdated)
     db.session.commit()
 
-    feed = client.get(f"/api/restaurants/{ids['restaurant']}/reviews").get_json()["reviews"]
-    listed = client.get("/api/restaurants/").get_json()["Restaurants"][0]
+    feed = client.get(f"/api/restaurants/{ids['restaurant']}/reviews").get_json()["items"]
+    listed = client.get("/api/restaurants/").get_json()["items"][0]
     searched = search(client, "bistro")[0]
 
     assert listed["oneReview"] == searched["oneReview"] == feed[0]["review"] == "Solid."

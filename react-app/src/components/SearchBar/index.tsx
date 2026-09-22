@@ -44,6 +44,15 @@ function RestaurantBySearch(): React.JSX.Element {
         state.Restaurants.searchedRestaurants || {}
     );
     const restaurantArr = Object.values(restaurant);
+    const total = useAppSelector((state) => state.Restaurants.totalSearched ?? 0);
+    const loadedPage = useAppSelector((state) => state.Restaurants.searchedPage ?? 1);
+    const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+
+    const showMore = async () => {
+        setIsLoadingMore(true);
+        await dispatch(search_restaurants(keyword, loadedPage + 1));
+        setIsLoadingMore(false);
+    };
 
     if (isLoading) {
         return (
@@ -85,7 +94,8 @@ function RestaurantBySearch(): React.JSX.Element {
             
             <div className='search-restaurant-list'>
                 {restaurantArr?.map((restaurant, index) => {
-                    const delay = index * 0.1; // Stagger delay by 0.1s per item
+                    // Only the first row staggers; see RestaurantList.
+                    const delay = Math.min(index, 3) * 0.1;
                     return (
                         <Link
                             className="search-restaurant-list-item"
@@ -97,6 +107,19 @@ function RestaurantBySearch(): React.JSX.Element {
                         </Link>
                     );
                 })}
+                {restaurantArr.length < total && (
+                    <div className="restaurant-list-more">
+                        <button
+                            className="restaurant-list-more-button"
+                            onClick={showMore}
+                            disabled={isLoadingMore}
+                        >
+                            {isLoadingMore
+                                ? "Loading…"
+                                : `Show more (${restaurantArr.length} of ${total})`}
+                        </button>
+                    </div>
+                )}
                 
                 {restaurantArr?.length === 0 && (
                     <div className='no-results-suggestions'>

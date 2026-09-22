@@ -1,4 +1,4 @@
-import { Review, ReviewResponse, ReviewsState } from '../types';
+import { Page, Review, ReviewResponse, ReviewsState } from '../types';
 import { AnyAction } from 'redux';
 
 import { AppDispatch } from './index';
@@ -24,13 +24,30 @@ const  loadAllReviewsByRestaurantId = (reviews: Review[]) => {
     }
 }
 
-export const fetchAllReviewsByRestaurantId = (restaurantId: Id) => async (dispatch: AppDispatch) => {
-    const res = await fetch(`/api/restaurants/${restaurantId}/reviews`)
+export type ReviewSort = "newest" | "highest" | "lowest";
+
+/** What a restaurant's reviews are ordered by, and what each option is called. */
+export const REVIEW_SORTS: { value: ReviewSort; label: string }[] = [
+    { value: "newest", label: "Newest first" },
+    { value: "highest", label: "Highest rated" },
+    { value: "lowest", label: "Lowest rated" },
+];
+
+export const REVIEWS_PER_PAGE = 20;
+
+export const fetchAllReviewsByRestaurantId = (
+    restaurantId: Id,
+    sort: ReviewSort = "newest",
+    page = 1,
+) => async (dispatch: AppDispatch) => {
+    const res = await fetch(
+        `/api/restaurants/${restaurantId}/reviews?sort=${sort}&page=${page}&per_page=${REVIEWS_PER_PAGE}`)
     if(res.ok){
-        const reviews = await res.json();
-        dispatch(loadAllReviewsByRestaurantId(reviews["reviews"]));
-        return reviews;
+        const body: Page<Review> = await res.json();
+        dispatch(loadAllReviewsByRestaurantId(body.items));
+        return body;
     }
+    return null;
 }
 
 

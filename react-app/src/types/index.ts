@@ -88,9 +88,16 @@ export interface UserProfile extends PublicUser {
 }
 
 // API Response Containers
-export interface RestaurantsResponse {
-  Restaurants: Restaurant[];
+
+/** Every paginated list answers with this. */
+export interface Page<T> {
+  items: T[];
+  page: number;
+  per_page: number;
+  total: number;
 }
+
+export type RestaurantsResponse = Page<Restaurant>;
 
 export interface SingleRestaurantResponse {
   id: number;
@@ -122,8 +129,13 @@ export interface SessionState {
 
 export interface RestaurantsState {
   allRestaurants?: { [key: number]: Restaurant };
+  /** How many restaurants exist, so the page knows if there are more. */
+  totalRestaurants?: number;
+  loadedPage?: number;
   singleRestaurant?: SingleRestaurantResponse;
   searchedRestaurants?: { [key: number]: Restaurant };
+  totalSearched?: number;
+  searchedPage?: number;
   searchLoading?: boolean;
   searchError?: string | null;
 }
@@ -169,6 +181,9 @@ export interface OpenModalButtonProps {
 export interface LoadRestaurantsAction {
   type: 'restaurants/loadRestaurants';
   allRestaurants: Restaurant[];
+  total: number;
+  page: number;
+  append: boolean;
 }
 
 export interface LoadSingleRestaurantAction {
@@ -183,6 +198,7 @@ export interface ClearSingleRestaurantAction {
 export interface SearchRestaurantsAction {
   type: 'restaurants/searchedRestaurants';
   restaurants: RestaurantsResponse;
+  append: boolean;
 }
 
 export interface SearchLoadingAction {

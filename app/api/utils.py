@@ -1,4 +1,64 @@
+from flask import request
 from sqlalchemy import func
+
+DEFAULT_PER_PAGE = 20
+MAX_PER_PAGE = 50
+
+
+class PageRequest:
+    """The page a caller asked for, or the reason it is not a page."""
+
+    def __init__(self, page=None, per_page=None, error=None):
+        self.page = page
+        self.per_page = per_page
+        self.error = error
+
+    @property
+    def offset(self):
+        return (self.page - 1) * self.per_page
+
+
+def read_page_request(args=None):
+    """
+    Read `page` and `per_page` off the query string.
+
+    A number that is not one, or is below one, is a mistake worth saying out
+    loud rather than quietly reading as the default. Asking for more than
+    MAX_PER_PAGE is answered with MAX_PER_PAGE instead of an error, and the
+    response repeats the per_page it used, so a caller can see what it got.
+    """
+    args = request.args if args is None else args
+
+    def whole_number(name, default):
+        raw = args.get(name)
+        if raw is None or raw == "":
+            return default, None
+        try:
+            value = int(raw)
+        except ValueError:
+            return None, f"{name} must be a whole number"
+        if value < 1:
+            return None, f"{name} must be 1 or more"
+        return value, None
+
+    page, error = whole_number("page", 1)
+    if error:
+        return PageRequest(error=error)
+    per_page, error = whole_number("per_page", DEFAULT_PER_PAGE)
+    if error:
+        return PageRequest(error=error)
+
+    return PageRequest(page=page, per_page=min(per_page, MAX_PER_PAGE))
+
+
+def page_response(items, page_request, total):
+    """The envelope every paginated list answers with."""
+    return {
+        "items": items,
+        "page": page_request.page,
+        "per_page": page_request.per_page,
+        "total": total,
+    }
 
 
 def error_messages(form_errors):

@@ -30,18 +30,29 @@ export interface RestaurantDraft {
 //Load all restaurants
 const LOAD = "restaurants/loadRestaurants";
 
-export const loadRestaurants = (list: Restaurant[]) => ({
+export const loadRestaurants = (page: RestaurantsResponse, append: boolean) => ({
     type: LOAD,
-    allRestaurants: list
+    allRestaurants: page.items,
+    total: page.total,
+    page: page.page,
+    append
 });
 
-export const getAllRestaurants = () => async (dispatch: AppDispatch) => {
-    const response = await fetch(`/api/restaurants`);
+export const PER_PAGE = 20;
+
+/**
+ * Load one page of restaurants. `append` keeps what is already in the store,
+ * which is what the listing's "Show more" wants; without it a second page
+ * would replace the first.
+ */
+export const getAllRestaurants = (page = 1) => async (dispatch: AppDispatch) => {
+    const response = await fetch(`/api/restaurants?page=${page}&per_page=${PER_PAGE}`);
     if (response.ok) {
-        const listObj: RestaurantsResponse = await response.json();
-        const list = listObj.Restaurants;
-        dispatch(loadRestaurants(list));
+        const body: RestaurantsResponse = await response.json();
+        dispatch(loadRestaurants(body, page > 1));
+        return body;
     }
+    return null;
 };
 
 //Search Restaurants
@@ -59,16 +70,17 @@ const searchError = (error: string) => ({
     error
 });
 
-const search = (restaurants: RestaurantsResponse) => ({
+const search = (restaurants: RestaurantsResponse, append: boolean) => ({
     type: SEARCH_RESTAURANTS,
-    restaurants
+    restaurants,
+    append
 });
 
 const clearSearchResults = () => ({
     type: CLEAR_SEARCH_RESULTS
 });
 
-export const search_restaurants = (keyword: string) => async (dispatch: AppDispatch) => {
+export const search_restaurants = (keyword: string, page = 1) => async (dispatch: AppDispatch) => {
     if (!keyword || keyword.trim().length === 0) {
         dispatch(searchError("Search keyword cannot be empty"));
         return null;
@@ -77,11 +89,13 @@ export const search_restaurants = (keyword: string) => async (dispatch: AppDispa
     dispatch(searchLoading());
 
     try {
-        const response = await fetch(`/api/restaurants/search/${encodeURIComponent(keyword.trim())}`);
+        const response = await fetch(
+            `/api/restaurants/search/${encodeURIComponent(keyword.trim())}`
+            + `?page=${page}&per_page=${PER_PAGE}`);
         
         if (response.ok) {
             const data = await response.json();
-            dispatch(search(data));
+            dispatch(search(data, page > 1));
             return data;
         } else if (response.status === 400) {
             dispatch(searchError("Invalid search query"));
@@ -264,17 +278,20 @@ export default function restaurantsReducer(
     action: RestaurantActionTypes
 ): RestaurantsState {
     switch (action.type) {
-        case LOAD:
-            const newAllRestaurants: { [key: number]: Restaurant } = {};
+        case LOAD: {
+            const loaded: { [key: number]: Restaurant } = action.append
+                ? { ...state.allRestaurants }
+                : {};
             action.allRestaurants.forEach(restaurant => {
-                newAllRestaurants[restaurant.id] = restaurant;
+                loaded[restaurant.id] = restaurant;
             });
             return {
                 ...state,
-                allRestaurants: {
-                    ...newAllRestaurants
-                }
+                allRestaurants: loaded,
+                totalRestaurants: action.total,
+                loadedPage: action.page
             };
+        }
         case LOADSINGLE: {
             const newSingleState = action.singleRestaurant
             return {
@@ -304,17 +321,22 @@ export default function restaurantsReducer(
                 searchError: action.error,
                 searchedRestaurants: {}
             };
-        case SEARCH_RESTAURANTS:
-            const newState: RestaurantsState = {
+        case SEARCH_RESTAURANTS: {
+            const found: { [key: number]: Restaurant } = action.append
+                ? { ...state.searchedRestaurants }
+                : {};
+            action.restaurants.items.forEach((restaurant) => {
+                found[restaurant.id] = restaurant;
+            });
+            return {
                 ...state,
-                searchedRestaurants: {},
+                searchedRestaurants: found,
+                totalSearched: action.restaurants.total,
+                searchedPage: action.restaurants.page,
                 searchLoading: false,
                 searchError: null
             };
-            action.restaurants.Restaurants.forEach((restaurant) => {
-                newState.searchedRestaurants![restaurant.id] = restaurant;
-            });
-            return newState;
+        }
         case CLEAR_SEARCH_RESULTS:
             return {
                 ...state,

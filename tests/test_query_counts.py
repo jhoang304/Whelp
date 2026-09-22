@@ -5,10 +5,9 @@ that does not grow with the rows they cover.
 Each test counts the statements for a small table, grows the table, and counts
 again: the absolute number is nobody's business, but it must not move.
 
-One caveat, covered by the last test here: selectinload splits its IN list
-every 500 parent rows, so an unpaginated review feed does cost one more
-statement per collection per 500 reviews. That is a couple of extra queries at
-600 reviews, not 600 of them -- and paginating the feeds is #42.
+The feeds are paginated now (#42), which caps the work a request can ask for:
+a page never reaches the 500-row boundary where selectinload would split its
+IN list, so the count stays put however many reviews a restaurant has.
 """
 from contextlib import contextmanager
 
@@ -74,7 +73,7 @@ def test_listing_queries_do_not_grow_with_the_table(client, ids, url):
     with counted() as after:
         res = client.get(url)
     assert res.status_code == 200
-    assert len(res.get_json()["Restaurants"]) >= 8, "the rows really are being served"
+    assert len(res.get_json()["items"]) >= 8, "the rows really are being served"
     assert len(after) == len(before), "\n".join(after)
 
 
@@ -94,7 +93,7 @@ def test_a_restaurants_reviews_do_not_cost_a_query_each(client, ids):
 
     with counted() as after:
         res = client.get(url)
-    assert len(res.get_json()["reviews"]) == 6
+    assert len(res.get_json()["items"]) == 6
     assert len(after) == len(before), "\n".join(after)
 
 
@@ -126,17 +125,18 @@ def test_a_profile_does_not_cost_a_query_per_business(client, ids):
     assert len(after) == len(before), "\n".join(after)
 
 
-# SQLAlchemy chunks a selectin load's IN list at this many parent keys.
+# SQLAlchemy chunks a selectin load's IN list at this many parent keys, which
+# a page of at most MAX_PER_PAGE reviews cannot reach.
 SELECTIN_BATCH = 500
 
 
-def test_a_feed_past_the_batch_size_costs_batches_not_a_query_per_row(client, ids):
+def test_a_page_of_reviews_costs_the_same_however_many_there_are(client, ids):
     """
-    The feeds are not paginated yet (#42), so this is where "does not grow"
-    stops being literally true. What has to hold is the shape: crossing the
-    batch boundary costs one more statement per collection, not one per review.
+    What pagination buys: the work is bounded by the page, not by the row
+    count. Before #42 this feed returned every review, and past 500 of them
+    selectinload started splitting into extra queries.
     """
-    url = f"/api/restaurants/{ids['restaurant']}/reviews"
+    url = f"/api/restaurants/{ids['restaurant']}/reviews?per_page=50"
     with counted() as small:
         assert client.get(url).status_code == 200
 
@@ -149,17 +149,18 @@ def test_a_feed_past_the_batch_size_costs_batches_not_a_query_per_row(client, id
 
     with counted() as large:
         res = client.get(url)
-    assert len(res.get_json()["reviews"]) == SELECTIN_BATCH + 101
+    body = res.get_json()
+    assert len(body["items"]) == 50, "a page, not the table"
+    assert body["total"] == SELECTIN_BATCH + 101
 
-    # review_images and response each need a second batch; nothing else moves.
-    assert len(large) - len(small) <= 2, "\n".join(large)
-    assert len(large) < 12, "\n".join(large)
+    # one extra statement for the count() the envelope's total needs
+    assert len(large) == len(small), chr(10).join(large)
 
 
 def test_the_cards_still_say_what_they_said(client, ids):
     """The rewrite is a query change, not a payload change."""
     login(client, "owner@test.io")
-    card = client.get("/api/restaurants/").get_json()["Restaurants"][0]
+    card = client.get("/api/restaurants/").get_json()["items"][0]
     assert card["name"] == "Test Bistro"
     assert card["avgRating"] == 4
     assert card["numReviews"] == 1
