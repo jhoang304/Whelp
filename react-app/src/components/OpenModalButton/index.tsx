@@ -7,6 +7,8 @@ interface OpenModalButtonProps {
   onButtonClick?: () => void; // optional: callback function that will be called once the button that opens the modal is clicked
   onModalClose?: () => void; // optional: callback function that will be called once the modal is closed
   className?: string;
+  /** When the visible text alone is ambiguous: "Delete" beside a review. */
+  ariaLabel?: string;
 }
 
 function OpenModalButton({
@@ -14,7 +16,8 @@ function OpenModalButton({
   buttonText,
   onButtonClick,
   onModalClose,
-  className
+  className,
+  ariaLabel
 }: OpenModalButtonProps): React.JSX.Element {
   const { setModalContent, setOnModalClose } = useModal();
 
@@ -26,7 +29,7 @@ function OpenModalButton({
 
   // type="button": without it a button inside a form submits the form.
   return (
-    <button type="button" onClick={onClick} className={className}>{buttonText}</button>
+    <button type="button" onClick={onClick} className={className} aria-label={ariaLabel}>{buttonText}</button>
   );
 }
 

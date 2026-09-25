@@ -16,6 +16,7 @@ import OpenModalButton from "../../OpenModalButton";
 import ConfirmDeleteModal from "../../ConfirmDeleteModal";
 import { avatarUrl, onAvatarError } from "../../../utils/images";
 import "./GetAllReviews.css";
+import "../../RowActions/RowActions.css";
 
 interface GetAllReviewsProps {
   restaurantId: string | number;
@@ -120,6 +121,30 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                     <RatingStar size="15" rating={review.rating} />
                   </div>
                 </div>
+                {/* The author's Edit and Delete, in the review's own header
+                    and in the same style as the owner's reply below. */}
+                {isAuthor && (
+                  <div className="review-actions row-actions">
+                    <button type="button" onClick={handleUpdate(review.id)} aria-label="Edit your review">
+                      <i className="fa-solid fa-pen" aria-hidden="true"></i>
+                      Edit
+                    </button>
+                    <OpenModalButton
+                      className="danger"
+                      ariaLabel="Delete your review"
+                      buttonText={<><i className="fa-solid fa-trash" aria-hidden="true"></i>Delete</>}
+                      modalComponent={
+                        <ConfirmDeleteModal
+                          title="Delete Review"
+                          message="Delete your review?"
+                          detail="This cannot be undone. Its photos go with it."
+                          confirmLabel="Delete Review"
+                          onConfirm={handleDelete(review.id)}
+                        />
+                      }
+                    />
+                  </div>
+                )}
               </div>
               <div className="review-body">{review.review}</div>
               <ReviewPhotos
@@ -132,26 +157,6 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                 businessName={currentRestaurant ? currentRestaurant.name : undefined}
               />
             </div>
-            {isAuthor && (
-              <div className="delete-update">
-                <button className="update-review red-button" onClick={handleUpdate(review.id)}>
-                  <span className="update-review-text">Update Review</span>
-                </button>
-                <OpenModalButton
-                  className="delete-review red-button"
-                  buttonText={<span className="delete-review-text">Delete Review</span>}
-                  modalComponent={
-                    <ConfirmDeleteModal
-                      title="Delete Review"
-                      message="Delete your review?"
-                      detail="This cannot be undone. Its photos go with it."
-                      confirmLabel="Delete Review"
-                      onConfirm={handleDelete(review.id)}
-                    />
-                  }
-                />
-              </div>
-            )}
           </div>
         );
       })}
