@@ -9,7 +9,7 @@ the only reason it had not mattered -- and building that display is exactly
 what would have made it matter.
 
 In the fixture, `reviewer` wrote the review, `owner` owns the restaurant it is
-about, and `bystander` is neither.
+about, and `bystander` is neither. Only `reviewer` may add or remove its photos.
 """
 from app.models import Restaurant, Review, ReviewImage, db
 from tests.conftest import login
@@ -114,14 +114,22 @@ def test_the_author_can_remove_a_photo_and_its_object_goes_too(client, ids, monk
     assert fake.deleted == [("whelp-test-bucket", f"uploads/{ids['reviewer']}/photo.png")]
 
 
-def test_the_restaurant_owner_can_remove_a_photo_from_a_review_of_theirs(client, ids, monkeypatch):
-    """Moderation, as the issue proposes: a business can take down a photo left on it."""
-    configure_s3(monkeypatch)
+def test_the_restaurant_owner_cannot_remove_a_photo_from_a_review_of_theirs(client, ids, monkeypatch):
+    """
+    #40 proposed letting them, as moderation. It would also let a business
+    pull the photo off a bad review of itself, so the review stays the
+    reviewer's to edit.
+    """
+    fake = configure_s3(monkeypatch)
     image_id = attached(client, ids)
     login(client, "owner@test.io")
 
-    assert client.delete(f"/api/review-images/{image_id}").status_code == 200
-    assert db.session.get(ReviewImage, image_id) is None
+    res = client.delete(f"/api/review-images/{image_id}")
+
+    assert res.status_code == 403
+    assert res.get_json()["errors"] == ["You can only delete photos from your own review"]
+    assert db.session.get(ReviewImage, image_id) is not None
+    assert fake.deleted == []
 
 
 def test_anyone_else_cannot(client, ids, monkeypatch):

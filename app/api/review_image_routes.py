@@ -12,8 +12,11 @@ review_image_routes = Blueprint('reviewImages', __name__)
 @login_required
 def delete_review_image(imageId):
     """
-    Delete a photo from a review. Allowed for the review's author, and for the
-    owner of the restaurant the review is about.
+    Delete a photo from a review. The review's author only.
+
+    Not the owner of the restaurant, though #40 proposed it: a business able
+    to remove photos from reviews of itself can quietly take the evidence off
+    a bad one, and the review is the reviewer's to edit.
 
     There was no way to remove a review photo at all before this, short of a
     query against the database -- so anything attached stayed attached.
@@ -22,12 +25,8 @@ def delete_review_image(imageId):
     if not image:
         return {"errors": ["Image couldn't be found"]}, 404
 
-    review = image.review
-    is_author = review is not None and review.user_id == current_user.id
-    is_owner = (review is not None and review.restaurant is not None
-                and review.restaurant.user_id == current_user.id)
-    if not (is_author or is_owner):
-        return {"errors": ["Only the review's author or the business owner can delete this photo"]}, 403
+    if image.review is None or image.review.user_id != current_user.id:
+        return {"errors": ["You can only delete photos from your own review"]}, 403
 
     object_key = image.s3_key
     db.session.delete(image)
