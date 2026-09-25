@@ -1,9 +1,11 @@
 from flask import Blueprint, request
-from flask_login import login_required, current_user
+from flask_login import login_required, current_user, logout_user
 from sqlalchemy.sql import func
 
 from app.models import Favorite, Restaurant, User, db
-from app.forms import UserProfileForm
+from app.forms import ChangePasswordForm, DeleteAccountForm, UserProfileForm
+from app.api.accounts import delete_account, deletion_summary
+from app.extensions import limiter
 from app.api.utils import (
     error_messages, key_still_referenced, page_response, read_page_request, restaurant_cards)
 from app.api.aws_helpers import key_uploaded_by, remove_key_from_s3
@@ -142,3 +144,91 @@ def edit_profile(id):
     if replaced_key and not key_still_referenced(replaced_key):
         remove_key_from_s3(replaced_key)
     return profile.to_dict()
+
+
+def _own_account(id):
+    """The account at `id`, or the response refusing to act on it."""
+    user = db.session.get(User, id)
+    if not user:
+        return None, ({'errors': ["User couldn't be found"]}, 404)
+    if user.id != current_user.id:
+        return None, ({'errors': ["You can only change your own account"]}, 403)
+    return user, None
+
+
+@user_routes.route('/<int:id>/password', methods=['PUT'])
+@login_required
+# It checks a password, so it is a place to guess one: the same limit as
+# logging in.
+@limiter.limit("10 per minute")
+def change_password(id):
+    """
+    Change your password: {"current_password", "new_password"}.
+
+    The current one is required even though you are logged in, so a session
+    left open on a shared computer is not enough to take the account over.
+    The new one follows the signup rule.
+    """
+    user, refusal = _own_account(id)
+    if refusal:
+        return refusal
+    if user.is_demo:
+        return {'errors': ["The demo account's password can't be changed: everyone shares it."]}, 403
+
+    form = ChangePasswordForm()
+    form['csrf_token'].data = request.cookies.get('csrf_token')
+    if not form.validate_on_submit():
+        return {'errors': error_messages(form.errors)}, 400
+
+    if not user.check_password(form.data['current_password']):
+        return {'errors': ["Your current password is incorrect."]}, 400
+    if form.data['new_password'] == form.data['current_password']:
+        return {'errors': ["Choose a new password that is different from your current one."]}, 400
+
+    user.password = form.data['new_password']
+    db.session.commit()
+    return {'message': 'Your password has been changed.'}
+
+
+@user_routes.route('/<int:id>/deletion', methods=['GET'])
+@login_required
+def account_deletion_summary(id):
+    """
+    What deleting your account would remove and keep, for the confirmation:
+    the restaurants you own (each with its review count), how many of your
+    reviews stay as "Deleted user", and how many photos and saved restaurants
+    go.
+    """
+    user, refusal = _own_account(id)
+    if refusal:
+        return refusal
+    return {**deletion_summary(user), 'isDemo': user.is_demo}
+
+
+@user_routes.route('/<int:id>', methods=['DELETE'])
+@login_required
+@limiter.limit("10 per minute")
+def delete_user(id):
+    """
+    Delete your account: {"password"}.
+
+    Removes the restaurants you own with everything on them, every photo you
+    added, your saved list and your avatar. Keeps the reviews you wrote, as
+    by "Deleted user". Logs you out.
+    """
+    user, refusal = _own_account(id)
+    if refusal:
+        return refusal
+    if user.is_demo:
+        return {'errors': ["The demo account can't be deleted: everyone shares it."]}, 403
+
+    form = DeleteAccountForm()
+    form['csrf_token'].data = request.cookies.get('csrf_token')
+    if not form.validate_on_submit():
+        return {'errors': error_messages(form.errors)}, 400
+    if not user.check_password(form.data['password']):
+        return {'errors': ["That password is incorrect."]}, 400
+
+    logout_user()
+    delete_account(user)
+    return {'message': 'Your account has been deleted.'}

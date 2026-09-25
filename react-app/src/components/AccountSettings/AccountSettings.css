@@ -1,0 +1,162 @@
+.account-settings {
+    width: 100%;
+    max-width: 640px;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: var(--space-8) var(--space-6) var(--space-16);
+    color: var(--color-gray-800);
+}
+
+.account-settings h1 {
+    margin: 0 0 var(--space-6);
+    font-size: var(--text-3xl);
+}
+
+.account-settings-section {
+    margin-bottom: var(--space-8);
+    padding: var(--space-6);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    background-color: white;
+}
+
+.account-settings-section h2 {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-xl);
+}
+
+.account-settings-section form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.account-settings-section label {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-700);
+}
+
+.account-settings-section input {
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    font-family: inherit;
+}
+
+.account-settings-section input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
+}
+
+.account-settings-section input:disabled {
+    background-color: var(--color-gray-100);
+}
+
+.account-settings-hint {
+    margin: calc(-1 * var(--space-2)) 0 0;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
+.account-settings-section button {
+    align-self: flex-start;
+    margin: var(--space-2) 0 0;
+    padding: var(--space-3) var(--space-6);
+    border-radius: var(--radius-sm);
+    font-weight: var(--font-semibold);
+}
+
+.account-settings-section button:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.account-settings-section button.account-settings-primary {
+    color: white;
+    background-color: var(--color-gray-800);
+    border: 1px solid var(--color-gray-800);
+}
+
+.account-settings-section button.account-settings-delete {
+    color: white;
+    background-color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.account-settings-section button.account-settings-delete:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+}
+
+.account-settings-danger {
+    border-color: #fecaca;
+}
+
+.account-settings-list {
+    margin: 0 0 var(--space-3);
+    padding-left: var(--space-5);
+    line-height: var(--leading-relaxed);
+}
+
+.account-settings-list a {
+    display: inline;
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+}
+
+.account-settings-errors {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    list-style: none;
+    color: #b91c1c;
+    font-size: var(--text-sm);
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-base);
+}
+
+.account-settings-success {
+    margin: 0;
+    padding: var(--space-3) var(--space-4);
+    color: #166534;
+    font-size: var(--text-sm);
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    border-radius: var(--radius-base);
+}
+
+.account-settings-demo {
+    margin: 0 0 var(--space-6);
+    padding: var(--space-4);
+    font-size: var(--text-sm);
+    background-color: #fffbeb;
+    border: 1px solid #fde68a;
+    border-radius: var(--radius-base);
+}
+
+.account-settings-home {
+    display: inline-block;
+    margin-top: var(--space-4);
+    color: var(--color-primary);
+}
+
+@media (max-width: 600px) {
+    .account-settings {
+        padding: var(--space-6) var(--space-4) var(--space-12);
+    }
+
+    .account-settings-section {
+        padding: var(--space-4);
+    }
+
+    .account-settings-section button {
+        align-self: stretch;
+    }
+}

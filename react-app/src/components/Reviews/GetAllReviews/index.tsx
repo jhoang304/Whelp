@@ -104,9 +104,15 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                   onError={onAvatarError}
                 />
                 <div className="review-right-section">
-                  <NavLink id="review-user-name" to={`/users/get/${review.user_id}`}>
-                    {review.user ? review.user.username : "Whelp user"}
-                  </NavLink>
+                  {review.user ? (
+                    <NavLink id="review-user-name" to={`/users/get/${review.user_id}`}>
+                      {review.user.username}
+                    </NavLink>
+                  ) : (
+                    // Its author deleted their account. The review stays, as
+                    // part of the rating, but there is no profile to link to.
+                    <span className="review-deleted-user">Deleted user</span>
+                  )}
                   <div className="review-time">
                     {new Date(review.createdAt).toLocaleDateString("en-US", DATE_OPTIONS)}
                   </div>

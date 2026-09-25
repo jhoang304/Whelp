@@ -13,6 +13,7 @@ import UserProfilePage from "./components/UserPage";
 import Footer from "./components/Footer";
 import RestaurantBySearch from "./components/SearchBar";
 import HomePage from "./components/HomePage";
+import AccountSettings from "./components/AccountSettings";
 
 function App(): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -30,6 +31,9 @@ function App(): React.JSX.Element {
           <Switch>
             <Route exact path='/users/get/:userId'>
               <UserProfilePage />
+            </Route>
+            <Route exact path="/settings">
+              <AccountSettings />
             </Route>
             <Route exact path="/login">
               <LoginFormPage />

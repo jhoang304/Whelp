@@ -83,6 +83,12 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
     closeMenu();
   };
 
+  const loadSettings = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    history.push("/settings");
+    closeMenu();
+  };
+
   const ulClassName = "profile-dropdown" + (showMenu ? "" : " hidden");
 
   return (
@@ -109,6 +115,12 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
               <button className="user-profile-button" onClick={loadProfile}>
                 <i className="fa-solid fa-user-circle"></i>
                 My Profile
+              </button>
+            </li>
+            <li>
+              <button className="user-profile-button" onClick={loadSettings}>
+                <i className="fa-solid fa-gear"></i>
+                Account settings
               </button>
             </li>
             <li className="add-restaurant-dropdown-button">
