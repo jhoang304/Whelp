@@ -159,3 +159,21 @@ a.red-button {
     fill: white;
     padding-right: var(--space-2);
 }
+
+/*
+ * Someone who has asked their system for less motion gets it: the cards that
+ * slide in, the menus that drop, the hovers that lift all land at once
+ * instead. Near-zero rather than none, so an animation that ends somewhere
+ * (the list's fade-in finishes at full opacity) still ends there.
+ */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-delay: 0s !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
