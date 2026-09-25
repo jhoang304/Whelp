@@ -373,6 +373,31 @@
         padding: 8px 16px;
         font-size: 14px;
         letter-spacing: 0.3px;
+        /* Logged out, the two buttons had half the row between them and
+           shrank until "Log In" broke onto two lines. They take the room
+           they need instead, and the logo gives a little back. */
+        white-space: nowrap;
+    }
+
+    /* Log In's 2px border, so the two are the same height side by side. */
+    .signup-button {
+        border: 2px solid var(--color-primary);
+    }
+
+    .nav-left {
+        min-width: 0;
+    }
+
+    .nav-right {
+        flex: 0 0 auto;
+    }
+
+    .nav-logo {
+        margin-right: var(--space-2);
+    }
+
+    .logo-img {
+        width: 96px;
     }
 
     .login-button:hover,
