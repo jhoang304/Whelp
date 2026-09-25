@@ -3,6 +3,8 @@
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  /* The padding inside the 100%, or the page is 40px wider than a phone. */
+  box-sizing: border-box;
 }
 
 .homepage-hero {
@@ -208,7 +210,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 900px) {
   .homepage-hero {
     padding: 60px 20px;
   }
@@ -236,5 +238,30 @@
 
   .cta-content h2 {
     font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .homepage-container {
+    padding: var(--space-4);
+  }
+
+  .homepage-hero {
+    padding: 48px 16px;
+    margin-bottom: 32px;
+  }
+
+  .homepage-hero h1 {
+    font-size: 2.2rem;
+  }
+
+  .hero-subtitle {
+    font-size: 1.2rem;
+  }
+
+  /* 300px plus 60px of padding is more than a phone has left. */
+  .feature-card {
+    min-width: 0;
+    padding: 32px 20px;
   }
 }

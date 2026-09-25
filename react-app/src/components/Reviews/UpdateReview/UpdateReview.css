@@ -1,6 +1,8 @@
 /* General container styling */
 .update-review-container {
-    width: 550px; /* Consider using max-width for responsiveness */
+    width: 100%;
+    max-width: 550px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -17,6 +19,7 @@
 
 /* Form specific styling */
 .update-new-review-form {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: stretch; /* Stretch items to fill width */
@@ -99,4 +102,15 @@
     background-color: #f8d7da; /* Light red background */
     border: 1px solid #f5c6cb; /* Red border */
     border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+    .update-review-container {
+        margin: var(--space-4) auto;
+        padding: 0 var(--space-4);
+    }
+
+    .update-new-review-form {
+        padding: var(--space-5) var(--space-4);
+    }
 }

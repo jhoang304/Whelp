@@ -1,7 +1,10 @@
 .confirm-delete-modal {
     padding: var(--space-8);
-    max-width: 500px;
-    width: 90vw;
+    width: 500px;
+    /* The window less the modal's own 16px gutter on either side. 90vw
+       plus this padding was wider than a phone. */
+    max-width: calc(100vw - 2 * var(--space-4));
+    box-sizing: border-box;
     background: white;
     border-radius: var(--radius-lg);
     text-align: center;
@@ -97,4 +100,25 @@
 
 .delete-button i {
     font-size: var(--text-sm);
+}
+
+@media (max-width: 600px) {
+    .confirm-delete-modal {
+        padding: var(--space-6) var(--space-4);
+    }
+
+    /* Side by side they need 316px before any padding: stack them, the
+       delete button on top where a thumb expects the main action. */
+    .confirm-delete-buttons {
+        flex-direction: column-reverse;
+        gap: var(--space-3);
+    }
+
+    .cancel-button,
+    .delete-button {
+        width: 100%;
+        min-width: 0;
+        /* the global button margin, which at full width pokes out */
+        margin: 0;
+    }
 }

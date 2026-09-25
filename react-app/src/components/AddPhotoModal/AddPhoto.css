@@ -1,6 +1,7 @@
 .add-photo-modal {
     width: 560px;
-    max-width: 92vw;
+    /* The window less the modal's own 16px gutter on either side. */
+    max-width: calc(100vw - 2 * var(--space-4));
     padding: 0 var(--space-8) var(--space-8);
     box-sizing: border-box;
 }

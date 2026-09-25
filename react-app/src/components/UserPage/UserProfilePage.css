@@ -394,7 +394,7 @@ button.profile-link-button:hover {
 
 /* ---------- responsive ---------- */
 
-@media (max-width: 720px) {
+@media (max-width: 600px) {
     .profile-header-inner {
         flex-direction: column;
         align-items: flex-start;
