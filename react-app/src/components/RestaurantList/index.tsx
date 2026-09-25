@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Link, useHistory, useLocation } from "react-router-dom"
+import { useHistory, useLocation } from "react-router-dom"
 import "./RestaurantList.css"
-import Restaurant from "../Restaurant"
+import RestaurantListEntry from "../RestaurantListEntry";
 import FilterBar from "../FilterBar";
 import { getAllRestaurants } from "../../store/restaurants";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -101,14 +101,12 @@ function RestaurantList(): React.JSX.Element {
                                 // ten seconds after the page loaded.
                                 const delay = Math.min(index, 3) * 0.1;
                                 return (
-                                    <Link
-                                        className="restaurant-list-item" // Changed class for clarity
+                                    <RestaurantListEntry
                                         key={restaurant.id}
-                                        to={`/single/${restaurant.id}`}
-                                        style={{ animationDelay: `${delay}s` }} // Apply inline style for delay
-                                    >
-                                        <Restaurant restaurant={restaurant} />
-                                    </Link>
+                                        className="restaurant-list-item"
+                                        restaurant={restaurant}
+                                        delay={delay}
+                                    />
                                 )
                             })
                         }

@@ -10,6 +10,12 @@ import {
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { NO_FILTERS, RestaurantFilters, filterParams } from '../utils/filters';
+import { FAVORITE_CHANGED } from './favorites';
+
+/** The same map with one restaurant's flag changed, if it is in there. */
+const withFlag = (
+    map: { [key: number]: Restaurant } | undefined, id: number, isFavorited: boolean,
+) => (map && map[id] ? { ...map, [id]: { ...map[id], isFavorited } } : map);
 
 /** What the create and edit modals send. The API owns id and user_id. */
 export interface RestaurantDraft {
@@ -393,6 +399,17 @@ export default function restaurantsReducer(
                 searchLoading: false,
                 searchError: null
             };
+        case FAVORITE_CHANGED: {
+            const { restaurantId, isFavorited } = action;
+            return {
+                ...state,
+                allRestaurants: withFlag(state.allRestaurants, restaurantId, isFavorited),
+                searchedRestaurants: withFlag(state.searchedRestaurants, restaurantId, isFavorited),
+                singleRestaurant: state.singleRestaurant && state.singleRestaurant.id === restaurantId
+                    ? { ...state.singleRestaurant, isFavorited }
+                    : state.singleRestaurant,
+            };
+        }
 
         default:
             return state;

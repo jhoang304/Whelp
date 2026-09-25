@@ -105,6 +105,12 @@ h1 {
     transition: all 0.3s ease;
 }
 
+/* The Save heart, in line with the buttons beside it. */
+.buttons .favorite {
+    margin: var(--space-1);
+    vertical-align: top;
+}
+
 .buttons button:hover {
     cursor: pointer;
     background-color: var(--color-gray-200);

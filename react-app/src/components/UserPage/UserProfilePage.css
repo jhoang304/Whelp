@@ -278,6 +278,30 @@
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* A saved card is the business card plus a heart over its photo. The heart
+   is beside the link rather than in it: a button inside a link is invalid,
+   and two things to press in one place. */
+.profile-saved-card {
+    position: relative;
+}
+
+.profile-saved-card .profile-business-card {
+    height: 100%;
+}
+
+.profile-saved-card .profile-saved-favorite {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+}
+
+.profile-saved-note,
+.profile-saved-status {
+    margin: 0 0 var(--space-4);
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+}
+
 .profile-business-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-base);
@@ -332,6 +356,12 @@
     font-size: 44px;
     color: var(--color-gray-400);
     margin-bottom: var(--space-4);
+}
+
+/* Focused only when the last saved restaurant is unsaved, to keep focus
+   somewhere; it is not a control, so it needs no ring. */
+.profile-empty h2:focus {
+    outline: none;
 }
 
 .profile-empty h2 {

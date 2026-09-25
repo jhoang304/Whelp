@@ -116,6 +116,18 @@ def test_a_new_category_reaches_a_database_that_is_skipped(app):
     assert "Added 1 category to the taxonomy" in result.output
 
 
+def test_undo_clears_saved_restaurants_too(app):
+    from app.models import Favorite, User, db
+    runner = app.test_cli_runner()
+    assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0
+    db.session.add(Favorite(user_id=User.query.first().id, restaurant_id=Restaurant.query.first().id))
+    db.session.commit()
+
+    assert runner.invoke(args=["seed", "undo"]).exit_code == 0
+
+    assert Favorite.query.count() == 0
+
+
 def test_undo_clears_the_taxonomy_too(app):
     runner = app.test_cli_runner()
     assert runner.invoke(args=["seed", "all", "--reset"]).exit_code == 0

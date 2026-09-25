@@ -2,9 +2,10 @@ from flask import Blueprint, request
 from flask_login import login_required, current_user
 from sqlalchemy.sql import func
 
-from app.models import User, db
+from app.models import Favorite, Restaurant, User, db
 from app.forms import UserProfileForm
-from app.api.utils import error_messages, key_still_referenced, restaurant_cards
+from app.api.utils import (
+    error_messages, key_still_referenced, page_response, read_page_request, restaurant_cards)
 from app.api.aws_helpers import key_uploaded_by, remove_key_from_s3
 
 user_routes = Blueprint('users', __name__)
@@ -51,7 +52,40 @@ def get_user_profile(id):
     data["restaurants"] = restaurant_cards(profile.restaurants)
     data["restaurant_count"] = len(profile.restaurants)
     data["review_count"] = len(profile.reviews)
+    if current_user.is_authenticated and current_user.id == profile.id:
+        # For the Saved tab's count. Nobody else is told how many there are.
+        data["favorite_count"] = Favorite.query.filter_by(user_id=profile.id).count()
     return data
+
+
+@user_routes.route('/<int:id>/favorites', methods=['GET'])
+@login_required
+def get_favorites(id):
+    """
+    A page of the restaurants a user has saved, most recently saved first, as
+    the same cards the listing shows.
+
+    Only the user themselves may read it: a saved list is a bookmark, not a
+    recommendation, and saving somewhere should not tell anyone else.
+    """
+    if not db.session.get(User, id):
+        return {'errors': ["User couldn't be found"]}, 404
+    if current_user.id != id:
+        return {'errors': ["You can only see your own saved restaurants"]}, 403
+
+    page_request = read_page_request()
+    if page_request.error:
+        return {'errors': [page_request.error]}, 400
+
+    query = (Restaurant.query
+             .join(Favorite, Favorite.restaurant_id == Restaurant.id)
+             .filter(Favorite.user_id == id)
+             # Newest save first, with the id breaking ties so two saves in
+             # the same second cannot swap places between pages.
+             .order_by(Favorite.createdAt.desc(), Favorite.id.desc()))
+    total = query.count()
+    rows = query.limit(page_request.per_page).offset(page_request.offset).all()
+    return page_response(restaurant_cards(rows), page_request, total)
 
 
 @user_routes.route('/<int:id>/edit', methods=['PUT'])
