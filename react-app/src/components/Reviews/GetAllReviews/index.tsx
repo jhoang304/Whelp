@@ -11,6 +11,7 @@ import { useAppDispatch, useAppSelector } from "../../../store";
 import { Review } from "../../../types";
 import RatingStar from "../../RatingStar";
 import OwnerResponse from "../OwnerResponse";
+import ReviewPhotos from "../ReviewPhotos";
 import { avatarUrl, onAvatarError } from "../../../utils/images";
 import "./GetAllReviews.css";
 
@@ -114,6 +115,10 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                 </div>
               </div>
               <div className="review-body">{review.review}</div>
+              <ReviewPhotos
+                photos={review.reviewImages}
+                author={review.user ? review.user.username : undefined}
+              />
               <OwnerResponse
                 review={review}
                 canManage={isOwner}

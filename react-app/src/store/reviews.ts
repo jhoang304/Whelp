@@ -94,8 +94,16 @@ const createReview = (review: Review) => {
         review
     }
 }
-/** Post a new review. Returns null on success or a list of error messages. */
-export const createOneReview = (newReview: ReviewDraft, restaurantId: Id) => async (dispatch: AppDispatch) => {
+/**
+ * What posting a review comes back with: the review, or why it was refused.
+ *
+ * Not the "null or messages" the other thunks return, because a caller that
+ * attaches photos needs the new review's id, and null has nowhere to put it.
+ */
+export type CreateReviewResult = { review: Review; errors?: undefined } | { review?: undefined; errors: string[] };
+
+/** Post a new review. */
+export const createOneReview = (newReview: ReviewDraft, restaurantId: Id) => async (dispatch: AppDispatch): Promise<CreateReviewResult> => {
     let res: Response
     try {
         res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
@@ -105,16 +113,16 @@ export const createOneReview = (newReview: ReviewDraft, restaurantId: Id) => asy
         })
     } catch (networkError) {
         // fetch rejects, rather than resolving with a status, when the browser
-        // is offline or the connection drops. Returning the message keeps this
-        // thunk's "null or messages" contract, so the form can recover.
-        return [NETWORK_ERROR]
+        // is offline or the connection drops. Returning the message rather
+        // than letting it throw is what lets the form recover.
+        return { errors: [NETWORK_ERROR] }
     }
     if(res.ok){
-        const review = await res.json();
+        const review: Review = await res.json();
         dispatch(createReview(review));
-        return null;
+        return { review };
     }
-    return parseErrors(res, "Could not post your review. Please try again.")
+    return { errors: await parseErrors(res, "Could not post your review. Please try again.") }
 }
 
 //update a review
@@ -143,6 +151,56 @@ export const updateOneReview = (newReview: ReviewDraft, reviewId: Id) => async (
         return null
     }
     return parseErrors(res, "Could not save your review. Please try again.")
+}
+
+// ---------------------------------------------------------------------------
+// Photos on a review. Only its author may add or remove them; the API checks.
+// ---------------------------------------------------------------------------
+
+/** The most photos one review may carry. The API refuses the eleventh. */
+export const MAX_REVIEW_PHOTOS = 10;
+
+/**
+ * Attach an uploaded photo to a review. Returns null on success or a list of
+ * error messages. The review is refetched by the forms after saving, which is
+ * what puts the photo on the page, so nothing is dispatched here.
+ */
+export const attachReviewImage = (reviewId: Id, url: string) => async (): Promise<string[] | null> => {
+    let res: Response
+    try {
+        res = await fetch(`/api/reviews/${reviewId}/images`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ url }),
+        })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
+    if (res.ok) return null
+    return parseErrors(res, "Could not attach a photo. Please try again.")
+}
+
+const REMOVE_REVIEW_IMAGE = 'reviews/REMOVE_REVIEW_IMAGE'
+
+const removeReviewImage = (reviewId: number, imageId: number) => ({
+    type: REMOVE_REVIEW_IMAGE,
+    reviewId,
+    imageId,
+})
+
+/** Remove one photo from a review. Returns null on success or a list of error messages. */
+export const deleteReviewImage = (reviewId: number, imageId: number) => async (dispatch: AppDispatch): Promise<string[] | null> => {
+    let res: Response
+    try {
+        res = await fetch(`/api/review-images/${imageId}`, { method: "DELETE" })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
+    if (res.ok) {
+        dispatch(removeReviewImage(reviewId, imageId))
+        return null
+    }
+    return parseErrors(res, "Could not remove the photo. Please try again.")
 }
 
 // ---------------------------------------------------------------------------
@@ -207,7 +265,8 @@ type ReviewAction =
     | { type: typeof CREATE_REVIEW; review: Review }
     | { type: typeof UPDATE_REVIEW; review: Review }
     | { type: typeof SET_REVIEW_RESPONSE; reviewId: number; response: ReviewResponse }
-    | { type: typeof REMOVE_REVIEW_RESPONSE; reviewId: number };
+    | { type: typeof REMOVE_REVIEW_RESPONSE; reviewId: number }
+    | { type: typeof REMOVE_REVIEW_IMAGE; reviewId: number; imageId: number };
 
 const initialState: ReviewsState = {}
 const reviewReducer = (state: ReviewsState = initialState, incoming: AnyAction): ReviewsState => {
@@ -251,6 +310,18 @@ const reviewReducer = (state: ReviewsState = initialState, incoming: AnyAction):
             const existing = state[action.reviewId]
             if (!existing) return state
             return { ...state, [action.reviewId]: { ...existing, response: action.response } }
+        }
+
+        case REMOVE_REVIEW_IMAGE: {
+            const existing = state[action.reviewId]
+            if (!existing) return state
+            return {
+                ...state,
+                [action.reviewId]: {
+                    ...existing,
+                    reviewImages: (existing.reviewImages || []).filter((image) => image.id !== action.imageId),
+                },
+            }
         }
 
         case REMOVE_REVIEW_RESPONSE: {
