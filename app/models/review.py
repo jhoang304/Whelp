@@ -10,7 +10,11 @@ class Review(db.Model):
         __table_args__ = {'schema': SCHEMA}
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("users.id")), nullable=False)
+    # Null once the author has deleted their account. The review stays -- its
+    # rating is part of a restaurant's average, and the business's reply to it
+    # would otherwise lose what it was replying to -- and is shown as written
+    # by "Deleted user". Nobody can edit or delete it after that.
+    user_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("users.id")), nullable=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("restaurants.id")), nullable=False)
     review = db.Column(db.String(255), nullable=False)
     rating = db.Column(db.Integer, nullable=False)

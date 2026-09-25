@@ -107,7 +107,8 @@ export type ReviewRestaurant = Omit<Restaurant, 'avgRating' | 'previewImage' | '
 
 export interface Review {
   id: number;
-  user_id: number;
+  /** Null once the author has deleted their account: "Deleted user". */
+  user_id: number | null;
   restaurant_id: number;
   review: string;
   rating: number;

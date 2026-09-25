@@ -128,6 +128,9 @@ export default function UserProfilePage(): React.JSX.Element {
                                 buttonText={<><i className="fa-solid fa-pen"></i> Edit profile</>}
                                 modalComponent={<UpdateProfile user={profile} />}
                             />
+                            <Link to="/settings" className="profile-settings-link">
+                                <i className="fa-solid fa-gear" aria-hidden="true"></i> Account settings
+                            </Link>
                         </div>
                     )}
                 </div>

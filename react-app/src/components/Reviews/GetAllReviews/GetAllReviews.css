@@ -68,6 +68,11 @@
   }
 
 
+  .review-deleted-user {
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-500);
+  }
+
   #review-user-name {
     margin: 0px;
     padding: 0px;

@@ -3,6 +3,12 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from flask_login import UserMixin
 from sqlalchemy.sql import func
 
+# The account behind "Log in as Demo User". Everyone who tries the site shares
+# it, so it cannot change its password or delete itself: either would lock
+# every later visitor out of the demo.
+DEMO_EMAIL = "demo@aa.io"
+
+
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
@@ -22,11 +28,19 @@ class User(db.Model, UserMixin):
     updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),
                           onupdate=func.now())
 
+    # No cascade, and that is the point: deleting an account keeps the reviews
+    # it wrote, with no author -- "Deleted user". A delete cascade here would
+    # take other businesses' ratings with it; app/api/accounts.py nulls the
+    # author first so that even one could not.
     reviews = db.relationship("Review", back_populates="user")
     restaurants = db.relationship("Restaurant", back_populates="user")
     restaurant_images = db.relationship("RestaurantImage", back_populates="user", cascade="all, delete-orphan")
     review_responses = db.relationship("ReviewResponse", back_populates="user", cascade="all, delete-orphan")
     favorites = db.relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
+
+    @property
+    def is_demo(self):
+        return self.email == DEMO_EMAIL
 
     @property
     def password(self):
