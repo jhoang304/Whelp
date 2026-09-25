@@ -4,6 +4,7 @@ import { AnyAction } from 'redux';
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { setUser } from './session';
+import { FAVORITE_CHANGED } from './favorites';
 
 const LOAD_PROFILE = 'userProfile/LOAD_PROFILE';
 const CLEAR_PROFILE = 'userProfile/CLEAR_PROFILE';
@@ -76,6 +77,27 @@ export default function userProfileReducer(state: UserProfileState = initialStat
             return { profile: action.profile, reviews: action.reviews };
         case CLEAR_PROFILE:
             return { profile: null, reviews: [] };
+        case FAVORITE_CHANGED: {
+            const { profile } = state;
+            if (!profile) return state;
+            // The count is only there on your own profile, and only moves
+            // when the flag really changed: saving something already saved
+            // is not a second save.
+            const delta = action.isFavorited === action.wasFavorited ? 0 : action.isFavorited ? 1 : -1;
+            return {
+                ...state,
+                profile: {
+                    ...profile,
+                    restaurants: profile.restaurants.map((restaurant) =>
+                        restaurant.id === action.restaurantId
+                            ? { ...restaurant, isFavorited: action.isFavorited }
+                            : restaurant),
+                    favorite_count: profile.favorite_count === undefined
+                        ? undefined
+                        : Math.max(profile.favorite_count + delta, 0),
+                },
+            };
+        }
         default:
             return state;
     }

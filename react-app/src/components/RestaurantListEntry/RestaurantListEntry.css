@@ -1,0 +1,29 @@
+/* As wide as the card inside it, so the heart lands on the card's corner. */
+.restaurant-list-entry {
+    position: relative;
+    max-width: 900px;
+    margin: 0 auto;
+}
+
+.restaurant-list-entry .restaurant-list-favorite {
+    position: absolute;
+    top: var(--space-5);
+    right: var(--space-5);
+}
+
+/* Keep a long name out from under the heart. */
+.restaurant-list-entry .restaurant-card {
+    padding-right: 72px;
+}
+
+@media (max-width: 600px) {
+    /* The photo is on top here, so the heart sits on the photo instead. */
+    .restaurant-list-entry .restaurant-list-favorite {
+        top: var(--space-6);
+        right: var(--space-6);
+    }
+
+    .restaurant-list-entry .restaurant-card {
+        padding-right: var(--space-4);
+    }
+}

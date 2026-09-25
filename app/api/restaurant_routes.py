@@ -1,9 +1,10 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
 from sqlalchemy import case, or_
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from app.models import (
-    Category, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage,
+    Category, Favorite, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage,
     User, db, restaurant_categories)
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 from app.api.amenities import read_amenities
@@ -13,7 +14,7 @@ from app.api.hours import (
 from app.api.filters import filtered_restaurants, read_filters
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
-    clear_other_previews, error_messages, key_still_referenced, page_response,
+    clear_other_previews, error_messages, favorited_ids, key_still_referenced, page_response,
     read_page_request, restaurant_cards, reviews_with_details)
 
 restaurant_routes = Blueprint('restaurants', __name__)
@@ -128,9 +129,46 @@ def restaurants_by_id(id):
        "timezone": SingleRestaurant.timezone,
        "hours": hours_to_dicts(sorted(hour_rows)),
        "openStatus": open_status(hour_rows, SingleRestaurant.timezone),
+       "isFavorited": id in favorited_ids([id]),
     }
 
     return data
+
+
+# Save a restaurant, or stop saving it
+@restaurant_routes.route('/<int:id>/favorite', methods=['POST', 'DELETE'])
+@login_required
+def favorite_restaurant(id):
+    """
+    POST saves the restaurant to the reader's list; DELETE takes it off.
+
+    Both say where things now stand, as {"isFavorited": bool}, and both are
+    safe to repeat: saving something already saved, or unsaving something
+    that never was, is not an error. The heart is a toggle, and a double
+    click or a retried request should land it where it was aimed, not
+    answer with a 409 the page then has to explain.
+    """
+    if not db.session.get(Restaurant, id):
+        return {"errors": ["Restaurant couldn't be found"]}, 404
+
+    existing = Favorite.query.filter_by(user_id=current_user.id, restaurant_id=id).first()
+
+    if request.method == 'DELETE':
+        if existing:
+            db.session.delete(existing)
+            db.session.commit()
+        return {"isFavorited": False}
+
+    if existing:
+        return {"isFavorited": True}
+    db.session.add(Favorite(user_id=current_user.id, restaurant_id=id))
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Two saves racing each other: the other one got there first, and
+        # the unique constraint turned this one away. Either way, it is saved.
+        db.session.rollback()
+    return {"isFavorited": True}, 201
 
 
 # Create a Restaurant

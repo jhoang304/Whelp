@@ -10,6 +10,7 @@ from .restaurant_images import seed_restaurantImages, undo_restaurantImages
 from .reviews import seed_reviews, undo_reviews
 from .review_images import seed_reviewImages, undo_reviewImages
 from .review_responses import seed_reviewResponses, undo_reviewResponses
+from .favorites import undo_favorites
 
 from app.models import User
 from app.models.db import db, environment, SCHEMA
@@ -21,6 +22,7 @@ seed_commands = AppGroup('seed')
 
 def _undo_all():
     # Children first so foreign keys are satisfied in every environment.
+    undo_favorites()
     undo_reviewResponses()
     undo_reviewImages()
     undo_reviews()

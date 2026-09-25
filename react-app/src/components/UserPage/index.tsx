@@ -11,6 +11,7 @@ import RatingStar from "../RatingStar";
 import OwnerResponse from "../Reviews/OwnerResponse";
 import ReviewPhotos from "../Reviews/ReviewPhotos";
 import UpdateProfile from "./UpdateProfile";
+import SavedRestaurants from "./SavedRestaurants";
 import {
     avatarUrl,
     onAvatarError,
@@ -19,7 +20,7 @@ import {
 } from "../../utils/images";
 import "./UserProfilePage.css";
 
-type Tab = "reviews" | "businesses";
+type Tab = "reviews" | "businesses" | "saved";
 type Status = "loading" | "ready" | "error";
 
 const LONG_DATE: Intl.DateTimeFormatOptions = { year: "numeric", month: "long", day: "numeric" };
@@ -136,6 +137,7 @@ export default function UserProfilePage(): React.JSX.Element {
                 <button
                     type="button"
                     className={activeTab === "reviews" ? "active" : ""}
+                    aria-pressed={activeTab === "reviews"}
                     onClick={() => setActiveTab("reviews")}
                 >
                     Reviews <span className="profile-tab-count">{reviews.length}</span>
@@ -143,10 +145,23 @@ export default function UserProfilePage(): React.JSX.Element {
                 <button
                     type="button"
                     className={activeTab === "businesses" ? "active" : ""}
+                    aria-pressed={activeTab === "businesses"}
                     onClick={() => setActiveTab("businesses")}
                 >
                     Businesses <span className="profile-tab-count">{businesses.length}</span>
                 </button>
+                {/* Your own profile only: a saved list is a bookmark, and
+                    nobody else is shown it or told how long it is. */}
+                {isOwnProfile && (
+                    <button
+                        type="button"
+                        className={activeTab === "saved" ? "active" : ""}
+                        aria-pressed={activeTab === "saved"}
+                        onClick={() => setActiveTab("saved")}
+                    >
+                        Saved <span className="profile-tab-count">{profile.favorite_count ?? 0}</span>
+                    </button>
+                )}
             </nav>
 
             <section className="profile-content">
@@ -260,6 +275,8 @@ export default function UserProfilePage(): React.JSX.Element {
                         </div>
                     )
                 )}
+
+                {activeTab === "saved" && isOwnProfile && <SavedRestaurants userId={profile.id} />}
             </section>
         </div>
     );

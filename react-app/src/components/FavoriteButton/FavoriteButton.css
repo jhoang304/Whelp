@@ -1,0 +1,73 @@
+/*
+ * The heart, in two sizes. Every rule names the button, so the global
+ * `button` rule (grey, 4px margin) and the `.buttons button` rule on the
+ * restaurant page cannot restyle it.
+ */
+.favorite {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: var(--space-1);
+}
+
+.favorite .favorite-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    margin: 0;
+    color: var(--color-gray-700);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+    cursor: pointer;
+    transition: color 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.favorite .favorite-button:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+    background-color: white;
+}
+
+.favorite .favorite-button.saved {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+}
+
+.favorite .favorite-button[aria-disabled="true"] {
+    cursor: progress;
+    opacity: 0.7;
+}
+
+/* Round, over the corner of a card. */
+.favorite .favorite-button-icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    border-radius: 50%;
+    font-size: var(--text-lg);
+    box-shadow: var(--shadow-base);
+}
+
+.favorite .favorite-button-icon:hover {
+    transform: scale(1.08);
+}
+
+/* Beside the restaurant page's other buttons, and as tall as them. */
+.favorite .favorite-button-labelled {
+    padding: var(--space-2) var(--space-5);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+}
+
+.favorite .favorite-error {
+    max-width: 220px;
+    font-size: var(--text-xs);
+    color: var(--color-error);
+    text-align: right;
+}
+
+.favorite .favorite-error:empty {
+    display: none;
+}

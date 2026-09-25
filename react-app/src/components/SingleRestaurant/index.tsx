@@ -14,6 +14,7 @@ import CategoryChips from "../CategoryChips";
 import OpenStatus from "../OpenStatus";
 import OpeningHoursTable from "../OpeningHoursTable";
 import DisplayPhotos from "../DisplayPhotos";
+import FavoriteButton from "../FavoriteButton";
 import { onRestaurantImageError } from "../../utils/images";
 import { useAppDispatch, useAppSelector } from "../../store";
 
@@ -158,6 +159,12 @@ function SingleRestaurant(): React.JSX.Element {
                         <div className="bottom-left-section">
                             {sessionUser && (
                                 <><div className="buttons">
+                                    <FavoriteButton
+                                        variant="labelled"
+                                        restaurantId={singleRestaurant.id}
+                                        name={singleRestaurant.name}
+                                        isFavorited={!!singleRestaurant.isFavorited}
+                                    />
                                     <OpenModalButton
                                         buttonText="Add photo"
                                         modalComponent={<AddPhotoModal restaurantId={restaurantId} />}

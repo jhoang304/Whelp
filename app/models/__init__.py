@@ -9,3 +9,4 @@ from .review import Review
 from .restaurant_image import RestaurantImage
 from .review_image import ReviewImage
 from .review_response import ReviewResponse
+from .favorite import Favorite

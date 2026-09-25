@@ -54,6 +54,8 @@ export interface Restaurant {
   categories?: Category[];
   amenities?: Amenity[];
   openStatus?: OpenStatus;
+  /** Whether the reader has saved it; always false for someone logged out. */
+  isFavorited?: boolean;
 }
 
 export interface RestaurantImage {
@@ -123,6 +125,8 @@ export interface UserProfile extends PublicUser {
   restaurants: Restaurant[];
   restaurant_count: number;
   review_count: number;
+  /** Only on your own profile: nobody else is told how many you have saved. */
+  favorite_count?: number;
 }
 
 // API Response Containers
@@ -163,6 +167,7 @@ export interface SingleRestaurantResponse {
   hours: OpeningHours[];
   openStatus: OpenStatus;
   timezone: string | null;
+  isFavorited?: boolean;
 }
 
 // Redux State Types
@@ -281,4 +286,18 @@ export type RestaurantActionTypes =
   | SearchLoadingAction
   | SearchErrorAction
   | ClearSearchAction
-  | LoadRestaurantsErrorAction;
+  | LoadRestaurantsErrorAction
+  | FavoriteChangedAction;
+
+/**
+ * The reader saved or unsaved a restaurant. Every copy of it in the store --
+ * the listing, the search results, the detail page -- takes the new flag, so
+ * the heart agrees wherever the restaurant is shown next.
+ */
+export interface FavoriteChangedAction {
+  type: "favorites/changed";
+  restaurantId: number;
+  isFavorited: boolean;
+  /** What it was before, so a count only moves when the flag really did. */
+  wasFavorited: boolean;
+}

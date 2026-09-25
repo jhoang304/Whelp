@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams, useHistory, useLocation } from "react-router-dom";
 import { search_restaurants } from '../../store/restaurants';
-import Restaurant from '../Restaurant';
+import RestaurantListEntry from '../RestaurantListEntry';
 import FilterBar from '../FilterBar';
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
@@ -131,14 +131,12 @@ function RestaurantBySearch(): React.JSX.Element {
                     // Only the first row staggers; see RestaurantList.
                     const delay = Math.min(index, 3) * 0.1;
                     return (
-                        <Link
-                            className="search-restaurant-list-item"
+                        <RestaurantListEntry
                             key={restaurant.id}
-                            to={`/single/${restaurant.id}`}
-                            style={{ animationDelay: `${delay}s` }}
-                        >
-                            <Restaurant restaurant={restaurant} />
-                        </Link>
+                            className="search-restaurant-list-item"
+                            restaurant={restaurant}
+                            delay={delay}
+                        />
                     );
                 })}
                 {restaurantArr.length < total && (

@@ -204,14 +204,35 @@ def latest_review_texts(restaurant_ids):
     return dict(rows)
 
 
+def favorited_ids(restaurant_ids):
+    """
+    Which of these restaurants the reader has saved, as a set of ids.
+
+    One query for a page of any size, and none at all for someone logged out
+    -- who has saved nothing, and for whom every card says so.
+    """
+    from flask_login import current_user
+    from app.models import Favorite, db
+
+    ids = list(restaurant_ids)
+    if not ids or not current_user.is_authenticated:
+        return set()
+    rows = db.session.query(Favorite.restaurant_id).filter(
+        Favorite.user_id == current_user.id,
+        Favorite.restaurant_id.in_(ids),
+    ).all()
+    return {restaurant_id for (restaurant_id,) in rows}
+
+
 def restaurant_cards(restaurants):
     """
     The card payload the listing, the search results and a profile's business
     list all show: the restaurant, its rating, how many reviews it has, its
-    cover photo, its cuisines, what it offers, whether it is open, and one
-    review's text.
+    cover photo, its cuisines, what it offers, whether it is open, one
+    review's text, and whether the reader has saved it.
 
-    Six queries whatever the number of restaurants -- though the ids go into
+    Six queries whatever the number of restaurants, and a seventh for someone
+    logged in -- though the ids go into
     an IN list, so the statement grows with the page even where the count of
     them does not. That is the argument for paginating the listing (#42), not
     for going back to a query per row.
@@ -228,6 +249,7 @@ def restaurant_cards(restaurants):
     categories = categories_by_restaurant(ids)
     amenities = amenities_by_restaurant(ids)
     hours = hours_by_restaurant(ids)
+    saved = favorited_ids(ids)
 
     cards = []
     for restaurant in restaurants:
@@ -242,6 +264,7 @@ def restaurant_cards(restaurants):
         # None where the restaurant has no hours or no timezone: the card
         # then says nothing, rather than calling it closed.
         card["openStatus"] = open_status(hours.get(restaurant.id, []), restaurant.timezone)
+        card["isFavorited"] = restaurant.id in saved
         cards.append(card)
     return cards
 

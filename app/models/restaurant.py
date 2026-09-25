@@ -42,6 +42,10 @@ class Restaurant(db.Model):
     hours = db.relationship(
         "RestaurantHours", back_populates="restaurant", cascade="all, delete-orphan",
         order_by="RestaurantHours.weekday")
+    # Deleting a restaurant takes it off everyone's saved list. The foreign key
+    # cascades too, but SQLite only honours that with a pragma this app does
+    # not set, so the ORM does it as well.
+    favorites = db.relationship("Favorite", back_populates="restaurant", cascade="all, delete-orphan")
 
     def to_dict(self):
         return {
