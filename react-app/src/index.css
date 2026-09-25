@@ -1,6 +1,18 @@
 /* === WHELP DESIGN SYSTEM === */
 
 /* Design Tokens */
+/*
+ * === BREAKPOINTS ===
+ * Two, used by every stylesheet:
+ *   @media (max-width: 900px)  tablet and narrow windows: one column where
+ *                              there were two, full-width content
+ *   @media (max-width: 600px)  phones: stack what sits side by side, smaller
+ *                              headings, tighter gutters
+ * (and min-width: 601px / 901px for the few written mobile-first).
+ * They cannot be custom properties like the tokens below -- a media query is
+ * evaluated before any element exists, so var() means nothing inside one --
+ * which is why they are written out here and nowhere else is a third.
+ */
 :root {
   /* === SPACING SCALE === */
   --space-0: 0;
@@ -75,6 +87,9 @@
 
 /* Base styles */
 body {
+    /* Said outright: left transparent, a browser in dark mode paints the
+       page black behind every white card and bar. */
+    background-color: white;
     font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
     font-size: var(--text-base);
     line-height: var(--leading-normal);

@@ -123,3 +123,21 @@
     border-radius: 4px;
     background: #fff;
 }
+
+@media (max-width: 600px) {
+    /* The author's Update and Delete sat beside the review, squeezing the
+       text into what was left; on a phone they go under it. */
+    .single-review-container {
+        flex-direction: column;
+        margin-right: 0;
+    }
+
+    .delete-update {
+        height: auto;
+        margin: 0 0 var(--space-4) var(--space-2);
+    }
+
+    .review-body {
+        width: 100%;
+    }
+}

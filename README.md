@@ -111,6 +111,17 @@ npm test -- --watchAll=false
 
 The Flask tests run the app against an in-memory SQLite database with S3 mocked, and cover the routes, permissions, error shape, form rules and query counts. Every pull request runs both suites, plus the production build and an advisory dependency audit: see `.github/workflows/ci.yml`.
 
+### Checking a layout change on small screens
+
+The stylesheets share two breakpoints, 900px (tablet) and 600px (phone), documented at the top of `react-app/src/index.css`. A change to layout is not done until it has been looked at in the browser's device toolbar (Chrome/Edge: F12, then Ctrl+Shift+M) at **375px** and **768px**:
+
+- [ ] Nothing scrolls sideways. In the console, `document.documentElement.scrollWidth === innerWidth` should be `true`.
+- [ ] The nav fits: the logo and profile button share the first row, and the search box gets a row of its own.
+- [ ] Restaurant cards (`/restaurants`, search results) show the photo above the text at 375px and beside it at 768px.
+- [ ] The restaurant page is one column at 375px, with the contact box under the description and ahead of the reviews. At 768px it is two columns.
+- [ ] Every modal (Add Restaurant, Edit Restaurant, Add Photo, See all photos, the delete confirmation) fits inside the window and scrolls inside itself, with nothing cut off at the top or bottom.
+- [ ] The review forms fit, and their photo pickers wrap rather than overflow.
+
 --------------------------------------------------------------------------------------------------------------------------------------
 
 # Images:

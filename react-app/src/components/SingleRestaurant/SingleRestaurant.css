@@ -19,7 +19,9 @@
 
 .photos {
     height: 435px;
-    width: 100vw;
+    /* Not 100vw: that counts the vertical scrollbar, so the strip was 17px
+       wider than the page and every desktop window could scroll sideways. */
+    width: 100%;
     overflow-y: hidden;
     overflow-x: scroll;
     white-space: nowrap;
@@ -27,7 +29,9 @@
 
 .top-section {
     position: relative;
-
+    /* The page centres its children, which would otherwise size this to its
+       content -- the whole photo strip, end to end. */
+    width: 100%;
 }
 
 .summary-line {
@@ -69,7 +73,6 @@
 h1 {
     font-size: var(--text-5xl);
     margin: var(--space-2);
-    white-space: nowrap;
 }
 
 .one-line-review {
@@ -343,4 +346,90 @@ button:hover {
     background-color: var(--color-primary-dark);
     border-color: var(--color-primary-dark);
     color: white;
+}
+
+/* ---------- responsive ---------- */
+
+@media (max-width: 900px) {
+    .bottom-section {
+        width: 100%;
+        box-sizing: border-box;
+        padding: 0 var(--space-4);
+        gap: var(--space-6);
+    }
+
+    .bottom-left-section {
+        margin-left: 0;
+        margin-right: 0;
+        min-width: 0;
+    }
+
+    .side-bar {
+        max-width: 300px;
+    }
+}
+
+@media (max-width: 600px) {
+    /* Still tall: on a phone the name, stars, price, chips and hours stack
+       up to about 260px over the photo, and the button needs room above. */
+    .photos {
+        height: 380px;
+    }
+
+    .summary-line {
+        margin: var(--space-4);
+        right: 0;
+    }
+
+    .summary-line h1 {
+        font-size: var(--text-3xl);
+        margin: var(--space-1) 0;
+    }
+
+    /* Top right, out of the way of the name and stars along the bottom. */
+    .see-all-photos button {
+        top: var(--space-4);
+        right: var(--space-4);
+        bottom: auto;
+        padding: var(--space-1) var(--space-4);
+        border-width: 2px;
+        font-size: var(--text-sm);
+    }
+
+    /*
+     * One column, with the contact box under the description and ahead of
+     * the reviews rather than after all of them. The two wrappers step aside
+     * (display: contents) so their children line up in this column with the
+     * sidebar, and order puts the reviews last.
+     */
+    .bottom-section {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .bottom-left-section,
+    .bottom-left-section .restaurant-details {
+        display: contents;
+    }
+
+    .bottom-right-section {
+        order: 1;
+        margin-bottom: var(--space-4);
+    }
+
+    .bottom-section .reviews-container {
+        order: 2;
+    }
+
+    .side-bar {
+        max-width: none;
+    }
+
+    .buttons {
+        margin: var(--space-4) 0;
+    }
+
+    .indi-amenity {
+        flex-basis: 100%;
+    }
 }

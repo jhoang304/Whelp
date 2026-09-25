@@ -156,17 +156,12 @@
   text-decoration: underline;
 }
 
-/* Responsive Adjustments */
-@media (min-width: 768px) {
+/* Responsive Adjustments: the photo beside the form only once there is
+   room for both, above the tablet breakpoint (see index.css). */
+@media (min-width: 901px) {
   .login-image-section {
     display: block; /* Show image on larger screens */
   }
-  .login-form-section {
-    padding: 60px 50px;
-  }
-}
-
-@media (min-width: 992px) {
   .login-form-section {
     padding: 70px 60px;
   }

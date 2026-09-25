@@ -288,7 +288,10 @@
 }
 
 .search-input-values {
-    width: 500px;
+    /* As wide as its container, which stops at 500px: a fixed 500px was the
+       widest thing on a phone and set the whole page's width. */
+    width: 100%;
+    box-sizing: border-box;
     height: 100%;
     padding: 0 60px 0 24px;
     border: none;
@@ -329,7 +332,7 @@
     top: -1px;
 }
 
-@media (max-width: 992px) {
+@media (max-width: 900px) {
     .navigationBar {
         flex-wrap: wrap;
         padding: 10px 0;
@@ -347,9 +350,9 @@
     }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 600px) {
     .navBar-container {
-        padding: 0 20px;
+        padding: 0 var(--space-4);
     }
 
     .nav-links {

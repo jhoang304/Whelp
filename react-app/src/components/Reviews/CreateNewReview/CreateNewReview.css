@@ -1,5 +1,7 @@
 .create-review-container{
-    width: 550px;
+    width: 100%;
+    max-width: 550px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -14,6 +16,7 @@
 }
 
 .create-new-review-form {
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -88,4 +91,15 @@
     background-color: #f8d7da;
     border: 1px solid #f5c6cb;
     border-radius: 4px;
+}
+
+@media (max-width: 600px) {
+    .create-review-container {
+        margin: var(--space-4) auto;
+        padding: 0 var(--space-4);
+    }
+
+    .create-new-review-form {
+        padding: var(--space-5) var(--space-4);
+    }
 }

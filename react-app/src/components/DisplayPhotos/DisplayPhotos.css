@@ -1,5 +1,6 @@
 .display-photos-modal {
-    max-width: 90vw;
+    /* The window less the modal's own 16px gutter on either side. */
+    max-width: calc(100vw - 2 * var(--space-4));
     max-height: 85vh;
     width: 900px;
     background: white;
@@ -169,9 +170,8 @@
 }
 
 /* Responsive adjustments */
-@media (max-width: 768px) {
+@media (max-width: 900px) {
     .display-photos-modal {
-        width: 95vw;
         max-height: 90vh;
     }
 
