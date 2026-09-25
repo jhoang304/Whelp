@@ -5,6 +5,7 @@ from .restaurants import seed_restaurants, undo_restaurants
 from .categories import ensure_categories, seed_restaurant_categories, undo_categories
 from .amenities import ensure_amenities, seed_restaurant_amenities, undo_amenities
 from .hours import seed_restaurant_hours, undo_hours
+from .backfill import backfill as backfill_demo_details
 from .restaurant_images import seed_restaurantImages, undo_restaurantImages
 from .reviews import seed_reviews, undo_reviews
 from .review_images import seed_reviewImages, undo_reviewImages
@@ -80,6 +81,39 @@ def seed(reset):
         return
     _seed_all()
     click.echo("Seeded the database.")
+
+
+# Creates the `flask seed backfill` command
+@seed_commands.command('backfill')
+@click.option('--apply', is_flag=True, default=False,
+              help='Write the changes. Without it, only report what would change.')
+def backfill(apply):
+    """
+    Give the demo restaurants the cuisines, amenities and hours a populated
+    database never got, without touching anything an owner has set.
+
+    Reports what it would do unless --apply is passed. Run it once, by hand:
+    it is not a build step, because it cannot tell a restaurant with no hours
+    from one whose owner cleared them.
+    """
+    changes, not_found, ambiguous = backfill_demo_details(apply=apply)
+
+    if changes:
+        verb = "Gave" if apply else "Would give"
+        click.echo(f"{verb} {len(changes)} restaurant{'' if len(changes) == 1 else 's'} "
+                   "what they were missing:")
+        for name, gets in changes:
+            click.echo(f"  {name}: {'; '.join(gets)}")
+    else:
+        click.echo("Nothing to fill in: every demo restaurant already has its details.")
+
+    if not_found:
+        click.echo(f"Not in this database, so left alone: {', '.join(not_found)}")
+    if ambiguous:
+        click.echo(f"More than one restaurant by this name, so left alone: {', '.join(ambiguous)}")
+
+    if changes and not apply:
+        click.echo("Nothing was written. Run again with --apply to write it.")
 
 
 # Creates the `flask seed undo` command
