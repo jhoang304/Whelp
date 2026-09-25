@@ -323,6 +323,14 @@ def delete_restaurant(restaurantId):
     # rows, and without this the objects would sit in the bucket forever,
     # costing storage and staying publicly readable after the user deleted them.
     object_keys = [image.s3_key for image in restaurant.restaurant_images if image.s3_key]
+    # The cascade reaches one level further: the restaurant's reviews go, and
+    # their photos with them. Collecting only the restaurant's own images left
+    # every review photo's object behind in the bucket.
+    object_keys += [key for (key,) in db.session.query(ReviewImage.s3_key).join(
+        Review, Review.id == ReviewImage.review_id
+    ).filter(
+        Review.restaurant_id == restaurantId, ReviewImage.s3_key.isnot(None)
+    ).all()]
 
     db.session.delete(restaurant)
     db.session.commit()

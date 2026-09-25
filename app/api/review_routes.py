@@ -5,8 +5,8 @@ from sqlalchemy.sql import func
 
 from app.models import db, Review, ReviewImage, ReviewResponse
 from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
-from app.api.utils import error_messages, reviews_with_details
-from app.api.aws_helpers import key_uploaded_by
+from app.api.utils import error_messages, key_still_referenced, reviews_with_details
+from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 
 review_routes = Blueprint('reviews', __name__)
 
@@ -35,6 +35,12 @@ def create_image_by_review_id(id):
   review = db.session.get(Review, id)
   if not review:
     return {"errors": ["Review couldn't be found"]}, 404
+
+  # Before the cap, not after it: this route used to let anyone signed in
+  # attach any url to anyone's review, and ten strangers' photos were then
+  # also the most the author could ever add.
+  if review.user_id != current_user.id:
+    return {"errors": ["You can only add photos to your own review"]}, 403
 
   images = ReviewImage.query.filter(ReviewImage.review_id == id).all()
   if len(images) >= 10:
@@ -92,8 +98,15 @@ def delete_review(id):
   if review.user_id != current_user.id:
     return {"errors": ["You can only delete your own reviews"]}, 403
 
+  # Read the keys before the delete: the cascade drops the review_images rows,
+  # and the objects would otherwise stay in the bucket, public, for good.
+  object_keys = [image.s3_key for image in review.review_images if image.s3_key]
+
   db.session.delete(review)
   db.session.commit()
+  # After the commit, so this review's own rows no longer count as references;
+  # best effort, like every other cleanup, so a bucket hiccup is not a 500.
+  remove_keys_from_s3([key for key in object_keys if not key_still_referenced(key)])
 
   return {"message": ["Successfully deleted"]},200
 

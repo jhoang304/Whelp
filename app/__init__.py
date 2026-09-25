@@ -14,6 +14,7 @@ from .api.category_routes import category_routes
 from .api.amenity_routes import amenity_routes
 from .api.restaurant_image_routes import resImage_routes
 from .api.review_routes import review_routes
+from .api.review_image_routes import review_image_routes
 from .api.image_routes import image_routes
 from .cli import check_db
 from .seeds import seed_commands
@@ -45,6 +46,7 @@ app.register_blueprint(category_routes, url_prefix='/api/categories')
 app.register_blueprint(amenity_routes, url_prefix='/api/amenities')
 app.register_blueprint(resImage_routes, url_prefix='/api/restaurant-images')
 app.register_blueprint(review_routes, url_prefix='/api/reviews')
+app.register_blueprint(review_image_routes, url_prefix='/api/review-images')
 app.register_blueprint(image_routes, url_prefix='/api/images')
 # Before anything reads an address: the rate limit is keyed on one.
 if app.config["TRUSTED_PROXY_HOPS"]:
