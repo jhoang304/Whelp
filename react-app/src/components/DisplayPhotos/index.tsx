@@ -94,13 +94,21 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                     return (
                         <li className="photo-li" key={photo.id}>
                             <div className="photo-frame">
-                                <img
-                                    className="indi-photo"
-                                    src={photo.url}
-                                    alt="res-photos"
+                                {/* A button, so the keyboard can open it too:
+                                    a clickable <img> is a mouse-only control. */}
+                                <button
+                                    type="button"
+                                    className="photo-open"
                                     onClick={() => setOpenIndex(index)}
-                                    onError={onRestaurantImageError}
-                                />
+                                    aria-label={`Enlarge photo ${index + 1} of ${allResPhotoArray.length} of ${singleRestaurant.name}`}
+                                >
+                                    <img
+                                        className="indi-photo"
+                                        src={photo.url}
+                                        alt=""
+                                        onError={onRestaurantImageError}
+                                    />
+                                </button>
                                 {photo.preview && (
                                     <span className="cover-badge">
                                         <i className="fa-solid fa-star"></i>
@@ -141,9 +149,9 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
             
             {openIndex !== null && (
                 <Lightbox
-                    photos={allResPhotoArray.map((photo) => ({
+                    photos={allResPhotoArray.map((photo, index) => ({
                         url: photo.url,
-                        alt: `${singleRestaurant.name}, enlarged`,
+                        alt: `${singleRestaurant.name}, ${index + 1} of ${allResPhotoArray.length}`,
                     }))}
                     index={openIndex}
                     onIndexChange={setOpenIndex}

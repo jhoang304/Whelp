@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Redirect } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from "../../utils/password";
 import { signUp } from "../../store/session";
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -121,7 +121,7 @@ function SignupFormPage(): React.JSX.Element {
             <button className="signup-submit-button" type="submit">Sign Up</button>
           </form>
           <p className="login-link">
-            Already have an account? <a href="/login">Log In</a>
+            Already have an account? <Link to="/login">Log In</Link>
           </p>
         </div>
         <div className="signup-image-section">

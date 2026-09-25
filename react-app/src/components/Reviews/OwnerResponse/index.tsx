@@ -8,6 +8,8 @@ import {
   deleteReviewResponse,
 } from "../../../store/reviews";
 import { avatarUrl, onAvatarError } from "../../../utils/images";
+import OpenModalButton from "../../OpenModalButton";
+import ConfirmDeleteModal from "../../ConfirmDeleteModal";
 import "./OwnerResponse.css";
 
 export const MAX_RESPONSE_LENGTH = 1000;
@@ -81,7 +83,6 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Delete your response to this review?")) return;
     const result: string[] | null = await dispatch(deleteReviewResponse(review.id));
     if (result) setErrors(result);
   };
@@ -168,10 +169,19 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
               <i className="fa-solid fa-pen"></i>
               Edit
             </button>
-            <button type="button" className="danger" onClick={handleDelete}>
-              <i className="fa-solid fa-trash"></i>
-              Delete
-            </button>
+            <OpenModalButton
+              className="danger"
+              buttonText={<><i className="fa-solid fa-trash"></i>Delete</>}
+              modalComponent={
+                <ConfirmDeleteModal
+                  title="Delete Response"
+                  message="Delete your response to this review?"
+                  detail="The review stays; only your reply is removed."
+                  confirmLabel="Delete Response"
+                  onConfirm={handleDelete}
+                />
+              }
+            />
           </div>
         )}
       </div>

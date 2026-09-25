@@ -63,8 +63,10 @@ const submitButton = () => screen.getByRole("button", { name: /create restaurant
 
 /** Fill every required field with something valid. */
 function fillTheForm() {
-  const type = (placeholder: RegExp | string, value: string) =>
-    fireEvent.change(screen.getByPlaceholderText(placeholder), { target: { value } });
+  // By label, the way a screen reader finds them: the placeholders that used
+  // to name these fields were gone the moment anyone typed.
+  const type = (label: RegExp | string, value: string) =>
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
   type("Business Name", "New Bistro");
   type("Address", "9 New St");
@@ -77,8 +79,8 @@ function fillTheForm() {
   type("Description", "Brand new.");
 
   // A pasted URL rather than an upload, so the file input is out of the way.
-  fireEvent.click(screen.getByRole("tab", { name: /image url/i }));
-  type(/Cover Image URL/i, "https://example.com/cover.jpg");
+  fireEvent.click(screen.getByRole("button", { name: /image url/i }));
+  type(/Cover image URL/i, "https://example.com/cover.jpg");
 }
 
 /** The bodies of the JSON requests the modal sent, by URL. */
@@ -153,7 +155,7 @@ test("a cover photo is required before anything is created", async () => {
 
   renderModal();
   fillTheForm();
-  fireEvent.change(screen.getByPlaceholderText(/Cover Image URL/i), { target: { value: "" } });
+  fireEvent.change(screen.getByLabelText(/Cover image URL/i), { target: { value: "" } });
   fireEvent.click(submitButton());
 
   expect(await screen.findByText("Cover photo URL is required")).toBeInTheDocument();
@@ -167,7 +169,7 @@ test("a failed upload stops before the restaurant is created", async () => {
   renderModal();
   fillTheForm();
   // back to the upload tab, with a file chosen
-  fireEvent.click(screen.getByRole("tab", { name: /upload cover photo/i }));
+  fireEvent.click(screen.getByRole("button", { name: /upload cover photo/i }));
   const file = new File(["x"], "cover.png", { type: "image/png" });
   fireEvent.change(screen.getByLabelText(/choose photo/i, { selector: "input[type=file]" }), {
     target: { files: [file] },

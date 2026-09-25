@@ -5,6 +5,7 @@ import { Restaurant, Review } from "../../types";
 import { getProfileThunk } from "../../store/userProfile";
 import { deleteReviewById } from "../../store/reviews";
 import OpenModalButton from "../OpenModalButton";
+import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import CreateRestaurantModal from "../CreateRestaurantModal";
 import RatingStar from "../RatingStar";
 import OwnerResponse from "../Reviews/OwnerResponse";
@@ -63,7 +64,6 @@ export default function UserProfilePage(): React.JSX.Element {
     const isOwnProfile = !!sessionUser && !!profile && sessionUser.id === profile.id;
 
     const handleDeleteReview = async (review: Review) => {
-        if (!window.confirm("Delete your review? This cannot be undone.")) return;
         await dispatch(deleteReviewById(review.id));
         dispatch(getProfileThunk(userId));
     };
@@ -199,9 +199,19 @@ export default function UserProfilePage(): React.JSX.Element {
                                             >
                                                 <i className="fa-solid fa-pen"></i> Edit
                                             </button>
-                                            <button type="button" className="danger" onClick={() => handleDeleteReview(review)}>
-                                                <i className="fa-solid fa-trash"></i> Delete
-                                            </button>
+                                            <OpenModalButton
+                                                className="danger"
+                                                buttonText={<><i className="fa-solid fa-trash"></i> Delete</>}
+                                                modalComponent={
+                                                    <ConfirmDeleteModal
+                                                        title="Delete Review"
+                                                        message={<>Delete your review of <strong>{review.restaurant ? review.restaurant.name : "this restaurant"}</strong>?</>}
+                                                        detail="This cannot be undone. Its photos go with it."
+                                                        confirmLabel="Delete Review"
+                                                        onConfirm={() => handleDeleteReview(review)}
+                                                    />
+                                                }
+                                            />
                                         </div>
                                     )}
                                 </article>

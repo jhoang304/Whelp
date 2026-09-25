@@ -117,11 +117,15 @@ function SingleRestaurant(): React.JSX.Element {
             {(
                 <div className="single-page-container">
                     <div className="top-section">
+                        {/* The strip is the page's backdrop, so its photos are
+                            alt="": read out, it was "images, images, images"
+                            eight times before the restaurant's name. They
+                            are one tab away, described, under See all photos. */}
                         <div className="photos">
                             {
                                 singleRestaurant.restaurantImages?.map(image => {
                                     return (
-                                        <img className="singlePhoto" alt="images" key={image.id} src={image.url} onError={onRestaurantImageError}/>
+                                        <img className="singlePhoto" alt="" key={image.id} src={image.url} onError={onRestaurantImageError}/>
                                     )
                                 })
                             }
@@ -167,8 +171,11 @@ function SingleRestaurant(): React.JSX.Element {
                                             <OpenModalButton
                                                 buttonText="Delete Restaurant"
                                                 modalComponent={
-                                                    <ConfirmDeleteModal 
-                                                        restaurantName={singleRestaurant.name}
+                                                    <ConfirmDeleteModal
+                                                        title="Delete Restaurant"
+                                                        message={<>Are you sure you want to delete <strong>"{singleRestaurant.name}"</strong>?</>}
+                                                        detail="This action cannot be undone. All reviews and photos associated with this restaurant will also be permanently deleted."
+                                                        confirmLabel="Delete Restaurant"
                                                         onConfirm={handleDelete}
                                                     />
                                                 }

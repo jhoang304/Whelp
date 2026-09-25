@@ -30,8 +30,17 @@
    * button 270px below the bottom, both out of reach and neither scrollable.
    */
   position: relative;
+  /* Never wider than the window either: a form narrower than its preferred
+     width is better than one running off the side of a phone. */
+  max-width: 100%;
   max-height: calc(100vh - var(--space-8));
   overflow-y: auto;
   background-color:white;
   border-radius: 20px;
+}
+
+/* The dialog itself only takes focus when nothing inside it can, and a red
+   ring around the whole modal says nothing a reader needs to know. */
+#modal-content:focus {
+  outline: none;
 }

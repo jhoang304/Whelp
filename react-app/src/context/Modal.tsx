@@ -1,6 +1,7 @@
-import React, { useCallback, useContext, useRef, useState } from 'react';
+import React, { useCallback, useContext, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import './Modal.css';
+import { useDialog } from '../hooks/useDialog';
 
 interface ModalContextValue {
   /** The div the modal is portalled into. */
@@ -54,17 +55,49 @@ export function ModalProvider({ children }: { children: React.ReactNode }): Reac
 
 export function Modal(): React.JSX.Element | null {
   const { modalRef, modalContent, closeModal } = useModal();
+  const contentRef = useRef<HTMLDivElement>(null);
+  const open = !!modalRef.current && !!modalContent;
+
+  // Focus in, Tab kept inside, Escape to close, focus back out afterwards.
+  useDialog(contentRef, open, closeModal);
+
+  useLayoutEffect(() => {
+    // Every modal opens with a heading, and that heading is the dialog's name:
+    // "Add Restaurant, dialog" rather than just "dialog". The modals are
+    // written without knowing they will be wrapped, so the wrapper finds it --
+    // and looks again whenever the content changes, since some show a
+    // "Loading..." with no heading first. React never set these attributes,
+    // so it will not fight over them.
+    const content = contentRef.current;
+    if (!open || !content) return;
+    const name = () => {
+      const heading = content.querySelector('h1, h2, h3');
+      if (!heading) {
+        content.removeAttribute('aria-labelledby');
+        return;
+      }
+      if (!heading.id) heading.id = 'modal-title';
+      content.setAttribute('aria-labelledby', heading.id);
+    };
+    name();
+    // Only added and removed nodes: the attributes set above are not
+    // watched, so naming the dialog cannot set this off again.
+    const observer = new MutationObserver(name);
+    observer.observe(content, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [open]);
+
   // Nothing to portal into until the provider's div has mounted.
-  if (!modalRef.current || !modalContent) return null;
+  if (!open) return null;
 
   return createPortal(
     <div id="modal">
       <div id="modal-background" onClick={closeModal} />
-      <div id="modal-content">
+      <div id="modal-content" ref={contentRef} role="dialog" aria-modal="true" tabIndex={-1}>
         {modalContent}
       </div>
     </div>,
-    modalRef.current
+    modalRef.current as HTMLDivElement
   );
 }
 

@@ -68,6 +68,22 @@
     overflow: hidden;
 }
 
+/* The photo is the button: nothing of the button should show but its focus. */
+.photo-frame .photo-open {
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    cursor: pointer;
+}
+
+.photo-frame .photo-open:focus-visible {
+    outline-offset: -3px;
+}
+
 .cover-badge {
     position: absolute;
     top: 10px;

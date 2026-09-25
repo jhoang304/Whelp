@@ -1,4 +1,3 @@
-import "./EditRestaurant.css"
 import React, { useState } from "react";
 import { useModal } from "../../context/Modal";
 import { updateRestaurantThunk } from "../../store/restaurants"
@@ -107,7 +106,6 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
             sessionLinks = (
                 <RestaurantForm
                     className="update-restaurant-form"
-                    labels="inline"
                     value={fields}
                     onChange={setFields}
                     categoryIds={categoryIds}
@@ -139,7 +137,7 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
     }
     return (
         <>
-            <h2 className="edit-restaurant-text">Edit Restaurant</h2>
+            <h2 className="restaurant-form-title">Edit Restaurant</h2>
             {sessionLinks}
         </>
     )

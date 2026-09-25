@@ -149,3 +149,8 @@
         padding: 6px 12px;
     }
 }
+
+/* Focused only so the keyboard has somewhere to be; the photo is the focus. */
+.image-viewer-overlay:focus {
+    outline: none;
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { login } from "../../store/session";
-import { Redirect } from "react-router-dom";
+import { Link, Redirect } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store";
 import './LoginForm.css';
 
@@ -101,7 +101,7 @@ function LoginFormPage(): React.JSX.Element {
             </button>
           </form>
           <p className="signup-link">
-            Don't have an account?  <a href="/signup">Sign Up</a>
+            Don't have an account?  <Link to="/signup">Sign Up</Link>
           </p>
         </div>
       </div>

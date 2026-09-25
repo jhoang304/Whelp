@@ -1,110 +1,9 @@
-.add-restaurant-form {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-5);
-}
-
-.add-restaurant-form input {
-    width: 500px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-3);
-    margin: 0px var(--space-20);
-    border: 1px solid var(--color-gray-300);
-    font-size: var(--text-base);
-    color: var(--color-gray-700);
-    transition: border-color 0.3s ease;
-}
-
-.add-restaurant-form input:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.add-restaurant-form select {
-    width: 500px;
-    height: 40px;
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-3);
-    margin: 0px var(--space-20);
-    border: 1px solid var(--color-gray-300);
-    color: var(--color-gray-700);
-    font-size: var(--text-base);
-    transition: border-color 0.3s ease;
-}
-
-.add-restaurant-form select:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-.add-restaurant-form span {
-    display: inline-block;
-    width: 125px;
-    font-size: var(--text-sm);
-}
-
-.add-restaurant-text {
-    margin-top: var(--space-12);
-    display: flex;
-    justify-content: center;
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
-    color: var(--color-gray-700);
-}
-
-button.add-business-button {
-    margin-top: var(--space-5);
-    background-color: var(--color-primary);
-    color: white;
-    font-weight: var(--font-semibold);
-    font-size: var(--text-base);
-    width: 240px;
-    height: 56px;
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-sm);
-    border: none;
-    display: block;
-    margin-left: auto;
-    margin-right: auto;
-    margin-bottom: var(--space-12);
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-button.add-business-button:hover {
-    background-color: var(--color-primary-dark);
-    transform: translateY(-1px);
-}
-
-/* Button loading state */
-.add-business-button:disabled {
-    background-color: var(--color-gray-400);
-    cursor: not-allowed;
-    opacity: 0.7;
-}
-
-.add-business-button i {
-    margin-right: var(--space-2);
-}
-
-.fa-spin {
-    animation: fa-spin 1s infinite linear;
-}
-
-@keyframes fa-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
+/*
+ * What only the create form has: the cover photo picker. The fields, their
+ * labels and the submit button are RestaurantForm's, shared with edit.
+ */
 /* Cover photo picker (upload to S3 or paste a URL) */
 .add-restaurant-form .image-picker {
-    width: 500px;
-    margin: 0 var(--space-20);
     display: flex;
     flex-direction: column;
     gap: var(--space-3);
@@ -135,10 +34,22 @@ button.add-business-button:hover {
     background-color: rgba(240, 12, 19, 0.06);
 }
 
-.add-restaurant-form .image-picker input {
+.add-restaurant-form .image-picker input[type="text"] {
     width: 100%;
-    margin: 0;
+    min-height: 40px;
     box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    font-size: var(--text-base);
+    color: var(--color-gray-700);
+}
+
+.add-restaurant-form .image-picker input[type="text"]:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }
 
 .image-picker-file {
@@ -178,7 +89,7 @@ button.add-business-button:hover {
 }
 
 .add-restaurant-form .image-picker-file-name {
-    width: auto;
+    min-width: 0;
     font-size: var(--text-xs);
     color: var(--color-gray-500);
     overflow: hidden;
@@ -186,49 +97,15 @@ button.add-business-button:hover {
     white-space: nowrap;
 }
 
-/* Description: a real multi-line box with a character counter */
-.add-restaurant-form .description-field {
-    width: 500px;
-    margin: 0 var(--space-20);
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-1);
+.fa-spin {
+    animation: fa-spin 1s infinite linear;
 }
 
-.add-restaurant-form .description-field textarea {
-    width: 100%;
-    box-sizing: border-box;
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-gray-300);
-    font-size: var(--text-base);
-    font-family: inherit;
-    color: var(--color-gray-700);
-    resize: vertical;
-    transition: border-color 0.3s ease;
-}
-
-.add-restaurant-form .description-field textarea:focus {
-    outline: none;
-    border-color: var(--color-primary);
-}
-
-/* beats `.add-restaurant-form span`, which is 125px wide for field labels */
-.add-restaurant-form .description-count {
-    align-self: flex-end;
-    width: auto;
-    font-size: var(--text-xs);
-    color: var(--color-gray-500);
-}
-
-.add-restaurant-form .description-count.near-limit {
-    color: var(--color-error);
-}
-
-/* Line the picker up with the field column: the inputs are 500px inset by
-   space-20, and a full-width picker under them looks like a mistake. */
-.add-restaurant-form .chip-picker,
-.add-restaurant-form .hours-editor {
-    width: 500px;
-    margin: 0px var(--space-20);
+@keyframes fa-spin {
+    0% {
+        transform: rotate(0deg);
+    }
+    100% {
+        transform: rotate(360deg);
+    }
 }

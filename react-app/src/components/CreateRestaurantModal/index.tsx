@@ -108,10 +108,10 @@ function CreateRestaurantModal() {
 
     return (
         <>
-            <h2 className="add-restaurant-text">Add Restaurant</h2>
+            <h2 className="restaurant-form-title">Add Restaurant</h2>
             <RestaurantForm
                 className="add-restaurant-form"
-                labels="placeholder"
+                required
                 value={fields}
                 onChange={setFields}
                 categoryIds={categoryIds}
@@ -124,7 +124,6 @@ function CreateRestaurantModal() {
                 onTimezoneChange={setTimezone}
                 errors={errors}
                 busy={isSubmitting}
-                submitClassName="add-business-button"
                 submitLabel="Create Restaurant"
                 busyLabel={<><i className="fa-solid fa-spinner fa-spin"></i>Creating Restaurant...</>}
                 onSubmit={handleSubmit}
@@ -132,11 +131,11 @@ function CreateRestaurantModal() {
                 {/* The cover photo is create's own: an existing restaurant
                     changes its photos through the photo routes instead. */}
                 <div className="image-picker">
-                    <div className="image-picker-tabs" role="tablist" aria-label="Cover photo source">
+                    <span className="restaurant-form-label">Cover Photo</span>
+                    <div className="image-picker-tabs" role="group" aria-label="Cover photo source">
                         <button
                             type="button"
-                            role="tab"
-                            aria-selected={imageMode === "upload"}
+                            aria-pressed={imageMode === "upload"}
                             className={imageMode === "upload" ? "active" : ""}
                             onClick={() => setImageMode("upload")}
                         >
@@ -144,8 +143,7 @@ function CreateRestaurantModal() {
                         </button>
                         <button
                             type="button"
-                            role="tab"
-                            aria-selected={imageMode === "url"}
+                            aria-pressed={imageMode === "url"}
                             className={imageMode === "url" ? "active" : ""}
                             onClick={() => setImageMode("url")}
                         >
@@ -167,6 +165,7 @@ function CreateRestaurantModal() {
                     ) : (
                         <input
                             type="text"
+                            aria-label="Cover image URL"
                             placeholder="Cover Image URL (https://...)"
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
