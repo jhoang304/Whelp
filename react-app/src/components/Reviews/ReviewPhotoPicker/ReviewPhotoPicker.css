@@ -1,0 +1,144 @@
+/*
+ * Both review forms style their descendants by element -- every `label` is a
+ * bold column, every `button` a blue pill with a top margin, every `span`
+ * gets a bottom margin, every `input` is full-width. Each rule here names the
+ * picker and a class of its own so it out-specifies those, the same as the
+ * cuisine chips had to in the restaurant forms.
+ */
+.review-photo-picker {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    margin-bottom: 1em;
+}
+
+.review-photo-picker .review-photo-picker-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.review-photo-picker .review-photo-picker-title {
+    margin: 0;
+    font-weight: bold;
+    color: #555;
+}
+
+.review-photo-picker .review-photo-picker-count {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
+.review-photo-picker .review-photo-picker-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: var(--space-2);
+}
+
+.review-photo-picker .review-photo-picker-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-base);
+    overflow: hidden;
+    border: 1px solid var(--color-gray-200);
+    background-color: var(--color-gray-100);
+}
+
+/* Not uploaded yet: a dashed edge says "this will be added", not "this is". */
+.review-photo-picker .review-photo-picker-item.pending {
+    border-style: dashed;
+    border-color: var(--color-gray-400);
+}
+
+.review-photo-picker .review-photo-picker-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.review-photo-picker .review-photo-picker-remove {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: var(--radius-full);
+    background-color: rgba(0, 0, 0, 0.65);
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    line-height: 24px;
+    text-align: center;
+    cursor: pointer;
+    align-self: auto;
+}
+
+.review-photo-picker .review-photo-picker-remove:hover:not(:disabled) {
+    background-color: var(--color-primary);
+}
+
+.review-photo-picker .review-photo-picker-remove:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.review-photo-picker .review-photo-picker-choose {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: var(--space-3);
+    margin: 0;
+    font-weight: normal;
+    cursor: pointer;
+}
+
+/* The real input is invisible and stays focusable, so the keyboard still
+   reaches it; the styled span beside it is what a mouse clicks. */
+.review-photo-picker .review-photo-picker-choose input[type="file"] {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+}
+
+.review-photo-picker .review-photo-picker-choose:focus-within .review-photo-picker-button {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.review-photo-picker .review-photo-picker-button {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    background-color: #fff;
+    color: var(--color-gray-700);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+}
+
+.review-photo-picker .review-photo-picker-choose:hover .review-photo-picker-button {
+    background-color: var(--color-gray-100);
+}
+
+.review-photo-picker .review-photo-picker-hint {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
+.review-photo-picker .review-photo-picker-notice {
+    margin: 0;
+    font-size: var(--text-xs);
+    color: var(--color-error);
+}

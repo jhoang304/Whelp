@@ -4,6 +4,7 @@ import { getRestaurantRestaurantImages, deleteRestaurantImageThunk, setCoverPhot
 import { useAppDispatch, useAppSelector } from "../../store";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 import { RestaurantImage, SingleRestaurantResponse } from "../../types";
+import Lightbox from "../Lightbox";
 
 interface DisplayPhotosProps {
     singleRestaurant: SingleRestaurantResponse;
@@ -11,8 +12,8 @@ interface DisplayPhotosProps {
 
 function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Element {
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
-    const [selectedPhoto, setSelectedPhoto] = useState<string | null>(null);
-    const [currentPhotoIndex, setCurrentPhotoIndex] = useState<number>(0);
+    // Which photo is enlarged, or null for none.
+    const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [errors, setErrors] = useState<string[]>([]);
     const [busyPhotoId, setBusyPhotoId] = useState<number | null>(null);
     const sessionUser = useAppSelector((state) => state.session.user);
@@ -38,22 +39,6 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     const allResPhotoArray: RestaurantImage[] =
         Object.values(allResPhotoState?.allRestaurantImages ?? {})
 
-    const navigatePhoto = (direction: 'prev' | 'next') => {
-        if (direction === 'prev') {
-            const newIndex = currentPhotoIndex === 0 ? allResPhotoArray.length - 1 : currentPhotoIndex - 1;
-            setCurrentPhotoIndex(newIndex);
-            setSelectedPhoto(allResPhotoArray[newIndex].url);
-        } else {
-            const newIndex = currentPhotoIndex === allResPhotoArray.length - 1 ? 0 : currentPhotoIndex + 1;
-            setCurrentPhotoIndex(newIndex);
-            setSelectedPhoto(allResPhotoArray[newIndex].url);
-        }
-    };
-
-    const openPhoto = (photoUrl: string, index: number) => {
-        setSelectedPhoto(photoUrl);
-        setCurrentPhotoIndex(index);
-    };
 
     // Both handlers clear busyPhotoId in a finally: this modal stays mounted
     // either way, and an unhandled rejection would otherwise leave the button
@@ -113,7 +98,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                                     className="indi-photo"
                                     src={photo.url}
                                     alt="res-photos"
-                                    onClick={() => openPhoto(photo.url, index)}
+                                    onClick={() => setOpenIndex(index)}
                                     onError={onRestaurantImageError}
                                 />
                                 {photo.preview && (
@@ -154,55 +139,16 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                 })}
             </ul>
             
-            {selectedPhoto && (
-                <div className="image-viewer-overlay" onClick={() => setSelectedPhoto(null)}>
-                    <div className="image-viewer-container">
-                        <button 
-                            className="image-viewer-close" 
-                            onClick={() => setSelectedPhoto(null)}
-                            aria-label="Close image viewer"
-                        >
-                            <i className="fa-solid fa-times"></i>
-                        </button>
-                        
-                        {allResPhotoArray.length > 1 && (
-                            <button 
-                                className="image-nav-arrow image-nav-prev" 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigatePhoto('prev');
-                                }}
-                                aria-label="Previous photo"
-                            >
-                                <i className="fa-solid fa-chevron-left"></i>
-                            </button>
-                        )}
-                        
-                        <img 
-                            className="image-viewer-photo" 
-                            src={selectedPhoto} 
-                            alt={`${singleRestaurant.name}, enlarged`}
-                            onClick={(e) => e.stopPropagation()}
-                        />
-                        
-                        {allResPhotoArray.length > 1 && (
-                            <button 
-                                className="image-nav-arrow image-nav-next" 
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigatePhoto('next');
-                                }}
-                                aria-label="Next photo"
-                            >
-                                <i className="fa-solid fa-chevron-right"></i>
-                            </button>
-                        )}
-                        
-                        <div className="image-counter">
-                            {currentPhotoIndex + 1} / {allResPhotoArray.length}
-                        </div>
-                    </div>
-                </div>
+            {openIndex !== null && (
+                <Lightbox
+                    photos={allResPhotoArray.map((photo) => ({
+                        url: photo.url,
+                        alt: `${singleRestaurant.name}, enlarged`,
+                    }))}
+                    index={openIndex}
+                    onIndexChange={setOpenIndex}
+                    onClose={() => setOpenIndex(null)}
+                />
             )}
         </div>
     )

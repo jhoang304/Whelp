@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import { useHistory, useParams } from "react-router-dom";
-import { createOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
+import { CreateReviewResult, createOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
 import { useAppDispatch } from "../../../store";
+import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
+import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
 import './CreateNewReview.css'
 
 /** Matches the `review` column and ReviewForm's Length validator. */
@@ -19,6 +21,7 @@ function CreateNewReview(): React.JSX.Element {
 
   const [review, setReview] = useState<string>("");
   const [rating, setRating] = useState<string>("3");
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
@@ -39,25 +42,36 @@ function CreateNewReview(): React.JSX.Element {
     setErrors([]);
     setIsSubmitting(true);
 
+    // Photos go up before the review exists: uploading is the step that
+    // realistically fails, and failing here leaves nothing to undo.
+    const { uploaded, errors: uploadErrors } = await uploadPending(pending);
+    if (uploadErrors) {
+      setErrors(uploadErrors);
+      setIsSubmitting(false);
+      return;
+    }
+
     // The thunk returns the API's messages instead of throwing, so a rejected
     // review (already reviewed, own restaurant, expired session) has to be
     // shown here rather than silently redirecting. The catch is the backstop
     // for anything it cannot turn into messages, such as a 200 whose body is
     // not JSON: every path that stays on this page must re-enable the form.
-    let failures: string[] | null;
+    let result: CreateReviewResult;
     try {
-      failures = await dispatch(
+      result = await dispatch(
         createOneReview({ review: trimmed, rating: Number(rating) }, +restaurantId)
       );
     } catch (unexpected) {
-      failures = ["Something went wrong posting your review. Please try again."];
+      result = { errors: ["Something went wrong posting your review. Please try again."] };
     }
 
-    if (failures) {
-      setErrors(failures);
+    if (result.errors) {
+      setErrors(result.errors);
       setIsSubmitting(false);
       return;
     }
+
+    const { errors: attachErrors } = await attachUploaded(dispatch, result.review.id, uploaded);
 
     // The review is saved. Refreshing is best effort: if the connection drops
     // here, the restaurant page loads for itself and reports its own errors,
@@ -67,6 +81,16 @@ function CreateNewReview(): React.JSX.Element {
       await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
     } catch (refreshError) {
       // fall through to the restaurant page
+    }
+
+    if (attachErrors.length > 0) {
+      // The review exists now, so submitting this form again would only be
+      // told it is a second review. The edit page can add the rest, and it
+      // says why they are missing.
+      history.push(`/${restaurantId}/reviews/${result.review.id}/update`, {
+        notice: ["Your review was posted, but some photos could not be attached:", ...attachErrors],
+      });
+      return;
     }
 
     history.push(`/single/${restaurantId}`);
@@ -99,7 +123,10 @@ function CreateNewReview(): React.JSX.Element {
               <option value="5">5</option>
             </select>
           </label>
-          <button type="submit" disabled={isSubmitting}>{isSubmitting ? "Submitting..." : "Submit"}</button>
+          <ReviewPhotoPicker pending={pending} onPendingChange={setPending} disabled={isSubmitting} />
+          <button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (pending.length ? "Uploading photos..." : "Submitting...") : "Submit"}
+          </button>
         </form>
       </div>
     )

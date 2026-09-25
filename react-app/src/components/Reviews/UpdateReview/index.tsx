@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { useHistory, useParams } from "react-router-dom";
-import { updateOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
+import { useHistory, useLocation, useParams } from "react-router-dom";
+import { deleteReviewImage, updateOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
 import { useAppDispatch, useAppSelector } from "../../../store";
+import { ReviewImage } from "../../../types";
+import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
+import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
 import './UpdateReview.css'
 
 /** Matches the `review` column and ReviewForm's Length validator. */
@@ -13,8 +16,14 @@ interface UpdateReviewParams {
   restaurantId: string;
 }
 
+/** What the create form hands over when some photos did not make it. */
+interface UpdateReviewState {
+  notice?: string[];
+}
+
 function UpdateReview(): React.JSX.Element {
   const { reviewId, restaurantId } = useParams<UpdateReviewParams>();
+  const location = useLocation<UpdateReviewState | undefined>();
   const oldReview = useAppSelector((state) => state.reviews[+reviewId]);
 
   const dispatch = useAppDispatch();
@@ -23,7 +32,9 @@ function UpdateReview(): React.JSX.Element {
   // The review may not be in the store yet (e.g. arriving from the profile page).
   const [review, setReview] = useState<string>(oldReview ? oldReview.review : "");
   const [rating, setRating] = useState<string>(oldReview ? String(oldReview.rating) : "5");
-  const [errors, setErrors] = useState<string[]>([]);
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
+  const [removingId, setRemovingId] = useState<number | null>(null);
+  const [errors, setErrors] = useState<string[]>(location.state?.notice ?? []);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
 
   useEffect( () => {
@@ -37,6 +48,23 @@ function UpdateReview(): React.JSX.Element {
       setRating(String(oldReview.rating));
     }
   }, [oldReview]);
+
+  // Removing a photo the review already has takes effect at once, the way
+  // "Remove Photo" does in the restaurant's photo modal, rather than waiting
+  // for Submit: it is its own request, and pretending otherwise would mean a
+  // reader who leaves without saving finds the photo gone anyway.
+  const handleRemoveExisting = async (image: ReviewImage) => {
+    setErrors([]);
+    setRemovingId(image.id);
+    try {
+      const failures = await dispatch(deleteReviewImage(+reviewId, image.id));
+      if (failures) setErrors(failures);
+    } catch (unexpected) {
+      setErrors(["Something went wrong removing the photo. Please try again."]);
+    } finally {
+      setRemovingId(null);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -55,6 +83,15 @@ function UpdateReview(): React.JSX.Element {
     setErrors([]);
     setIsSubmitting(true);
 
+    // Photos go up first, so a file the server refuses stops everything
+    // before the edit is saved.
+    const { uploaded, errors: uploadErrors } = await uploadPending(pending);
+    if (uploadErrors) {
+      setErrors(uploadErrors);
+      setIsSubmitting(false);
+      return;
+    }
+
     // The thunk returns the API's messages instead of throwing, so a rejected
     // edit (someone else's review, expired session) has to be shown here
     // rather than redirecting as though it had saved. The catch is the
@@ -72,6 +109,24 @@ function UpdateReview(): React.JSX.Element {
 
     if (failures) {
       setErrors(failures);
+      setIsSubmitting(false);
+      return;
+    }
+
+    const { failed, errors: attachErrors } = await attachUploaded(dispatch, reviewId, uploaded);
+    if (attachErrors.length > 0) {
+      // Keep only the photos that did not arrive, so trying again cannot
+      // attach the others a second time, and show the rest as the review's.
+      pending
+        .filter((photo) => !failed.includes(photo))
+        .forEach((photo) => URL.revokeObjectURL(photo.preview));
+      setPending(failed);
+      try {
+        await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
+      } catch (refreshError) {
+        // the messages below still say what happened
+      }
+      setErrors(["Your review was saved, but some photos could not be attached:", ...attachErrors]);
       setIsSubmitting(false);
       return;
     }
@@ -116,7 +171,17 @@ function UpdateReview(): React.JSX.Element {
             <option value="5">5</option>
           </select>
           </label>
-          <button type="submit" disabled={isSubmitting}>{isSubmitting ? "Submitting..." : "Submit"}</button>
+          <ReviewPhotoPicker
+            pending={pending}
+            onPendingChange={setPending}
+            existing={oldReview?.reviewImages ?? []}
+            onRemoveExisting={handleRemoveExisting}
+            removingId={removingId}
+            disabled={isSubmitting}
+          />
+          <button type="submit" disabled={isSubmitting || removingId !== null}>
+            {isSubmitting ? (pending.length ? "Uploading photos..." : "Submitting...") : "Submit"}
+          </button>
         </form>
       </div>
     )
