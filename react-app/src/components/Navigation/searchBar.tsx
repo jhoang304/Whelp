@@ -44,9 +44,10 @@ function SearchBar(): React.JSX.Element {
     return (
       <div className="nav-search">
         <div className={`nav-search-container ${isFocused ? 'focused' : ''}`}>
-          <form onSubmit={handleSearch} className="search-bar-form">
+          <form onSubmit={handleSearch} className="search-bar-form" role="search">
             <input
               className='search-input-values'
+              aria-label="Search restaurants"
               placeholder="Search restaurants, cuisine, location..."
               value={keyword}
               onChange={handleKeywordChange}

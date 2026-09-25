@@ -21,7 +21,9 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
 
     return (
         <div className="restaurant-card">
-            <img className="square" src={restaurant.previewImage || DEFAULT_RESTAURANT_IMAGE} alt={restaurant.name} onError={onRestaurantImageError}/>
+            {/* alt="": the name is right beside it, inside the same link, and a
+                screen reader would otherwise read it twice. */}
+            <img className="square" src={restaurant.previewImage || DEFAULT_RESTAURANT_IMAGE} alt="" onError={onRestaurantImageError}/>
             <div className="summary">
                 {/* No id prefix: it was standing in for a list number and
                     read 1, 2, 5, 9 as soon as anything was deleted. */}

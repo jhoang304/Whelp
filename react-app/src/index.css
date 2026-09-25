@@ -94,7 +94,19 @@ button {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: none;
-    outline: none;
+}
+
+/*
+ * Where keyboard focus is. The button rule above used to say `outline: none`,
+ * which took the browser's own ring away from every button in the app and put
+ * nothing back: tabbing through a page, nobody could see where they were.
+ * :focus-visible shows it for the keyboard and not for a mouse click. Inputs
+ * that restyle their own focus (a red border and glow) still opt out with
+ * `outline: none` on their :focus, which out-specifies this.
+ */
+:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
 }
 
 button:hover {
@@ -113,6 +125,14 @@ button:hover {
     display: flex;
     align-items: center;
     gap: var(--space-2);
+}
+
+/* The same look on a link, for "go somewhere" rather than "do something". */
+a.red-button {
+    display: inline-flex;
+    margin: var(--space-1);
+    text-decoration: none;
+    width: fit-content;
 }
 
 .red-button:hover {

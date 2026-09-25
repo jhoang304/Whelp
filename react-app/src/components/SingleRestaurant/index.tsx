@@ -167,8 +167,11 @@ function SingleRestaurant(): React.JSX.Element {
                                             <OpenModalButton
                                                 buttonText="Delete Restaurant"
                                                 modalComponent={
-                                                    <ConfirmDeleteModal 
-                                                        restaurantName={singleRestaurant.name}
+                                                    <ConfirmDeleteModal
+                                                        title="Delete Restaurant"
+                                                        message={<>Are you sure you want to delete <strong>"{singleRestaurant.name}"</strong>?</>}
+                                                        detail="This action cannot be undone. All reviews and photos associated with this restaurant will also be permanently deleted."
+                                                        confirmLabel="Delete Restaurant"
                                                         onConfirm={handleDelete}
                                                     />
                                                 }

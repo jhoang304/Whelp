@@ -21,6 +21,9 @@ function RestaurantBySearch(): React.JSX.Element {
     const { keyword } = useParams<SearchParams>();
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    // Bumped by Try Again, to run the search again without reloading the
+    // whole app -- which threw away the session state and the scroll.
+    const [attempt, setAttempt] = useState<number>(0);
 
     // The filters live in the URL here too, so a filtered search is a link.
     const filters = useMemo(() => readFilters(location.search), [location.search]);
@@ -46,7 +49,7 @@ function RestaurantBySearch(): React.JSX.Element {
         };
 
         performSearch();
-    }, [dispatch, keyword, history, filters]);
+    }, [dispatch, keyword, history, filters, attempt]);
 
     const restaurant = useAppSelector((state) =>
         state.Restaurants.searchedRestaurants || {}
@@ -82,9 +85,9 @@ function RestaurantBySearch(): React.JSX.Element {
     if (error) {
         return (
             <div className='search-restaurants-container'>
-                <div className='search-error'>
+                <div className='search-error' role="alert">
                     <p>{error}</p>
-                    <button onClick={() => window.location.reload()}>Try Again</button>
+                    <button type="button" onClick={() => setAttempt((n) => n + 1)}>Try Again</button>
                 </div>
             </div>
         );

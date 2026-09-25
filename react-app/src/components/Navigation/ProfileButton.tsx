@@ -43,10 +43,30 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
       }
     };
 
-    document.addEventListener("click", closeOnOutsideClick);
+    // Escape shuts it from anywhere, and hands focus back to the button so
+    // a keyboard user is not left on an item that has just disappeared.
+    const closeOnEscape = (e: KeyboardEvent) => {
+      if (e.key !== "Escape" || e.defaultPrevented) return;
+      setShowMenu(false);
+      buttonRef.current?.focus();
+    };
 
-    return () => document.removeEventListener("click", closeOnOutsideClick);
+    document.addEventListener("click", closeOnOutsideClick);
+    document.addEventListener("keydown", closeOnEscape);
+
+    return () => {
+      document.removeEventListener("click", closeOnOutsideClick);
+      document.removeEventListener("keydown", closeOnEscape);
+    };
   }, [showMenu]);
+
+  // A modal opened from the menu closes it, and the item that opened the
+  // modal goes with it -- so focus comes back to the button instead, which
+  // is still there to take it.
+  const closeMenuAfterModal = () => {
+    closeMenu();
+    buttonRef.current?.focus();
+  };
 
   const handleLogout = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault();
@@ -83,13 +103,15 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
       <ul className={ulClassName} ref={ulRef}>
         {user ? (
           <>
-            <div className='user-dropdown-username'>{user.username}</div>
-            <div className='user-dropdown-email'>{user.email}</div>
-            <button className="user-profile-button" onClick={loadProfile}>
-              <i className="fa-solid fa-user-circle"></i>
-              My Profile
-            </button>
-            <div className="add-restaurant-dropdown-button">
+            <li className='user-dropdown-username'>{user.username}</li>
+            <li className='user-dropdown-email'>{user.email}</li>
+            <li>
+              <button className="user-profile-button" onClick={loadProfile}>
+                <i className="fa-solid fa-user-circle"></i>
+                My Profile
+              </button>
+            </li>
+            <li className="add-restaurant-dropdown-button">
               <OpenModalButton
                 buttonText={
                   <>
@@ -97,27 +119,33 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
                     Add Restaurant
                   </>
                 }
-                onModalClose={closeMenu}
+                onModalClose={closeMenuAfterModal}
                 modalComponent={<CreateRestaurantModal />}
               />
-            </div>
-            <button className='user-logout-button' onClick={handleLogout}>
-              <i className="fa-solid fa-arrow-right-from-bracket"></i>
-              Log Out
-            </button>
+            </li>
+            <li>
+              <button className='user-logout-button' onClick={handleLogout}>
+                <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                Log Out
+              </button>
+            </li>
           </>
         ) : (
           <>
-            <OpenModalButton
-              buttonText="Log In"
-              onModalClose={closeMenu}
-              modalComponent={<LoginFormModal />}
-            />
-            <OpenModalButton
-              buttonText="Sign Up"
-              onModalClose={closeMenu}
-              modalComponent={<SignupFormModal />}
-            />
+            <li>
+              <OpenModalButton
+                buttonText="Log In"
+                onModalClose={closeMenuAfterModal}
+                modalComponent={<LoginFormModal />}
+              />
+            </li>
+            <li>
+              <OpenModalButton
+                buttonText="Sign Up"
+                onModalClose={closeMenuAfterModal}
+                modalComponent={<SignupFormModal />}
+              />
+            </li>
           </>
         )}
       </ul>

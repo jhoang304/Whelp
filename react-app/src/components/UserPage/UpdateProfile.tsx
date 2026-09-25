@@ -136,11 +136,10 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                         onError={onAvatarError}
                     />
                     <div className="update-profile-photo-controls">
-                        <div className="update-profile-mode" role="tablist" aria-label="Photo source">
+                        <div className="update-profile-mode" role="group" aria-label="Photo source">
                             <button
                                 type="button"
-                                role="tab"
-                                aria-selected={imageMode === "upload"}
+                                aria-pressed={imageMode === "upload"}
                                 className={imageMode === "upload" ? "active" : ""}
                                 onClick={() => setImageMode("upload")}
                             >
@@ -148,8 +147,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                             </button>
                             <button
                                 type="button"
-                                role="tab"
-                                aria-selected={imageMode === "url"}
+                                aria-pressed={imageMode === "url"}
                                 className={imageMode === "url" ? "active" : ""}
                                 onClick={() => setImageMode("url")}
                             >
@@ -171,6 +169,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                             <input
                                 className="update-profile-url"
                                 type="text"
+                                aria-label="Photo URL"
                                 placeholder="https://example.com/me.jpg"
                                 value={imageUrl}
                                 onChange={(e) => handleUrlChange(e.target.value)}

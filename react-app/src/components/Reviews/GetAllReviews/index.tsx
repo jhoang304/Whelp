@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useHistory } from "react-router-dom";
+import { Link, NavLink, useHistory } from "react-router-dom";
 import {
   fetchAllReviewsByRestaurantId,
   deleteReviewById,
@@ -12,6 +12,8 @@ import { Review } from "../../../types";
 import RatingStar from "../../RatingStar";
 import OwnerResponse from "../OwnerResponse";
 import ReviewPhotos from "../ReviewPhotos";
+import OpenModalButton from "../../OpenModalButton";
+import ConfirmDeleteModal from "../../ConfirmDeleteModal";
 import { avatarUrl, onAvatarError } from "../../../utils/images";
 import "./GetAllReviews.css";
 
@@ -56,7 +58,6 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   const hasReviewed = !!sessionUser && reviews.some((review) => review.user_id === sessionUser.id);
 
   const handleDelete = (reviewId: number) => async () => {
-    if (!window.confirm("Delete your review? This cannot be undone.")) return;
     await dispatch(deleteReviewById(reviewId));
     const page = await dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort));
     if (page) setOrder(page.items.map((review) => review.id));
@@ -130,9 +131,19 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                 <button className="update-review red-button" onClick={handleUpdate(review.id)}>
                   <span className="update-review-text">Update Review</span>
                 </button>
-                <button className="delete-review red-button" onClick={handleDelete(review.id)}>
-                  <span className="delete-review-text">Delete Review</span>
-                </button>
+                <OpenModalButton
+                  className="delete-review red-button"
+                  buttonText={<span className="delete-review-text">Delete Review</span>}
+                  modalComponent={
+                    <ConfirmDeleteModal
+                      title="Delete Review"
+                      message="Delete your review?"
+                      detail="This cannot be undone. Its photos go with it."
+                      confirmLabel="Delete Review"
+                      onConfirm={handleDelete(review.id)}
+                    />
+                  }
+                />
               </div>
             )}
           </div>
@@ -140,12 +151,13 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
       })}
 
       {sessionUser && !isOwner && !hasReviewed && (
-        <NavLink to={`/${restaurantId}/create-review`}>
-          <button className="red-button">
-            {whiteStar}
-            <span className="write-a-review">Write a review</span>
-          </button>
-        </NavLink>
+        // A link that looks like a button, not a button inside a link: the
+        // two nested are two stops for Tab and two things for a screen reader
+        // to announce, and HTML does not allow it.
+        <Link className="red-button" to={`/${restaurantId}/create-review`}>
+          {whiteStar}
+          <span className="write-a-review">Write a review</span>
+        </Link>
       )}
     </div>
   );

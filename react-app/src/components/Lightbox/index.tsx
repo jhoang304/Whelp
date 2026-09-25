@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 
 import "./Lightbox.css";
+import { useDialog } from "../../hooks/useDialog";
 
 export interface LightboxPhoto {
     url: string;
@@ -21,30 +22,37 @@ interface LightboxProps {
  * Lifted out of the restaurant photo modal when review photos needed the same
  * viewer: a second copy would have been the fourth control this month to be
  * written twice and then drift. Escape closes it and the arrow keys move
- * through the photos, which the old one did not do.
+ * through the photos, which the old one did not do; focus moves in when it
+ * opens and back to the thumbnail when it closes.
  */
 function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProps): React.JSX.Element | null {
     const count = photos.length;
+    const dialogRef = useRef<HTMLDivElement>(null);
+
+    // Escape is handled here, so that when this opens inside the photos
+    // modal, Escape closes the photo and not the modal behind it.
+    useDialog(dialogRef, true, onClose);
 
     const step = (by: number) => onIndexChange((index + by + count) % count);
 
     useEffect(() => {
         const onKey = (event: KeyboardEvent) => {
-            if (event.key === "Escape") onClose();
-            else if (event.key === "ArrowLeft" && count > 1) onIndexChange((index - 1 + count) % count);
+            if (event.key === "ArrowLeft" && count > 1) onIndexChange((index - 1 + count) % count);
             else if (event.key === "ArrowRight" && count > 1) onIndexChange((index + 1) % count);
         };
         document.addEventListener("keydown", onKey);
         return () => document.removeEventListener("keydown", onKey);
-    }, [index, count, onClose, onIndexChange]);
+    }, [index, count, onIndexChange]);
 
     const photo = photos[index];
     if (!photo) return null;
 
     return (
         <div
+            ref={dialogRef}
             className="image-viewer-overlay"
             role="dialog"
+            tabIndex={-1}
             aria-modal="true"
             aria-label="Photo viewer"
             onClick={onClose}

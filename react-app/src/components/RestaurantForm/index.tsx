@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useId } from "react";
 
 import "./RestaurantForm.css";
 import ChipPicker from "../ChipPicker";
@@ -18,13 +18,13 @@ import { MAX_DESCRIPTION_LENGTH, RestaurantFields } from "../../utils/restaurant
  *
  * What is left in the modals is what genuinely differs -- create uploads a
  * cover photo and redirects to the new page, edit is behind an owner gate and
- * closes itself. The form renders; it decides nothing. Each modal keeps its
- * own wrapper class, so the stylesheets that key off `.add-restaurant-form`
- * and `.update-restaurant-form` keep working untouched.
+ * closes itself. The form renders; it decides nothing.
+ *
+ * Every field has a visible label above it, in both. Create used to name its
+ * fields only with placeholders, which vanish as soon as you type, and edit
+ * put its labels in a 100px column beside 500px inputs -- a form 700px wide
+ * that no phone could show. Stacked labels suit both, at any width.
  */
-
-/** Create names its fields with placeholders, edit with labels beside them. */
-export type FieldLabels = "placeholder" | "inline";
 
 interface RestaurantFormProps {
     value: RestaurantFields;
@@ -37,14 +37,18 @@ interface RestaurantFormProps {
     onHoursChange: (hours: OpeningHours[]) => void;
     timezone: string | null;
     onTimezoneChange: (timezone: string | null) => void;
-    labels: FieldLabels;
+    /**
+     * Let the browser refuse empty fields before the form's own checks run.
+     * Only create has ever done this, and edit keeps it off: the browser's
+     * bubble appears first and talks over the form's own list of errors.
+     */
+    required?: boolean;
     errors: string[];
     busy: boolean;
     submitLabel: React.ReactNode;
     busyLabel: React.ReactNode;
-    submitClassName?: string;
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
-    /** `.add-restaurant-form` or `.update-restaurant-form`: their CSS keys off it. */
+    /** `.add-restaurant-form` or `.update-restaurant-form`, for what differs. */
     className: string;
     /** create's cover-photo picker, which edit has no use for */
     children?: React.ReactNode;
@@ -53,18 +57,22 @@ interface RestaurantFormProps {
 type TextField = {
     name: Exclude<keyof RestaurantFields, "price" | "description">;
     label: string;
-    placeholder: string;
+    /** An example, where the format is not obvious -- never the label again. */
+    placeholder?: string;
+    type?: "text" | "tel";
 };
 
 const TEXT_FIELDS: TextField[] = [
-    { name: "name", label: "Name", placeholder: "Business Name" },
-    { name: "address", label: "Address", placeholder: "Address" },
-    { name: "city", label: "City", placeholder: "City" },
-    { name: "state", label: "State", placeholder: "State" },
-    { name: "zipcode", label: "Zipcode", placeholder: "Zip Code" },
-    { name: "country", label: "Country", placeholder: "Country" },
-    { name: "phone_number", label: "Phone Number", placeholder: "Phone Number" },
-    { name: "website", label: "Website", placeholder: "Website" },
+    { name: "name", label: "Business Name" },
+    { name: "address", label: "Address" },
+    { name: "city", label: "City" },
+    { name: "state", label: "State", placeholder: "CA" },
+    { name: "zipcode", label: "Zip Code" },
+    { name: "country", label: "Country" },
+    { name: "phone_number", label: "Phone Number", placeholder: "(555) 123-4567", type: "tel" },
+    // Not type="url": that makes the browser demand a scheme, and the form
+    // accepts "example.com" on purpose.
+    { name: "website", label: "Website", placeholder: "example.com" },
 ];
 
 /** Where the price select sits: second, straight after the name. */
@@ -74,11 +82,11 @@ export const PRICE_OPTIONS = ["$", "$$", "$$$", "$$$$", "$$$$$"];
 
 function RestaurantForm({
     value, onChange, categoryIds, onCategoryIdsChange, amenityIds, onAmenityIdsChange,
-    hours, onHoursChange, timezone, onTimezoneChange, labels, errors, busy,
-    submitLabel, busyLabel, submitClassName, onSubmit, className, children,
+    hours, onHoursChange, timezone, onTimezoneChange, required = false, errors, busy,
+    submitLabel, busyLabel, onSubmit, className, children,
 }: RestaurantFormProps): React.JSX.Element {
-    const inline = labels === "inline";
     const dispatch = useAppDispatch();
+    const idPrefix = useId();
     const categories = useAppSelector((state) => state.categories.list);
     const amenities = useAppSelector((state) => state.categories.amenities);
 
@@ -90,24 +98,20 @@ function RestaurantForm({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch]);
 
-    // Only the create form has ever marked its inputs required, and the two
-    // validations would talk over each other: the browser's bubble appears
-    // before the form's own message list can. Keeping it as it was means this
-    // refactor changes nothing anyone can see.
-    const required = !inline;
-
     const set = (name: keyof RestaurantFields) =>
         (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
             onChange({ ...value, [name]: event.target.value });
 
-    /** An input on its own in create, and beside its label in edit. */
-    const labelled = (label: string, control: React.ReactNode) =>
-        inline ? <label key={label}><span>{label}</span>{control}</label> : control;
+    const labelled = (label: string, control: React.ReactNode) => (
+        <label className="restaurant-form-field" key={label}>
+            <span className="restaurant-form-label">{label}</span>
+            {control}
+        </label>
+    );
 
     const priceSelect = labelled("Price Range", (
         <select
             className="price-selector"
-            aria-label="Price Range"
             value={value.price}
             onChange={set("price")}
         >
@@ -117,27 +121,33 @@ function RestaurantForm({
         </select>
     ));
 
-    const description = labelled("Description", (
-        <div className="description-field">
+    // Not wrapped in its label like the others: the counter would sit inside
+    // it and become part of the field's name ("Description 0/500").
+    const description = (
+        <div className="restaurant-form-field">
+            <label className="restaurant-form-label" htmlFor={`${idPrefix}-description`}>Description</label>
             <textarea
+                id={`${idPrefix}-description`}
                 value={value.description}
-                placeholder={inline ? undefined : "Description"}
-                aria-label="Description"
                 onChange={set("description")}
                 rows={4}
                 maxLength={MAX_DESCRIPTION_LENGTH}
                 required={required}
+                aria-describedby={`${idPrefix}-description-count`}
             />
-            <span className={`description-count${value.description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}>
+            <span
+                id={`${idPrefix}-description-count`}
+                className={`description-count${value.description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}
+            >
                 {value.description.length}/{MAX_DESCRIPTION_LENGTH}
             </span>
         </div>
-    ));
+    );
 
     return (
-        <form className={className} onSubmit={onSubmit}>
+        <form className={`restaurant-form ${className}`} onSubmit={onSubmit}>
             {errors.length > 0 && (
-                <div className="error-container">
+                <div className="error-container" role="alert">
                     <div className="error-header">
                         <i className="fa-solid fa-triangle-exclamation"></i>
                         Please fix the following errors:
@@ -154,10 +164,9 @@ function RestaurantForm({
                 <React.Fragment key={field.name}>
                     {labelled(field.label, (
                         <input
-                            type="text"
+                            type={field.type || "text"}
                             value={value[field.name]}
-                            placeholder={inline ? undefined : field.placeholder}
-                            aria-label={field.label}
+                            placeholder={field.placeholder}
                             onChange={set(field.name)}
                             required={required}
                         />
@@ -192,7 +201,7 @@ function RestaurantForm({
 
             {children}
 
-            <button className={submitClassName} type="submit" disabled={busy}>
+            <button className="restaurant-form-submit" type="submit" disabled={busy}>
                 {busy ? busyLabel : submitLabel}
             </button>
         </form>

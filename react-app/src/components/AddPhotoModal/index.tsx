@@ -93,11 +93,10 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
         <div className="add-photo-modal">
             <h2 className="add-photo-text"><span>Add Photo</span></h2>
 
-            <div className="add-photo-mode" role="tablist" aria-label="Photo source">
+            <div className="add-photo-mode" role="group" aria-label="Photo source">
                 <button
                     type="button"
-                    role="tab"
-                    aria-selected={mode === "upload"}
+                    aria-pressed={mode === "upload"}
                     className={mode === "upload" ? "active" : ""}
                     onClick={() => { setMode("upload"); setErrors([]); }}
                 >
@@ -105,8 +104,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                 </button>
                 <button
                     type="button"
-                    role="tab"
-                    aria-selected={mode === "url"}
+                    aria-pressed={mode === "url"}
                     className={mode === "url" ? "active" : ""}
                     onClick={() => { setMode("url"); setErrors([]); }}
                 >
@@ -145,6 +143,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                     <label className="add-photo-url">
                         <input
                             type="text"
+                            aria-label="Photo URL"
                             placeholder="https://example.com/photo.jpg"
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}

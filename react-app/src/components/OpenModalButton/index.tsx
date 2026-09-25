@@ -24,8 +24,9 @@ function OpenModalButton({
     if (onButtonClick) onButtonClick();
   };
 
+  // type="button": without it a button inside a form submits the form.
   return (
-    <button onClick={onClick} className={className}>{buttonText}</button>
+    <button type="button" onClick={onClick} className={className}>{buttonText}</button>
   );
 }
 

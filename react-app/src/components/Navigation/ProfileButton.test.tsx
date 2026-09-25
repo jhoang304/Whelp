@@ -101,3 +101,24 @@ test("clicking outside closes the menu", () => {
 
   expect(menu()).toHaveClass("hidden");
 });
+
+test("Escape closes the menu and puts focus back on the button", () => {
+  renderButton();
+  fireEvent.click(button());
+  const logOut = screen.getByRole("button", { name: /log out/i });
+  logOut.focus();
+
+  fireEvent.keyDown(logOut, { key: "Escape" });
+
+  expect(menu()).toHaveClass("hidden");
+  expect(button()).toHaveFocus();
+});
+
+test("the menu is a list of list items", () => {
+  // It held divs and buttons directly, which a screen reader announces as a
+  // list with no items in it.
+  renderButton();
+  const children = Array.from(menu().children);
+  expect(children.length).toBeGreaterThan(0);
+  children.forEach((child) => expect(child.tagName).toBe("LI"));
+});

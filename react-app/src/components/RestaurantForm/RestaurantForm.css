@@ -45,3 +45,131 @@
 .error-item:last-child {
     margin-bottom: 0;
 }
+
+/*
+ * The form itself, for create and edit alike: one column, a label over each
+ * field, as wide as it can be up to 560px. The old layouts were fixed at
+ * 500px inputs inside 80px margins (create) or beside a 100px label column
+ * (edit), so neither fit a phone. Nothing here is styled by bare element --
+ * the old `.update-restaurant-form button` made every button in the form
+ * 150x56 and red, and the chip and hours pickers had to out-specify it.
+ */
+.restaurant-form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    width: 560px;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0 auto;
+    padding: 0 var(--space-8) var(--space-8);
+    color: var(--color-gray-800);
+}
+
+.restaurant-form .restaurant-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+    margin: 0;
+}
+
+.restaurant-form .restaurant-form-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-700);
+}
+
+.restaurant-form .restaurant-form-field input,
+.restaurant-form .restaurant-form-field select,
+.restaurant-form .restaurant-form-field textarea {
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    background-color: white;
+    font-family: inherit;
+    font-size: var(--text-base);
+    color: var(--color-gray-700);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.restaurant-form .restaurant-form-field input:focus,
+.restaurant-form .restaurant-form-field select:focus,
+.restaurant-form .restaurant-form-field textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
+}
+
+.restaurant-form .restaurant-form-field textarea {
+    resize: vertical;
+}
+
+/* The description's label is a <label> of its own rather than a span. */
+.restaurant-form label.restaurant-form-label {
+    display: block;
+}
+
+.restaurant-form .description-count {
+    align-self: flex-end;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
+.restaurant-form .description-count.near-limit {
+    color: var(--color-error);
+}
+
+.restaurant-form .restaurant-form-submit {
+    align-self: center;
+    min-width: 200px;
+    height: 52px;
+    margin: var(--space-4) 0 0;
+    padding: var(--space-2) var(--space-6);
+    border: none;
+    border-radius: var(--radius-sm);
+    background-color: var(--color-primary);
+    color: white;
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+}
+
+.restaurant-form .restaurant-form-submit:hover {
+    background-color: var(--color-primary-dark);
+}
+
+.restaurant-form .restaurant-form-submit:disabled {
+    background-color: var(--color-gray-400);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.restaurant-form .restaurant-form-submit i {
+    margin-right: var(--space-2);
+}
+
+/* The heading above either form. */
+.restaurant-form-title {
+    margin: var(--space-8) var(--space-8) var(--space-6);
+    text-align: center;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-700);
+}
+
+@media (max-width: 600px) {
+    .restaurant-form {
+        padding: 0 var(--space-4) var(--space-6);
+    }
+
+    .restaurant-form .restaurant-form-submit {
+        align-self: stretch;
+    }
+
+    .restaurant-form-title {
+        margin: var(--space-6) var(--space-4) var(--space-4);
+    }
+}
