@@ -10,18 +10,18 @@ https://whelp-8ru8.onrender.com/
 
 Whelp is a platform where users can search for businesses and leave reviews for them. Users can also create their own businesses and add them to the platform. Whelp is a full-stack application built with React, Redux, TypeScript, Flask, SQLAlchemy, and PostgreSQL. Some functionalities include:
 
-* User authentication and authorization
-* Creating, reading, updating, and deleting businesses
-* Creating, reading, updating, and deleting reviews
-* Searching businesses by name, cuisine, city, state, or description
-* Filtering the listing and the search by cuisine, price, minimum rating and city, and sorting by rating, review count or newest -- the filters live in the URL, so a filtered page can be shared and reloaded
-* User profile pages with an avatar, the reviews a user has written, and the businesses they own
+* User authentication and authorization, with a shared demo account
+* Creating, reading, updating, and deleting businesses, with their cuisines, amenities and opening hours. "Open until 9:30 PM" is worked out in the restaurant's own time zone, not the server's or the reader's
+* Creating, reading, updating, and deleting reviews, with up to ten photos each, sortable by newest, highest or lowest rated
 * Business owners can publicly respond to reviews left on their restaurants (one response per review, editable and deletable)
-* Photo uploads (restaurant photos and profile pictures) stored in AWS S3, with a paste-a-URL fallback
-
-Future Functionalities:
-* Photos attached to individual reviews
-* Business hours and amenities editable by the owner
+* Searching businesses by name, cuisine, city, state, or description
+* Filtering the listing and the search by cuisine, price, minimum rating and city, and sorting by rating, review count or newest. The filters live in the URL, so a filtered page can be shared and reloaded
+* Saving restaurants to a private list, shown on your own profile and nobody else's
+* User profile pages with an avatar, the reviews a user has written, and the businesses they own
+* Account settings: change your password, or delete your account. Your reviews stay, shown as by "Deleted user", so the restaurants keep their ratings
+* Photo uploads (restaurant, review and profile photos) stored in AWS S3, with a paste-a-URL fallback
+* Keyboard and screen-reader support: dialogs that manage focus and close on Escape, labelled fields, visible focus, and motion that stops for anyone who has asked their system for less
+* Layouts for phones and tablets as well as desktops
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -29,15 +29,20 @@ Future Functionalities:
 The website uses the following technologies:
 
 ### Backend:
-* Python
-* Flask
-* SQLAlchemy
+* Python 3.11
+* Flask, with Flask-Login, Flask-WTF and Flask-Limiter
+* SQLAlchemy, with Alembic migrations (Flask-Migrate)
+* PostgreSQL in production, SQLite locally
 * AWS S3 (boto3) for image storage
+* pytest
 
 ### Frontend:
-* TypeScript / JavaScript
-* React
+* TypeScript
+* React 18
 * Redux
+* Jest and Testing Library
+
+CI runs both test suites and a production build on every pull request (GitHub Actions).
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
@@ -45,7 +50,8 @@ The website uses the following technologies:
 Running the backend server:
 * From the root directory, copy `.env.example` to `.env` (the defaults use a local SQLite database)
 * Put a `SECRET_KEY` in it. The app refuses to boot without one; generate yours with `python -c "import secrets; print(secrets.token_hex(32))"`
-* Run "pipenv install -r requirements.txt" to install dependencies
+* Use Python 3.11 (pinned in `.python-version`) and Node 18
+* Run "pipenv install --dev" to install the dependencies the `Pipfile` lists, including the test tools. The deployed service and CI install the same pinned versions from `requirements.txt`
 * Run "pipenv shell" to run the virtual environment
 * Run "flask db upgrade" to create a local database
 * Run "flask seed all" to populate the database with seed data (6 users, 10 restaurants, 34 dated reviews, and 11 owner responses). It only seeds an empty database, so it is safe to run again; use "flask seed all --reset" to wipe everything and reseed
@@ -71,15 +77,29 @@ Environment variables the deployed service needs:
 | `TRUSTED_PROXY_HOPS` | no | How many reverse proxies stand in front of the app, so the real client address can be read from `X-Forwarded-For`. Defaults to 1 in production and 0 elsewhere. Leave it at 0 where nothing proxies: trusting that header without a proxy lets a caller spoof an address and walk around the rate limit |
 | `SQLALCHEMY_ECHO` | no | `1` logs every SQL statement. Development only, and ignored in production |
 
-The Python version is pinned in `.python-version`.
+The Python version, 3.11.9, is pinned in `.python-version`, which Render reads.
+
+On Render, the build and start commands are:
+
+```
+npm install --prefix react-app && npm run build --prefix react-app && pip install -r requirements.txt && pip install psycopg2 && flask db upgrade && flask seed all
+```
+
+```
+gunicorn app:app
+```
 
 If a deploy fails to reach the database, put `flask check-db` in the build command ahead of `flask db upgrade`. It prints which user, host and database the service actually received, the password's length and an eight-character fingerprint of it -- never the password itself -- and then either connects or reports the driver's one-line refusal. Running it locally against the same connection string and comparing fingerprints is what tells you whether the service holds the value you think it does.
 
 Keep `flask db upgrade && flask seed all` in the build command. Migrations run on every deploy, and the seed step now does nothing once the database has data, so a redeploy no longer erases what users have added. Run `flask seed all --reset` only when you really want a fresh copy of the demo data.
 
-Because `flask seed all` skips a database that already has data, a database seeded before cuisines, amenities and opening hours existed has the vocabularies but none of it attached to the demo restaurants. `flask seed backfill` fills that in: it touches only restaurants named in the demo seed, only fills what is empty -- anything an owner has set is kept -- and skips a name that matches more than one restaurant. It only reports what it would do until you add `--apply`. Run it once, by hand, from the Render shell; it is not a build step, because it cannot tell a restaurant with no hours from one whose owner cleared them.
+Because `flask seed all` skips a database that already has data, a database seeded before cuisines, amenities and opening hours existed has the vocabularies but none of it attached to the demo restaurants. `flask seed backfill` fills that in: it touches only restaurants named in the demo seed, only fills what is empty -- anything an owner has set is kept -- and skips a name that matches more than one restaurant. It only reports what it would do until you add `--apply`. Run it once: `flask seed backfill --apply` from a shell on the service, or, where there is no shell (Render's free instances have none), add `&& flask seed backfill --apply` to the end of the build command for a single deploy and then take it back out. Left in, it runs on every deploy, and it cannot tell a restaurant with no hours from one whose owner cleared them.
 
 Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.
+
+### API reference
+
+`GET /api/docs` lists every route with the methods it accepts and its docstring, which says what it takes and returns. It opens with the error contract, which holds for every route: a failure answers `{"errors": [message, ...]}`, a flat list of strings a UI can show as-is, and the status code says what kind of failure it was. Lists are paginated with `page` and `per_page` (at most 50) and answer `{"items", "page", "per_page", "total"}`.
 
 ### Photo uploads (optional)
 Uploads go to an S3 bucket when these variables are set in `.env`:
@@ -124,6 +144,21 @@ The stylesheets share two breakpoints, 900px (tablet) and 600px (phone), documen
 
 --------------------------------------------------------------------------------------------------------------------------------------
 
-# Images:
+# Screenshots
 
-Screenshots are best viewed on the live site linked above. The previous hosted images expired, so they were removed from this README.
+Taken from a local build with the seed data, logged out.
+
+### Landing page
+![Landing page](docs/screenshots/landing.jpg)
+
+### Restaurants, with filters
+![The restaurant list with its filter bar](docs/screenshots/restaurants.jpg)
+
+### A restaurant
+![A restaurant page: photos, rating, cuisines, hours, amenities and contact details](docs/screenshots/restaurant.jpg)
+
+### Log in
+![The log in page, with the demo login](docs/screenshots/login.jpg)
+
+### Sign up
+![The sign up page](docs/screenshots/signup.jpg)
