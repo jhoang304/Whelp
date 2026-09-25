@@ -68,13 +68,13 @@ function fillTheForm() {
   const type = (label: RegExp | string, value: string) =>
     fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
-  type("Business Name", "New Bistro");
-  type("Address", "9 New St");
+  type("Business name", "New Bistro");
+  type("Street address", "9 New St");
   type("City", "Austin");
   type("State", "TX");
-  type("Zip Code", "78701");
+  type("ZIP code", "78701");
   type("Country", "USA");
-  type("Phone Number", "(555) 999-0000");
+  type("Phone", "(555) 999-0000");
   type("Website", "http://new.com");
   type("Description", "Brand new.");
 
@@ -89,6 +89,13 @@ function sentJson() {
     .filter(([, options]) => options?.body && typeof options.body === "string")
     .map(([url, options]) => ({ url, body: JSON.parse(options.body) }));
 }
+
+beforeEach(() => {
+  // The cover preview draws a chosen file through a blob: url, which jsdom
+  // does not implement.
+  (global.URL as any).createObjectURL = jest.fn(() => "blob:cover");
+  (global.URL as any).revokeObjectURL = jest.fn();
+});
 
 afterEach(() => {
   jest.clearAllMocks();
@@ -211,4 +218,23 @@ test("a dropped connection is reported instead of stranding the form", async () 
   expect(await screen.findByText(/Network error/i)).toBeInTheDocument();
   expect(mockCloseModal).not.toHaveBeenCalled();
   expect(submitButton()).not.toBeDisabled();
+});
+
+test("the cover photo is previewed once there is one to show", () => {
+  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({})));
+  renderModal();
+  const preview = () => document.querySelector(".image-picker-preview img");
+  expect(preview()).toBeNull();
+
+  fireEvent.change(screen.getByLabelText(/choose photo/i, { selector: "input[type=file]" }), {
+    target: { files: [new File(["x"], "cover.png", { type: "image/png" })] },
+  });
+  expect(preview()).toHaveAttribute("src", "blob:cover");
+  expect(screen.getByText("cover.png")).toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: /image url/i }));
+  fireEvent.change(screen.getByLabelText(/Cover image URL/i), { target: { value: "not a url" } });
+  expect(preview()).toBeNull();
+  fireEvent.change(screen.getByLabelText(/Cover image URL/i), { target: { value: "https://example.com/c.jpg" } });
+  expect(preview()).toHaveAttribute("src", "https://example.com/c.jpg");
 });

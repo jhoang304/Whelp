@@ -1,76 +1,121 @@
 /*
- * The error list both restaurant forms show. It used to live in
- * CreateRestaurantModal.css, unscoped, which is why the edit modal could have
- * picked it up at any time and never did -- it had a plainer list of its own.
- * One form component, one error block, one place to style it.
- */
-/* Error styling */
-.error-container {
-    background: #fef2f2;
-    border: 1px solid #fecaca;
-    border-radius: var(--radius-base);
-    padding: var(--space-4);
-    margin-bottom: var(--space-5);
-}
-
-.error-header {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--color-error);
-    font-weight: var(--font-semibold);
-    font-size: var(--text-sm);
-    margin-bottom: var(--space-3);
-}
-
-.error-header i {
-    font-size: var(--text-base);
-}
-
-.error-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.error-item {
-    color: #b91c1c;
-    font-size: var(--text-sm);
-    padding: var(--space-1) 0;
-    border-left: 3px solid var(--color-error);
-    padding-left: var(--space-3);
-    margin-bottom: var(--space-2);
-}
-
-.error-item:last-child {
-    margin-bottom: 0;
-}
-
-/*
- * The form itself, for create and edit alike: one column, a label over each
- * field, as wide as it can be up to 560px. The old layouts were fixed at
- * 500px inputs inside 80px margins (create) or beside a 100px label column
- * (edit), so neither fit a phone. Nothing here is styled by bare element --
- * the old `.update-restaurant-form button` made every button in the form
- * 150x56 and red, and the chip and hours pickers had to out-specify it.
+ * The add and edit restaurant forms: a header, the fields in sections, and
+ * a footer that stays put.
+ *
+ * The header and footer are sticky inside the modal's own scroll box, so the
+ * title, Close, Cancel and Save stay where they are while the sections move
+ * between them. Every rule names the form, so nothing here leaks into the
+ * page, and the global `button` rule (grey, 4px margin) cannot reach in.
  */
 .restaurant-form {
     display: flex;
     flex-direction: column;
-    gap: var(--space-4);
-    width: 560px;
+    width: 640px;
     max-width: 100%;
     box-sizing: border-box;
-    margin: 0 auto;
-    padding: 0 var(--space-8) var(--space-8);
     color: var(--color-gray-800);
+}
+
+/* ---------- header ---------- */
+
+.restaurant-form .restaurant-form-header {
+    position: sticky;
+    top: 0;
+    z-index: 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-6) var(--space-8) var(--space-4);
+    background-color: white;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.restaurant-form .restaurant-form-title {
+    margin: 0;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-gray-800);
+}
+
+.restaurant-form .restaurant-form-subtitle {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+}
+
+.restaurant-form .restaurant-form-close {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--color-gray-600);
+    font-size: var(--text-lg);
+}
+
+.restaurant-form .restaurant-form-close:hover {
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-800);
+}
+
+/* ---------- body and sections ---------- */
+
+.restaurant-form .restaurant-form-body {
+    display: flex;
+    flex-direction: column;
+    padding: var(--space-2) var(--space-8) var(--space-6);
+}
+
+.restaurant-form .restaurant-form-section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-4);
+    padding: var(--space-6) 0;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.restaurant-form .restaurant-form-section:last-child {
+    border-bottom: none;
+}
+
+.restaurant-form .restaurant-form-section-heading h3 {
+    margin: 0;
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-800);
+}
+
+.restaurant-form .restaurant-form-section-heading p {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-gray-500);
+}
+
+/* Two columns for the short fields; `wide` ones take the whole row. */
+.restaurant-form .restaurant-form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-4);
 }
 
 .restaurant-form .restaurant-form-field {
     display: flex;
     flex-direction: column;
     gap: var(--space-1);
+    min-width: 0;
     margin: 0;
+}
+
+.restaurant-form .restaurant-form-field.wide {
+    grid-column: 1 / -1;
 }
 
 .restaurant-form .restaurant-form-label {
@@ -79,25 +124,38 @@
     color: var(--color-gray-700);
 }
 
+.restaurant-form .restaurant-form-hint {
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
 .restaurant-form .restaurant-form-field input,
-.restaurant-form .restaurant-form-field select,
 .restaurant-form .restaurant-form-field textarea {
     width: 100%;
-    min-height: 40px;
+    min-height: 44px;
     box-sizing: border-box;
     margin: 0;
     padding: var(--space-2) var(--space-3);
     border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-base);
     background-color: white;
     font-family: inherit;
     font-size: var(--text-base);
-    color: var(--color-gray-700);
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    color: var(--color-gray-800);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.restaurant-form .restaurant-form-field input::placeholder,
+.restaurant-form .restaurant-form-field textarea::placeholder {
+    color: var(--color-gray-400);
+}
+
+.restaurant-form .restaurant-form-field input:hover,
+.restaurant-form .restaurant-form-field textarea:hover {
+    border-color: var(--color-gray-400);
 }
 
 .restaurant-form .restaurant-form-field input:focus,
-.restaurant-form .restaurant-form-field select:focus,
 .restaurant-form .restaurant-form-field textarea:focus {
     outline: none;
     border-color: var(--color-primary);
@@ -105,12 +163,9 @@
 }
 
 .restaurant-form .restaurant-form-field textarea {
+    min-height: 104px;
     resize: vertical;
-}
-
-/* The description's label is a <label> of its own rather than a span. */
-.restaurant-form label.restaurant-form-label {
-    display: block;
+    line-height: var(--leading-normal);
 }
 
 .restaurant-form .description-count {
@@ -123,27 +178,128 @@
     color: var(--color-error);
 }
 
-.restaurant-form .restaurant-form-submit {
-    align-self: center;
-    min-width: 200px;
-    height: 52px;
-    margin: var(--space-4) 0 0;
-    padding: var(--space-2) var(--space-6);
+/* ---------- price: a segmented control over real radio buttons ---------- */
+
+.restaurant-form .restaurant-form-price {
+    padding: 0;
     border: none;
-    border-radius: var(--radius-sm);
+}
+
+.restaurant-form .restaurant-form-price legend {
+    padding: 0;
+    margin-bottom: var(--space-1);
+}
+
+.restaurant-form .price-options {
+    display: flex;
+    width: fit-content;
+    max-width: 100%;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    overflow: hidden;
+}
+
+.restaurant-form .price-option {
+    position: relative;
+    margin: 0;
+}
+
+/* The radio stays in the page, focusable and arrow-keyable, but drawn by
+   its span instead. */
+.restaurant-form .price-option input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.restaurant-form .price-option span {
+    display: block;
+    min-width: 56px;
+    padding: var(--space-2) var(--space-3);
+    text-align: center;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-600);
+    background-color: white;
+    border-left: 1px solid var(--color-gray-300);
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.restaurant-form .price-option:first-child span {
+    border-left: none;
+}
+
+.restaurant-form .price-option:hover span {
+    background-color: var(--color-gray-50);
+    color: var(--color-gray-800);
+}
+
+.restaurant-form .price-option input:checked + span {
     background-color: var(--color-primary);
     color: white;
+}
+
+.restaurant-form .price-option input:focus-visible + span {
+    outline: 2px solid var(--color-primary);
+    outline-offset: -4px;
+}
+
+.restaurant-form .price-option input:checked:focus-visible + span {
+    outline-color: white;
+}
+
+/* ---------- footer ---------- */
+
+.restaurant-form .restaurant-form-footer {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-8);
+    background-color: white;
+    border-top: 1px solid var(--color-gray-200);
+    box-shadow: 0 -6px 16px rgba(0, 0, 0, 0.04);
+}
+
+.restaurant-form .restaurant-form-footer button {
+    margin: 0;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-6);
+    border-radius: var(--radius-base);
     font-size: var(--text-base);
     font-weight: var(--font-semibold);
 }
 
-.restaurant-form .restaurant-form-submit:hover {
+.restaurant-form .restaurant-form-cancel {
+    color: var(--color-gray-700);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+}
+
+.restaurant-form .restaurant-form-cancel:hover {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+}
+
+.restaurant-form .restaurant-form-submit {
+    color: white;
+    background-color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.restaurant-form .restaurant-form-submit:hover:not(:disabled) {
     background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
 }
 
 .restaurant-form .restaurant-form-submit:disabled {
-    background-color: var(--color-gray-400);
-    cursor: not-allowed;
+    cursor: progress;
     opacity: 0.7;
 }
 
@@ -151,25 +307,104 @@
     margin-right: var(--space-2);
 }
 
-/* The heading above either form. */
-.restaurant-form-title {
-    margin: var(--space-8) var(--space-8) var(--space-6);
-    text-align: center;
-    font-size: var(--text-2xl);
-    font-weight: var(--font-bold);
-    color: var(--color-gray-700);
+/* ---------- errors ---------- */
+
+.restaurant-form .error-container {
+    margin-top: var(--space-4);
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-base);
+    padding: var(--space-4);
 }
 
+/* Focused so it scrolls into view; the red box already says where it is. */
+.restaurant-form .error-container:focus {
+    outline: none;
+}
+
+.restaurant-form .error-header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-error);
+    font-weight: var(--font-semibold);
+    font-size: var(--text-sm);
+    margin-bottom: var(--space-3);
+}
+
+.restaurant-form .error-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.restaurant-form .error-item {
+    color: #b91c1c;
+    font-size: var(--text-sm);
+    border-left: 3px solid var(--color-error);
+    padding: var(--space-1) 0 var(--space-1) var(--space-3);
+    margin-bottom: var(--space-2);
+}
+
+.restaurant-form .error-item:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- phones ---------- */
+
 @media (max-width: 600px) {
-    .restaurant-form {
-        padding: 0 var(--space-4) var(--space-6);
+    .restaurant-form .restaurant-form-header {
+        padding: var(--space-4) var(--space-4) var(--space-3);
     }
 
-    .restaurant-form .restaurant-form-submit {
-        align-self: stretch;
+    .restaurant-form .restaurant-form-title {
+        font-size: var(--text-xl);
     }
 
-    .restaurant-form-title {
-        margin: var(--space-6) var(--space-4) var(--space-4);
+    .restaurant-form .restaurant-form-body {
+        padding: 0 var(--space-4) var(--space-4);
     }
+
+    .restaurant-form .restaurant-form-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .restaurant-form .price-options {
+        width: 100%;
+    }
+
+    .restaurant-form .price-option {
+        flex: 1;
+    }
+
+    .restaurant-form .price-option span {
+        min-width: 0;
+        padding: var(--space-2) var(--space-1);
+    }
+
+    .restaurant-form .restaurant-form-footer {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* Cancel as wide as its word, the main action the rest of the row. */
+    .restaurant-form .restaurant-form-footer .restaurant-form-cancel {
+        flex: 0 0 auto;
+        padding: var(--space-2) var(--space-4);
+    }
+
+    .restaurant-form .restaurant-form-footer .restaurant-form-submit {
+        flex: 1;
+        white-space: nowrap;
+    }
+}
+
+/* Edit, opened by someone who is not the owner: a heading and the reason. */
+.restaurant-form-refusal {
+    padding: var(--space-8);
+    max-width: 420px;
+}
+
+.restaurant-form-refusal .restaurant-form-title {
+    margin: 0 0 var(--space-3);
+    font-size: var(--text-2xl);
 }

@@ -30,9 +30,11 @@ function tabbable(container: HTMLElement): HTMLElement[] {
 /**
  * Makes `ref` behave as a modal dialog while `active` is true.
  *
- * - Focus moves into it when it opens, to the first thing that can take it
- *   (or to the container itself, which should carry tabIndex={-1}), unless
- *   something inside already has it.
+ * - Focus moves into it when it opens: to whatever carries data-autofocus,
+ *   else the first thing that can take it, else the container itself (which
+ *   should carry tabIndex={-1}), unless something inside already has it.
+ *   data-autofocus rather than React's autoFocus, which moves focus before
+ *   this can note what had it, and so what to give it back to.
  * - Tab and Shift+Tab wrap at its edges instead of walking out onto the page
  *   underneath.
  * - Escape calls `onClose`.
@@ -61,7 +63,8 @@ export function useDialog(ref: RefObject<HTMLElement>, active: boolean, onClose:
 
         const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
         if (!container.contains(document.activeElement)) {
-            (tabbable(container)[0] || container).focus();
+            const preferred = container.querySelector<HTMLElement>("[data-autofocus]");
+            (preferred || tabbable(container)[0] || container).focus();
         }
 
         const onKeyDown = (event: KeyboardEvent) => {

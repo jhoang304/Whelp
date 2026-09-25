@@ -61,6 +61,19 @@ test("a heading that only appears once the content has loaded still names it", a
   expect(await screen.findByRole("dialog", { name: "Photos for Somewhere" })).toBeInTheDocument();
 });
 
+test("a field marked data-autofocus takes focus ahead of a Close button before it", () => {
+  renderWith(
+    <form>
+      <h2>Edit Something</h2>
+      <button type="button" aria-label="Close">x</button>
+      <input aria-label="Name" data-autofocus />
+    </form>
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Open" }));
+
+  expect(screen.getByLabelText("Name")).toHaveFocus();
+});
+
 test("Escape closes it and focus returns to the button that opened it", () => {
   const onModalClose = jest.fn();
   renderWith(<Form />, onModalClose);

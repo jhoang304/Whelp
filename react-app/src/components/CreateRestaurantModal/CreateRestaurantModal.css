@@ -1,100 +1,159 @@
 /*
- * What only the create form has: the cover photo picker. The fields, their
- * labels and the submit button are RestaurantForm's, shared with edit.
+ * What only the create form has: the cover photo picker. The fields, the
+ * sections, the header and the footer are RestaurantForm's, shared with edit.
  */
-/* Cover photo picker (upload to S3 or paste a URL) */
 .add-restaurant-form .image-picker {
     display: flex;
     flex-direction: column;
-    gap: var(--space-3);
+    gap: var(--space-4);
 }
 
-.image-picker-tabs {
+/* Upload or paste: two toggles, drawn as one segmented control. */
+.add-restaurant-form .image-picker-tabs {
     display: flex;
-    gap: var(--space-2);
+    width: fit-content;
+    max-width: 100%;
+    padding: 3px;
+    gap: 2px;
+    background-color: var(--color-gray-100);
+    border-radius: var(--radius-base);
 }
 
-.image-picker-tabs button {
-    margin: 0;
-    padding: var(--space-1) var(--space-3);
-    font-size: var(--text-xs);
-    font-weight: var(--font-semibold);
-    color: var(--color-gray-600);
-    background-color: white;
-    border: 1px solid var(--color-gray-300);
-    border-radius: 999px;
+.add-restaurant-form .image-picker-tabs button {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-1);
-}
-
-.image-picker-tabs button.active {
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-    background-color: rgba(240, 12, 19, 0.06);
-}
-
-.add-restaurant-form .image-picker input[type="text"] {
-    width: 100%;
-    min-height: 40px;
-    box-sizing: border-box;
+    gap: var(--space-2);
     margin: 0;
     padding: var(--space-2) var(--space-3);
-    border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
-    font-size: var(--text-base);
-    color: var(--color-gray-700);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-600);
+    background-color: transparent;
+    border: none;
+    border-radius: 6px;
 }
 
-.add-restaurant-form .image-picker input[type="text"]:focus {
-    outline: none;
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
+.add-restaurant-form .image-picker-tabs button:hover {
+    color: var(--color-gray-800);
+    background-color: transparent;
 }
 
-.image-picker-file {
-    position: relative;
+.add-restaurant-form .image-picker-tabs button.active {
+    color: var(--color-gray-800);
+    background-color: white;
+    box-shadow: var(--shadow-sm), 0 0 0 1px var(--color-gray-200);
+}
+
+/* The thumbnail, and beside it the way to choose one. */
+.add-restaurant-form .image-picker-row {
     display: flex;
     align-items: center;
-    gap: var(--space-3);
-    min-height: 40px;
+    gap: var(--space-4);
+}
+
+.add-restaurant-form .image-picker-preview {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 120px;
+    height: 90px;
+    overflow: hidden;
+    border-radius: var(--radius-base);
+    background-color: var(--color-gray-100);
+}
+
+.add-restaurant-form .image-picker-preview.empty {
+    border: 1px dashed var(--color-gray-300);
+    color: var(--color-gray-400);
+    font-size: var(--text-3xl);
+}
+
+.add-restaurant-form .image-picker-preview img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* The file input covers the whole label, so the button, the file name and
+   the space between them all open the picker. */
+.add-restaurant-form .image-picker-file {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-1);
     cursor: pointer;
 }
 
 .add-restaurant-form .image-picker-file input[type="file"] {
     position: absolute;
     inset: 0;
+    width: 100%;
     height: 100%;
     opacity: 0;
     cursor: pointer;
 }
 
-.image-picker-file-button {
+.add-restaurant-form .image-picker-file-button {
     display: inline-flex;
     align-items: center;
-    gap: var(--space-2);
-    padding: var(--space-2) var(--space-3);
+    padding: var(--space-2) var(--space-4);
     font-size: var(--text-sm);
     font-weight: var(--font-semibold);
     color: var(--color-gray-800);
     background-color: white;
     border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius-base);
     white-space: nowrap;
 }
 
-.image-picker-file:hover .image-picker-file-button {
+.add-restaurant-form .image-picker-file:hover .image-picker-file-button {
     background-color: var(--color-gray-100);
     border-color: var(--color-gray-400);
 }
 
+.add-restaurant-form .image-picker-file:focus-within .image-picker-file-button {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .add-restaurant-form .image-picker-file-name {
-    min-width: 0;
+    max-width: 100%;
     font-size: var(--text-xs);
     color: var(--color-gray-500);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+.add-restaurant-form .image-picker-url {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+}
+
+.add-restaurant-form .image-picker-url input {
+    width: 100%;
+    min-height: 44px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-2) var(--space-3);
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    font-family: inherit;
+    font-size: var(--text-base);
+    color: var(--color-gray-800);
+}
+
+.add-restaurant-form .image-picker-url input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }
 
 .fa-spin {
@@ -107,5 +166,22 @@
     }
     100% {
         transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 600px) {
+    .add-restaurant-form .image-picker-tabs {
+        width: 100%;
+    }
+
+    .add-restaurant-form .image-picker-tabs button {
+        flex: 1;
+        justify-content: center;
+        padding: var(--space-2);
+    }
+
+    .add-restaurant-form .image-picker-preview {
+        width: 88px;
+        height: 72px;
     }
 }

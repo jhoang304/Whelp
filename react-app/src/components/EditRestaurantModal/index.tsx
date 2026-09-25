@@ -97,48 +97,39 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
         closeModal();
     }
 
-    let sessionLinks;
+    // Owners get the form, which carries its own heading. Anyone else who
+    // somehow opens this gets a heading and the reason, and no form.
+    const refusal = (reason: string) => (
+        <div className="restaurant-form-refusal">
+            <h2 className="restaurant-form-title">Edit restaurant</h2>
+            <p>{reason}</p>
+        </div>
+    );
 
-    if (sessionUser) {
-        const currentUserId = sessionUser.id
-        const restaurantOwnerId = singleRestaurant.user_id
-        if (currentUserId === restaurantOwnerId) {
-            sessionLinks = (
-                <RestaurantForm
-                    className="update-restaurant-form"
-                    value={fields}
-                    onChange={setFields}
-                    categoryIds={categoryIds}
-                    onCategoryIdsChange={setCategoryIds}
-                    amenityIds={amenityIds}
-                    onAmenityIdsChange={setAmenityIds}
-                    hours={hours}
-                    onHoursChange={setHours}
-                    timezone={timezone}
-                    onTimezoneChange={setTimezone}
-                    errors={errors}
-                    busy={isSaving}
-                    submitLabel="Submit"
-                    busyLabel="Saving..."
-                    onSubmit={handleUpdate}
-                />
-            )
-        } else if ((currentUserId !== restaurantOwnerId)) {
-            sessionLinks = (
-                <p>You are not the owner</p>
-            )
-        }
-    } else {
-        sessionLinks = (
-            <div>
-                Please log in to update the restaurant
-            </div>
-        )
-    }
+    if (!sessionUser) return refusal("Please log in to update the restaurant.");
+    if (sessionUser.id !== singleRestaurant.user_id) return refusal("You are not the owner");
+
     return (
-        <>
-            <h2 className="restaurant-form-title">Edit Restaurant</h2>
-            {sessionLinks}
-        </>
-    )
+        <RestaurantForm
+            className="update-restaurant-form"
+            title={`Edit ${singleRestaurant.name}`}
+            subtitle="Changes show on its page as soon as you save."
+            value={fields}
+            onChange={setFields}
+            categoryIds={categoryIds}
+            onCategoryIdsChange={setCategoryIds}
+            amenityIds={amenityIds}
+            onAmenityIdsChange={setAmenityIds}
+            hours={hours}
+            onHoursChange={setHours}
+            timezone={timezone}
+            onTimezoneChange={setTimezone}
+            errors={errors}
+            busy={isSaving}
+            submitLabel="Save changes"
+            busyLabel="Saving..."
+            onSubmit={handleUpdate}
+            onCancel={closeModal}
+        />
+    );
 }

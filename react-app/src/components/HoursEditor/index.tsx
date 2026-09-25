@@ -22,6 +22,8 @@ interface HoursEditorProps {
     onChange: (next: OpeningHours[]) => void;
     timezone: string | null;
     onTimezoneChange: (next: string | null) => void;
+    /** The editor's own heading; null where a section around it has one. */
+    title?: string | null;
 }
 
 /**
@@ -32,7 +34,7 @@ interface HoursEditorProps {
  * later on Fridays can say so, which a single range applied to ticked days
  * could not.
  */
-function HoursEditor({ value, onChange, timezone, onTimezoneChange }: HoursEditorProps): React.JSX.Element {
+function HoursEditor({ value, onChange, timezone, onTimezoneChange, title = "Opening hours" }: HoursEditorProps): React.JSX.Element {
     const byDay = new Map(value.map((day) => [day.weekday, day]));
 
     const setDay = (weekday: number, changes: Partial<OpeningHours>) => {
@@ -62,7 +64,7 @@ function HoursEditor({ value, onChange, timezone, onTimezoneChange }: HoursEdito
     return (
         <div className="hours-editor">
             <div className="hours-editor-heading">
-                <span className="hours-editor-title">Opening hours</span>
+                {title && <span className="hours-editor-title">{title}</span>}
                 <label className="hours-editor-timezone">
                     <span>Times are in</span>
                     <select
