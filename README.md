@@ -77,6 +77,8 @@ If a deploy fails to reach the database, put `flask check-db` in the build comma
 
 Keep `flask db upgrade && flask seed all` in the build command. Migrations run on every deploy, and the seed step now does nothing once the database has data, so a redeploy no longer erases what users have added. Run `flask seed all --reset` only when you really want a fresh copy of the demo data.
 
+Because `flask seed all` skips a database that already has data, a database seeded before cuisines, amenities and opening hours existed has the vocabularies but none of it attached to the demo restaurants. `flask seed backfill` fills that in: it touches only restaurants named in the demo seed, only fills what is empty -- anything an owner has set is kept -- and skips a name that matches more than one restaurant. It only reports what it would do until you add `--apply`. Run it once, by hand, from the Render shell; it is not a build step, because it cannot tell a restaurant with no hours from one whose owner cleared them.
+
 Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.
 
 ### Photo uploads (optional)
