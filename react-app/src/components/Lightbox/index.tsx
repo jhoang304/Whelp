@@ -24,6 +24,10 @@ interface LightboxProps {
  * written twice and then drift. Escape closes it and the arrow keys move
  * through the photos, which the old one did not do; focus moves in when it
  * opens and back to the thumbnail when it closes.
+ *
+ * A click anywhere but the photo closes it. The close button is there for
+ * the keyboard and screen readers, and only shows when the keyboard reaches
+ * it (Lightbox.css).
  */
 function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProps): React.JSX.Element | null {
     const count = photos.length;
