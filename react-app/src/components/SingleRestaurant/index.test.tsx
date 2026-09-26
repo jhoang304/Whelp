@@ -18,7 +18,7 @@ const RESTAURANT = {
   state: "TX", zipcode: "77003", country: "USA", phone_number: "(832) 344-8051",
   website: "http://nancyshustle.com/", description: "A modern bistro.",
   User: { id: 9, firstName: "Demo", lastName: "User" },
-  // The cover is third in the list; the gallery leads with it anyway.
+  // The cover is third in the list; the carousel leads with it anyway.
   restaurantImages: [
     { id: 11, url: "https://img/a.jpg", preview: false },
     { id: 12, url: "https://img/b.jpg", preview: false },
@@ -56,7 +56,7 @@ afterEach(() => {
   delete (global as any).fetch;
 });
 
-test("the gallery leads with the cover, and a photo opens enlarged where it was clicked", async () => {
+test("the carousel leads with the cover, and a photo opens enlarged where it was clicked", async () => {
   renderPage();
   const tiles = await screen.findAllByRole("button", { name: /^Enlarge photo/ });
 
@@ -66,6 +66,32 @@ test("the gallery leads with the cover, and a photo opens enlarged where it was 
   fireEvent.click(tiles[2]);
   expect(screen.getByRole("dialog", { name: "Photo viewer" })).toBeInTheDocument();
   expect(screen.getByAltText("Nancy's Hustle, 2 of 3")).toHaveAttribute("src", "https://img/b.jpg");
+});
+
+test("the arrows step through the photos, and each goes at its end", async () => {
+  renderPage();
+  await screen.findAllByRole("button", { name: /^Enlarge photo/ });
+  // jsdom lays nothing out, so give the track a size: 500px showing of 1500.
+  const track = document.querySelector(".restaurant-carousel-track") as HTMLElement;
+  Object.defineProperty(track, "clientWidth", { value: 500, configurable: true });
+  Object.defineProperty(track, "scrollWidth", { value: 1500, configurable: true });
+  const scrollBy = jest.fn();
+  (track as any).scrollBy = scrollBy;
+  const back = screen.getByRole("button", { name: "Previous photos" });
+  const forward = screen.getByRole("button", { name: "Next photos" });
+
+  track.scrollLeft = 0;
+  fireEvent.scroll(track);
+  expect(back).toBeDisabled();
+  expect(forward).toBeEnabled();
+
+  fireEvent.click(forward);
+  expect(scrollBy).toHaveBeenCalledWith({ left: 400, behavior: "smooth" });
+
+  track.scrollLeft = 1000;
+  fireEvent.scroll(track);
+  expect(back).toBeEnabled();
+  expect(forward).toBeDisabled();
 });
 
 test("the header gives the rating as a number and jumps to the reviews", async () => {

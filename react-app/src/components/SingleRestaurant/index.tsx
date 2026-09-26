@@ -1,5 +1,5 @@
 import "./SingleRestaurant.css"
-import React, { useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Link, useParams } from 'react-router-dom';
@@ -45,9 +45,9 @@ type Status = "loading" | "ready" | "error";
 /**
  * A restaurant's page: its photos, what it is, and everything else about it.
  *
- * A gallery across the top (the cover large, up to four more beside it), the
- * name and what it is on white beneath, the actions beside the name, and then
- * the details and reviews with the contact card alongside.
+ * A carousel of every photo across the top, edge to edge; the name and what
+ * it is on white beneath, with the actions beside the name; and then the
+ * details and reviews with the contact card alongside.
  */
 function SingleRestaurant(): React.JSX.Element {
     const history = useHistory();
@@ -60,8 +60,21 @@ function SingleRestaurant(): React.JSX.Element {
     const dispatch = useAppDispatch()
     const [status, setStatus] = useState<Status>("loading");
     const [loadErrors, setLoadErrors] = useState<string[]>([]);
-    // Which photo is enlarged from the gallery, as an index into restaurantImages.
+    // Which photo is enlarged from the carousel, as an index into restaurantImages.
     const [openPhoto, setOpenPhoto] = useState<number | null>(null);
+
+    // The carousel, and whether it can scroll further either way: an arrow
+    // with nowhere to go is hidden rather than left there doing nothing.
+    const trackRef = useRef<HTMLDivElement>(null);
+    const [canScroll, setCanScroll] = useState({ back: false, forward: false });
+    const measureScroll = useCallback(() => {
+        const track = trackRef.current;
+        if (!track) return;
+        setCanScroll({
+            back: track.scrollLeft > 1,
+            forward: track.scrollLeft + track.clientWidth < track.scrollWidth - 1,
+        });
+    }, []);
 
     useEffect(() => {
         if (!restaurantId) return;
@@ -83,6 +96,30 @@ function SingleRestaurant(): React.JSX.Element {
     }, [dispatch, restaurantId])
 
     const sessionUser = useAppSelector((state) => state.session.user);
+
+    const photoCount = singleRestaurant?.restaurantImages?.length ?? 0;
+    useEffect(() => {
+        // Again once the photos arrive, as each one loads and takes its width,
+        // and whenever the window changes size.
+        measureScroll();
+        const track = trackRef.current;
+        if (!track) return;
+        track.addEventListener("load", measureScroll, true);
+        window.addEventListener("resize", measureScroll);
+        return () => {
+            track.removeEventListener("load", measureScroll, true);
+            window.removeEventListener("resize", measureScroll);
+        };
+    }, [measureScroll, status, photoCount]);
+
+    const scrollPhotos = (direction: 1 | -1) => {
+        const track = trackRef.current;
+        if (!track) return;
+        const still = typeof window.matchMedia === "function"
+            && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        // Most of a screen at a time, leaving a sliver of what was just seen.
+        track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: still ? "auto" : "smooth" });
+    };
 
     const handleDelete = () => {
         if (restaurantId) {
@@ -124,12 +161,11 @@ function SingleRestaurant(): React.JSX.Element {
         url: image.url,
         alt: `${singleRestaurant.name}, ${index + 1} of ${images.length}`,
     }));
-    // The cover leads the gallery, wherever it sits in the list: it is the
+    // The cover leads the carousel, wherever it sits in the list: it is the
     // photo the owner chose to be seen first.
     const cover = images.findIndex((image) => image.preview);
     const order = images.map((_, index) => index);
     if (cover > 0) order.unshift(...order.splice(cover, 1));
-    const tiles = order.slice(0, 5);
 
     const address = [singleRestaurant.address, singleRestaurant.city, singleRestaurant.state,
         singleRestaurant.zipcode, singleRestaurant.country].filter(Boolean).join(", ");
@@ -141,15 +177,17 @@ function SingleRestaurant(): React.JSX.Element {
     const average = Number(singleRestaurant.avgStarRating) || 0;
 
     return (
-        <div className="restaurant-page">
-            <section className="restaurant-gallery" aria-label="Photos">
-                {tiles.length > 0 ? (
-                    <div className={`restaurant-gallery-grid count-${tiles.length}`}>
-                        {tiles.map((imageIndex, position) => (
+        <div className="restaurant-page-wrap">
+            {/* Edge to edge, outside the page's centred column: a strip of
+                every photo, cover first, that scrolls sideways. */}
+            <section className="restaurant-carousel" aria-label="Photos">
+                {images.length > 0 ? (
+                    <div className="restaurant-carousel-track" ref={trackRef} onScroll={measureScroll}>
+                        {order.map((imageIndex) => (
                             <button
                                 key={images[imageIndex].id}
                                 type="button"
-                                className={`restaurant-gallery-tile tile-${position}`}
+                                className="restaurant-carousel-photo"
                                 onClick={() => setOpenPhoto(imageIndex)}
                                 aria-label={`Enlarge photo ${imageIndex + 1} of ${images.length} of ${singleRestaurant.name}`}
                             >
@@ -158,19 +196,43 @@ function SingleRestaurant(): React.JSX.Element {
                         ))}
                     </div>
                 ) : (
-                    <div className="restaurant-gallery-empty">
+                    <div className="restaurant-carousel-empty">
                         <i className="fa-regular fa-image" aria-hidden="true"></i>
                         <span>No photos yet</span>
                     </div>
                 )}
+                {images.length > 1 && (
+                    <>
+                        <button
+                            type="button"
+                            className="restaurant-carousel-arrow back"
+                            onClick={() => scrollPhotos(-1)}
+                            disabled={!canScroll.back}
+                            aria-label="Previous photos"
+                        >
+                            <i className="fa-solid fa-chevron-left" aria-hidden="true"></i>
+                        </button>
+                        <button
+                            type="button"
+                            className="restaurant-carousel-arrow forward"
+                            onClick={() => scrollPhotos(1)}
+                            disabled={!canScroll.forward}
+                            aria-label="Next photos"
+                        >
+                            <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
+                        </button>
+                    </>
+                )}
                 {images.length > 0 && (
                     <OpenModalButton
-                        className="restaurant-gallery-all"
+                        className="restaurant-carousel-all"
                         buttonText={<><i className="fa-solid fa-table-cells-large" aria-hidden="true"></i> See all {images.length} photos</>}
                         modalComponent={<DisplayPhotos singleRestaurant={singleRestaurant} />}
                     />
                 )}
             </section>
+
+            <div className="restaurant-page">
 
             {openPhoto !== null && (
                 <Lightbox
@@ -312,6 +374,7 @@ function SingleRestaurant(): React.JSX.Element {
                 <section id="reviews" className="restaurant-section restaurant-reviews">
                     <GetAllReviews restaurantId={restaurantId} />
                 </section>
+            </div>
             </div>
         </div>
     )
