@@ -54,7 +54,6 @@ function OpeningHoursTable({ hours, timezone }: OpeningHoursTableProps): React.J
             {timezone && (
                 <p className="opening-hours-timezone">Times shown in {timezone.replace("_", " ")}</p>
             )}
-            <hr></hr>
         </>
     );
 }
