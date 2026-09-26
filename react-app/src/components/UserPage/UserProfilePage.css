@@ -72,45 +72,50 @@
     margin-right: var(--space-1);
 }
 
-.profile-actions button.profile-edit-button {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: 0;
-    padding: var(--space-3) var(--space-5);
-    font-size: var(--text-sm);
-    font-weight: var(--font-bold);
-    color: var(--color-gray-800);
-    background-color: white;
-    border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
-    white-space: nowrap;
-}
-
+/*
+ * Edit profile (a button: it opens a modal) and Account settings (a link: it
+ * goes to a page) side by side, drawn the same. One was a box and the other
+ * bare text under it, which read as a mistake rather than as a difference.
+ */
 .profile-actions {
     display: flex;
-    flex-direction: column;
-    align-items: flex-end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-2);
 }
 
-/* Under Edit profile, and quieter than it. */
+.profile-actions button.profile-edit-button,
 .profile-actions .profile-settings-link {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: var(--space-2);
-    margin-top: var(--space-2);
+    box-sizing: border-box;
+    min-height: 44px;
+    margin: 0;
+    padding: var(--space-2) var(--space-5);
     font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
-    color: var(--color-gray-600);
+    font-weight: var(--font-bold);
+    line-height: 1;
+    color: var(--color-gray-800);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    white-space: nowrap;
+    text-decoration: none;
+    transition: background-color 0.15s ease, border-color 0.15s ease;
 }
 
+.profile-actions button.profile-edit-button:hover,
 .profile-actions .profile-settings-link:hover {
-    color: var(--color-primary);
-}
-
-.profile-actions button.profile-edit-button:hover {
     background-color: var(--color-gray-100);
     border-color: var(--color-gray-400);
+    color: var(--color-gray-800);
+}
+
+.profile-actions .profile-settings-link i,
+.profile-actions button.profile-edit-button i {
+    color: var(--color-gray-600);
 }
 
 /* ---------- tabs ---------- */
@@ -443,8 +448,8 @@ button.profile-link-button:hover {
         width: 100%;
     }
 
-    .profile-actions button.profile-edit-button {
-        width: 100%;
-        justify-content: center;
+    .profile-actions button.profile-edit-button,
+    .profile-actions .profile-settings-link {
+        flex: 1;
     }
 }
