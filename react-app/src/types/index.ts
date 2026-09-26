@@ -178,11 +178,15 @@ export interface SessionState {
 
 export interface RestaurantsState {
   allRestaurants?: { [key: number]: Restaurant };
+  /** The listing's order, which the map above cannot keep (see `inOrder`). */
+  allRestaurantIds?: number[];
   /** How many restaurants exist, so the page knows if there are more. */
   totalRestaurants?: number;
   loadedPage?: number;
   singleRestaurant?: SingleRestaurantResponse;
   searchedRestaurants?: { [key: number]: Restaurant };
+  /** The search results' order: relevance, or the chosen sort. */
+  searchedIds?: number[];
   totalSearched?: number;
   searchedPage?: number;
   searchLoading?: boolean;

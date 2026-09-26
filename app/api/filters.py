@@ -149,5 +149,9 @@ def filtered_restaurants(filters, base=None, relevance=None):
 
     # Every order ends in id. Without a total order the database is free to
     # return equal rows in any order it likes, and two pages of the same
-    # query can then repeat a restaurant or skip one.
-    return query.order_by(*order, Restaurant.id)
+    # query can then repeat a restaurant or skip one. For "newest" the later
+    # insert wins a tie, as it does for reviews and saves: createdAt is to
+    # the second, and every seeded restaurant shares one, so ascending ids
+    # listed the demo's oldest first under "Newest".
+    tiebreak = Restaurant.id.desc() if filters.sort == "newest" else Restaurant.id
+    return query.order_by(*order, tiebreak)
