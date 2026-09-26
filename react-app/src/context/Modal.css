@@ -19,6 +19,7 @@
   left: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
+  animation: modal-backdrop-in 200ms ease-out;
 }
 
 #modal-content {
@@ -43,6 +44,52 @@
   overflow: hidden;
   background-color:white;
   border-radius: 20px;
+  animation: modal-content-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/*
+ * Fading in and out. The names are the modal's own: several stylesheets
+ * already define a global `fadeIn`, and a second one would quietly replace
+ * theirs.
+ *
+ * Closing, the modal stays FADE_OUT_MS (Modal.tsx) with this class while it
+ * fades, taking no clicks. The out animations hold their last frame, so it
+ * does not flash back before it goes. Nobody who has asked for less motion
+ * sees any of it: the modal skips the fade, and index.css cuts the
+ * animations to nothing.
+ */
+#modal.closing {
+  pointer-events: none;
+}
+
+#modal.closing #modal-background {
+  animation: modal-backdrop-out 160ms ease-in forwards;
+}
+
+#modal.closing #modal-content {
+  animation: modal-content-out 160ms ease-in forwards;
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* No fill: once it has arrived the box carries no transform, which would
+   otherwise trap the photo viewer's position: fixed inside it. */
+@keyframes modal-content-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes modal-content-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
 }
 
 /*

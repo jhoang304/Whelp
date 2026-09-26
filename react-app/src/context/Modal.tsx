@@ -53,13 +53,59 @@ export function ModalProvider({ children }: { children: React.ReactNode }): Reac
   );
 }
 
+/** How long a closing modal stays to fade out. Matches Modal.css. */
+export const FADE_OUT_MS = 160;
+
+/**
+ * Whether to fade at all. Not for anyone who has asked their system for less
+ * motion, and not where there is no way to ask -- a closing modal then goes at
+ * once, as it always used to.
+ */
+const motionAllowed = (): boolean =>
+  typeof window.matchMedia === 'function' &&
+  !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
 export function Modal(): React.JSX.Element | null {
   const { modalRef, modalContent, closeModal } = useModal();
   const contentRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
   const open = !!modalRef.current && !!modalContent;
 
-  // Focus in, Tab kept inside, Escape to close, focus back out afterwards.
+  // The content last shown, kept after the modal closes for as long as it
+  // takes to fade out. Rendering it in the same place keeps its state, so a
+  // form fades out as it was rather than blanking first.
+  const [fading, setFading] = useState<React.ReactNode>(null);
+  const shown = modalContent || fading;
+  const closing = !modalContent && !!fading;
+
+  // Focus in, Tab kept inside, Escape to close, focus back out afterwards --
+  // at the moment it closes, not once it has finished fading.
   useDialog(contentRef, open, closeModal);
+
+  useLayoutEffect(() => {
+    if (modalContent) {
+      setFading(modalContent);
+      return;
+    }
+    if (!fading) return;
+    if (!motionAllowed()) {
+      setFading(null);
+      return;
+    }
+    // Opened again mid-fade, and the cleanup cancels this.
+    const timer = window.setTimeout(() => setFading(null), FADE_OUT_MS);
+    return () => window.clearTimeout(timer);
+  }, [modalContent, fading]);
+
+  useLayoutEffect(() => {
+    // While it fades, nothing in it can take focus or clicks: Tab must not
+    // wander back into a dialog that has already closed. After useDialog's
+    // effect above, which has already sent focus back out.
+    const overlay = overlayRef.current;
+    if (!overlay) return;
+    if (closing) overlay.setAttribute('inert', '');
+    else overlay.removeAttribute('inert');
+  }, [closing]);
 
   useLayoutEffect(() => {
     // Every modal opens with a heading, and that heading is the dialog's name:
@@ -88,16 +134,16 @@ export function Modal(): React.JSX.Element | null {
   }, [open]);
 
   // Nothing to portal into until the provider's div has mounted.
-  if (!open) return null;
+  if (!modalRef.current || !shown) return null;
 
   return createPortal(
-    <div id="modal">
+    <div id="modal" ref={overlayRef} className={closing ? 'closing' : undefined}>
       <div id="modal-background" onClick={closeModal} />
       <div id="modal-content" ref={contentRef} role="dialog" aria-modal="true" tabIndex={-1}>
         {/* The scrolling happens in here, not on the rounded box around it:
             see .modal-scroll in Modal.css. */}
         <div className="modal-scroll">
-          {modalContent}
+          {shown}
         </div>
       </div>
     </div>,
