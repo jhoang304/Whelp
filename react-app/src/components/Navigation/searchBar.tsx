@@ -14,7 +14,10 @@ function SearchBar(): React.JSX.Element {
       e.preventDefault();
       
       const trimmedKeyword = keyword.trim();
+      // Nothing typed: the search icon is the way to every restaurant, now
+      // that the bar has no separate Restaurants link.
       if (trimmedKeyword.length === 0) {
+        history.push("/restaurants");
         return;
       }
 
@@ -41,6 +44,8 @@ function SearchBar(): React.JSX.Element {
       }
     };
 
+    const browsing = keyword.trim().length === 0;
+
     return (
       <div className="nav-search">
         <div className={`nav-search-container ${isFocused ? 'focused' : ''}`}>
@@ -56,11 +61,12 @@ function SearchBar(): React.JSX.Element {
               maxLength={100}
               disabled={isSearching}
             />
-            <button 
-              type="submit" 
-              className="search-button" 
-              aria-label="Search"
-              disabled={isSearching || keyword.trim().length === 0}
+            <button
+              type="submit"
+              className="search-button"
+              aria-label={browsing ? "Browse all restaurants" : "Search"}
+              title={browsing ? "Browse all restaurants" : "Search"}
+              disabled={isSearching}
             >
               {isSearching ? (
                 <i className="fa-solid fa-spinner fa-spin"></i>

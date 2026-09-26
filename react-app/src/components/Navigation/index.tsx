@@ -17,12 +17,6 @@ function Navigation(): React.JSX.Element {
 							<img className="logo-img" src="/whelp-logo.png" alt="Whelp" />
 						</NavLink>
 					</div>
-					<div className='nav-links'>
-						<NavLink className='nav-link' exact to='/restaurants'>
-							<i className="fas fa-utensils nav-icon"></i>
-							<span>Restaurants</span>
-						</NavLink>
-					</div>
 				</div>
 
 				<div className='nav-center'>

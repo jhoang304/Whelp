@@ -120,45 +120,6 @@
     justify-content: flex-end;
 }
 
-.nav-logo {
-    margin-right: var(--space-5);
-}
-
-.nav-links {
-    display: flex;
-    gap: var(--space-5);
-}
-
-.nav-link {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    text-decoration: none;
-    color: var(--color-gray-700);
-    font-weight: var(--font-semibold);
-    font-size: var(--text-base);
-    padding: var(--space-2) var(--space-4);
-    border-radius: var(--radius-base);
-    transition: all 0.3s ease;
-}
-
-.nav-icon {
-    font-size: var(--text-base);
-    color: var(--color-primary);
-}
-
-/* Hovers change colour, not position: in a compact floating bar, things
-   jumping up by a few pixels looked loose. */
-.nav-link:hover {
-    background-color: var(--color-gray-100);
-    color: var(--color-primary);
-}
-
-.nav-link.active {
-    color: var(--color-primary);
-    background-color: rgba(240, 12, 19, 0.08);
-}
-
 .auth-buttons {
     display: flex;
     gap: var(--space-4);
@@ -372,16 +333,25 @@
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: background-color 0.15s ease, transform 0.15s ease;
+    transition: background-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .search-button i {
     font-size: 14px;
 }
 
+/* It does something with the box empty too -- it browses every restaurant --
+   so it always answers the pointer: darker, a touch bigger, with a soft ring.
+   Small enough, ring and all, to stay inside the 5px the box leaves around
+   it, which clips anything further out. */
 .search-button:hover:not(:disabled) {
     background-color: var(--color-primary-dark);
-    transform: translateY(-50%) scale(1.05);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.18);
+    transform: translateY(-50%) scale(1.08);
+}
+
+.search-button:active:not(:disabled) {
+    transform: translateY(-50%) scale(0.96);
 }
 
 .search-button:disabled {
@@ -420,10 +390,6 @@
         border-radius: var(--radius-lg);
     }
 
-    .nav-links {
-        display: none;
-    }
-
     .auth-buttons {
         gap: 10px;
     }
@@ -450,10 +416,6 @@
     .nav-left,
     .nav-right {
         flex: 0 0 auto;
-    }
-
-    .nav-logo {
-        margin-right: 0;
     }
 
     .logo-img {
