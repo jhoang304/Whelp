@@ -61,6 +61,19 @@
     transform: scale(1.1);
 }
 
+/*
+ * Out of sight unless the keyboard reaches it. A click or tap outside the
+ * photo closes the viewer, so a pointer has no need of it, and a round white
+ * button over the corner of every photo got in the way of looking at it.
+ * It stays in the page, first in the Tab order and where focus lands when
+ * the viewer opens, because it is how a keyboard or screen reader closes
+ * the viewer: :focus-visible brings it back for exactly those.
+ */
+.image-viewer-close:not(:focus-visible) {
+    opacity: 0;
+    pointer-events: none;
+}
+
 .image-nav-arrow {
     position: absolute;
     top: 50%;
