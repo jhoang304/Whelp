@@ -5,8 +5,6 @@ import { onRestaurantImageError } from "../../utils/images";
 /** How fast the strip drifts while it rotates on its own. */
 export const ROTATE_PX_PER_SECOND = 40;
 
-/** The gap between photos, which the loop has to count. Matches the CSS. */
-const GAP = 4;
 
 export interface CarouselPhoto {
     id: number;
@@ -27,6 +25,20 @@ interface PhotoCarouselProps {
     corner?: React.ReactNode;
 }
 
+/**
+ * Whether focus arrived from the keyboard. A mouse click on a button focuses
+ * it too, and counting that as "focus inside" held the strip still after Play
+ * until something else was clicked. Where the browser cannot say, assume the
+ * keyboard: holding still by mistake is the safer error.
+ */
+const keyboardFocus = (element: Element): boolean => {
+    try {
+        return element.matches(":focus-visible");
+    } catch {
+        return true;
+    }
+};
+
 const motionReduced = (): boolean =>
     typeof window.matchMedia === "function" &&
     window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -41,10 +53,12 @@ const motionReduced = (): boolean =>
  * screen readers and skipped by Tab, and only exists when the photos are
  * wider than the window -- with too few to fill it, nothing moves.
  *
- * It holds still while the pointer is over it or focus is inside it, and
- * stops for good once someone takes over: an arrow, a photo, a swipe, or the
- * pause button, which plays it again. Nobody who has asked their system for
- * less motion sees it move at all.
+ * It holds still while the pointer is over it or keyboard focus is inside it,
+ * exactly where it is, and stops for good once someone takes over: an arrow,
+ * a photo, a swipe, or the pause button. Play starts it again at once, even
+ * with the pointer still over it; hovering holds it again once the pointer
+ * has left and come back. Nobody who has asked their system for less motion
+ * sees it move at all.
  */
 function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarouselProps): React.JSX.Element {
     const trackRef = useRef<HTMLDivElement>(null);
@@ -53,8 +67,11 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
     const [hovering, setHovering] = useState(false);
     const [focused, setFocused] = useState(false);
     const [stopped, setStopped] = useState(false);
+    // Play was pressed: move now, whatever the pointer and focus are doing.
+    // Cleared when they leave, so a later hover holds it as usual.
+    const [playing, setPlaying] = useState(false);
     const still = motionReduced();
-    const rotating = loopable && !still && !stopped && !hovering && !focused;
+    const rotating = loopable && !still && !stopped && (playing || (!hovering && !focused));
 
     const measure = useCallback(() => {
         const track = trackRef.current;
@@ -76,8 +93,8 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
         };
     }, [measure, photos.length]);
 
-    /** One copy of the photos, and the gap before the next. */
-    const loopWidth = () => (setRef.current?.offsetWidth ?? 0) + GAP;
+    /** One copy of the photos: the photos touch, so the next starts there. */
+    const loopWidth = () => setRef.current?.offsetWidth ?? 0;
 
     useEffect(() => {
         const track = trackRef.current;
@@ -94,7 +111,7 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
             last = now;
             position += ROTATE_PX_PER_SECOND * seconds;
             const width = loopWidth();
-            if (width > GAP && position >= width) position -= width;
+            if (width > 0 && position >= width) position -= width;
             track.scrollLeft = position;
             frame = requestAnimationFrame(drift);
         };
@@ -102,7 +119,10 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
         return () => cancelAnimationFrame(frame);
     }, [rotating]);
 
-    const takeOver = () => setStopped(true);
+    const takeOver = () => {
+        setStopped(true);
+        setPlaying(false);
+    };
 
     const step = (direction: 1 | -1) => {
         takeOver();
@@ -136,10 +156,16 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
         <section
             className={`restaurant-carousel${rotating ? " rotating" : ""}`}
             onMouseEnter={() => setHovering(true)}
-            onMouseLeave={() => setHovering(false)}
-            onFocus={() => setFocused(true)}
+            onMouseLeave={() => {
+                setHovering(false);
+                setPlaying(false);
+            }}
+            onFocus={(event) => { if (keyboardFocus(event.target)) setFocused(true); }}
             onBlur={(event) => {
-                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocused(false);
+                if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                    setFocused(false);
+                    setPlaying(false);
+                }
             }}
         >
             {photos.length > 0 ? (
@@ -175,7 +201,15 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
                         <button
                             type="button"
                             className="restaurant-carousel-pause"
-                            onClick={() => setStopped((was) => !was)}
+                            onClick={() => {
+                                if (stopped) {
+                                    setStopped(false);
+                                    setPlaying(true);
+                                } else {
+                                    setStopped(true);
+                                    setPlaying(false);
+                                }
+                            }}
                             aria-label={stopped ? "Play photos" : "Pause photos"}
                         >
                             <i className={`fa-solid ${stopped ? "fa-play" : "fa-pause"}`} aria-hidden="true"></i>

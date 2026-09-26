@@ -28,14 +28,17 @@
     margin-top: var(--space-4);
 }
 
+/*
+ * No scroll snapping. It was switched off while the strip drifted and back
+ * on when it paused -- so every hover snapped the strip back to the start of
+ * whichever photo it was on, instead of holding it where it was.
+ */
 .restaurant-carousel-track {
     display: flex;
-    gap: 4px;
     height: 460px;
     overflow-x: auto;
     overflow-y: hidden;
     overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
     /* Arrows, swipes and a trackpad scroll it; there is nothing a scrollbar
        adds but a grey line under the photos. */
     scrollbar-width: none;
@@ -45,16 +48,11 @@
     display: none;
 }
 
-/* Snapping would fight the drift, catching it at every photo. */
-.restaurant-carousel.rotating .restaurant-carousel-track {
-    scroll-snap-type: none;
-}
-
-/* A copy of the photos, and the one after it for the loop. */
+/* A copy of the photos, and the one after it for the loop. The photos
+   touch: no gap between them, or between the copies. */
 .restaurant-carousel-set {
     display: flex;
     flex: 0 0 auto;
-    gap: 4px;
     height: 100%;
 }
 
@@ -68,7 +66,6 @@
     border-radius: 0;
     background-color: var(--color-gray-800);
     overflow: hidden;
-    scroll-snap-align: start;
     cursor: zoom-in;
 }
 

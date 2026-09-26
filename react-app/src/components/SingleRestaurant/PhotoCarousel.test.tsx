@@ -56,15 +56,15 @@ test("with more photos than fit, it drifts on its own", () => {
 
 test("it loops: past one copy of the photos, it steps back by exactly that much", () => {
   const { track, section } = renderCarousel();
-  // Held still, moved to just short of the join -- one copy (1200px) and
-  // the 4px gap -- and let go: the drift picks up from where it is.
+  // Held still, moved to just short of the join -- one copy, 1200px, since
+  // the photos touch -- and let go: the drift picks up from where it is.
   fireEvent.mouseEnter(section);
   track.scrollLeft = 1195;
   fireEvent.mouseLeave(section);
 
   drift(track, 1000);
 
-  // About 40px on from 1195 is 1235, which is 31px into the second copy.
+  // About 40px on from 1195 is 1235, which is 35px into the second copy.
   expect(track.scrollLeft).toBeGreaterThan(20);
   expect(track.scrollLeft).toBeLessThan(40);
 });
@@ -107,7 +107,7 @@ test("going back from the start steps over the join first, so there is somewhere
   track.scrollLeft = 0;
   fireEvent.click(screen.getByRole("button", { name: "Previous photos" }));
 
-  expect(track.scrollLeft).toBe(1204);
+  expect(track.scrollLeft).toBe(1200);
   expect((track as any).scrollBy).toHaveBeenCalledWith({ left: -400, behavior: "smooth" });
 });
 
@@ -116,6 +116,34 @@ test("a photo stops it and opens, at that photo", () => {
   fireEvent.click(screen.getByRole("button", { name: "Enlarge photo 2 of 3 of Nancy's Hustle" }));
 
   expect(onOpen).toHaveBeenCalledWith(1);
+  expect(drift(track, 1000)).toBe(0);
+});
+
+test("a hover holds it exactly where it is, and it carries on from there", () => {
+  const { track, section } = renderCarousel();
+  drift(track, 1000);
+  fireEvent.mouseEnter(section);
+  const heldAt = track.scrollLeft;
+  act(() => { jest.advanceTimersByTime(1000); });
+  expect(track.scrollLeft).toBe(heldAt);
+
+  fireEvent.mouseLeave(section);
+  drift(track, 1000);
+  // Onward from where it was held, not back to the start of a photo.
+  expect(track.scrollLeft).toBeGreaterThan(heldAt);
+});
+
+test("Play starts it at once, with the pointer still on it, and a later hover holds it again", () => {
+  const { track, section } = renderCarousel();
+  fireEvent.mouseEnter(section);
+  fireEvent.click(screen.getByRole("button", { name: "Pause photos" }));
+  fireEvent.click(screen.getByRole("button", { name: "Play photos" }));
+
+  // Still hovering, and moving: nothing else needs clicking first.
+  expect(drift(track, 1000)).toBeGreaterThan(0);
+
+  fireEvent.mouseLeave(section);
+  fireEvent.mouseEnter(section);
   expect(drift(track, 1000)).toBe(0);
 });
 
