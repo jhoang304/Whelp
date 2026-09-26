@@ -1,5 +1,5 @@
 import "./SingleRestaurant.css"
-import React, { useCallback, useEffect, useRef } from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Link, useParams } from 'react-router-dom';
@@ -10,13 +10,12 @@ import EditRestaurant from "../EditRestaurantModal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
 import GetAllReviews from "../Reviews/GetAllReviews";
 import RatingStar from "../RatingStar";
-import CategoryChips from "../CategoryChips";
 import OpenStatus from "../OpenStatus";
 import OpeningHoursTable from "../OpeningHoursTable";
 import DisplayPhotos from "../DisplayPhotos";
 import FavoriteButton from "../FavoriteButton";
 import Lightbox from "../Lightbox";
-import { onRestaurantImageError } from "../../utils/images";
+import PhotoCarousel from "./PhotoCarousel";
 import { useAppDispatch, useAppSelector } from "../../store";
 
 
@@ -32,6 +31,12 @@ const AMENITY_ICONS: { [slug: string]: string } = {
     "groups": "fa-user-group",
 };
 
+/** "4 reviews", "1 review", "1.3k reviews". */
+function reviewCount(count: number): string {
+    const shown = count >= 1000 ? `${(count / 1000).toFixed(1).replace(/\.0$/, "")}k` : String(count);
+    return `${shown} ${count === 1 ? "review" : "reviews"}`;
+}
+
 function getMap(str: string): string {
     return str.replace(/\s+/g, "+")
 }
@@ -45,9 +50,9 @@ type Status = "loading" | "ready" | "error";
 /**
  * A restaurant's page: its photos, what it is, and everything else about it.
  *
- * A carousel of every photo across the top, edge to edge; the name and what
- * it is on white beneath, with the actions beside the name; and then the
- * details and reviews with the contact card alongside.
+ * A carousel of every photo across the top, edge to edge, with the name,
+ * rating, cuisines and hours written over it; the actions under it; and then
+ * the details and reviews with the contact card alongside.
  */
 function SingleRestaurant(): React.JSX.Element {
     const history = useHistory();
@@ -62,19 +67,6 @@ function SingleRestaurant(): React.JSX.Element {
     const [loadErrors, setLoadErrors] = useState<string[]>([]);
     // Which photo is enlarged from the carousel, as an index into restaurantImages.
     const [openPhoto, setOpenPhoto] = useState<number | null>(null);
-
-    // The carousel, and whether it can scroll further either way: an arrow
-    // with nowhere to go is hidden rather than left there doing nothing.
-    const trackRef = useRef<HTMLDivElement>(null);
-    const [canScroll, setCanScroll] = useState({ back: false, forward: false });
-    const measureScroll = useCallback(() => {
-        const track = trackRef.current;
-        if (!track) return;
-        setCanScroll({
-            back: track.scrollLeft > 1,
-            forward: track.scrollLeft + track.clientWidth < track.scrollWidth - 1,
-        });
-    }, []);
 
     useEffect(() => {
         if (!restaurantId) return;
@@ -96,30 +88,6 @@ function SingleRestaurant(): React.JSX.Element {
     }, [dispatch, restaurantId])
 
     const sessionUser = useAppSelector((state) => state.session.user);
-
-    const photoCount = singleRestaurant?.restaurantImages?.length ?? 0;
-    useEffect(() => {
-        // Again once the photos arrive, as each one loads and takes its width,
-        // and whenever the window changes size.
-        measureScroll();
-        const track = trackRef.current;
-        if (!track) return;
-        track.addEventListener("load", measureScroll, true);
-        window.addEventListener("resize", measureScroll);
-        return () => {
-            track.removeEventListener("load", measureScroll, true);
-            window.removeEventListener("resize", measureScroll);
-        };
-    }, [measureScroll, status, photoCount]);
-
-    const scrollPhotos = (direction: 1 | -1) => {
-        const track = trackRef.current;
-        if (!track) return;
-        const still = typeof window.matchMedia === "function"
-            && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-        // Most of a screen at a time, leaving a sliver of what was just seen.
-        track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: still ? "auto" : "smooth" });
-    };
 
     const handleDelete = () => {
         if (restaurantId) {
@@ -175,62 +143,66 @@ function SingleRestaurant(): React.JSX.Element {
     // "nancyshustle.com", not "http://nancyshustle.com/".
     const websiteLabel = singleRestaurant.website.replace(/^https?:\/\//, "").replace(/\/$/, "");
     const average = Number(singleRestaurant.avgStarRating) || 0;
+    const categories = singleRestaurant.categories || [];
+    const hasHours = (singleRestaurant.hours?.length ?? 0) > 0;
 
     return (
         <div className="restaurant-page-wrap">
-            {/* Edge to edge, outside the page's centred column: a strip of
-                every photo, cover first, that scrolls sideways. */}
-            <section className="restaurant-carousel" aria-label="Photos">
-                {images.length > 0 ? (
-                    <div className="restaurant-carousel-track" ref={trackRef} onScroll={measureScroll}>
-                        {order.map((imageIndex) => (
-                            <button
-                                key={images[imageIndex].id}
-                                type="button"
-                                className="restaurant-carousel-photo"
-                                onClick={() => setOpenPhoto(imageIndex)}
-                                aria-label={`Enlarge photo ${imageIndex + 1} of ${images.length} of ${singleRestaurant.name}`}
-                            >
-                                <img src={images[imageIndex].url} alt="" onError={onRestaurantImageError} />
-                            </button>
-                        ))}
-                    </div>
-                ) : (
-                    <div className="restaurant-carousel-empty">
-                        <i className="fa-regular fa-image" aria-hidden="true"></i>
-                        <span>No photos yet</span>
-                    </div>
-                )}
-                {images.length > 1 && (
-                    <>
-                        <button
-                            type="button"
-                            className="restaurant-carousel-arrow back"
-                            onClick={() => scrollPhotos(-1)}
-                            disabled={!canScroll.back}
-                            aria-label="Previous photos"
-                        >
-                            <i className="fa-solid fa-chevron-left" aria-hidden="true"></i>
-                        </button>
-                        <button
-                            type="button"
-                            className="restaurant-carousel-arrow forward"
-                            onClick={() => scrollPhotos(1)}
-                            disabled={!canScroll.forward}
-                            aria-label="Next photos"
-                        >
-                            <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
-                        </button>
-                    </>
-                )}
-                {images.length > 0 && (
+            {/* Edge to edge, outside the page's centred column: every photo,
+                cover first, drifting sideways, with what the restaurant is
+                written across them. */}
+            <PhotoCarousel
+                photos={order.map((imageIndex) => ({
+                    id: images[imageIndex].id,
+                    url: images[imageIndex].url,
+                    index: imageIndex,
+                }))}
+                name={singleRestaurant.name}
+                onOpen={setOpenPhoto}
+                corner={images.length > 0 && (
                     <OpenModalButton
                         className="restaurant-carousel-all"
                         buttonText={<><i className="fa-solid fa-table-cells-large" aria-hidden="true"></i> See all {images.length} photos</>}
                         modalComponent={<DisplayPhotos singleRestaurant={singleRestaurant} />}
                     />
                 )}
-            </section>
+            >
+                <div className="restaurant-hero">
+                    <h1 className="restaurant-name">{singleRestaurant.name}</h1>
+                    <div className="restaurant-rating">
+                        <RatingStar size="28" rating={average} />
+                        <span className="restaurant-rating-text">
+                            {average.toFixed(1)}{" "}
+                            (<a className="restaurant-rating-count" href="#reviews">{reviewCount(singleRestaurant.numReviews)}</a>)
+                        </span>
+                    </div>
+                    <div className="restaurant-meta">
+                        {/* Every restaurant here was listed by its owner. */}
+                        <span className="restaurant-claimed">
+                            <i className="fa-solid fa-circle-check" aria-hidden="true"></i> Claimed
+                        </span>
+                        <span className="restaurant-meta-dot" aria-hidden="true">•</span>
+                        <span className="restaurant-price">{singleRestaurant.price}</span>
+                        {categories.length > 0 && (
+                            <>
+                                <span className="restaurant-meta-dot" aria-hidden="true">•</span>
+                                <span className="restaurant-categories">
+                                    {categories.map((category, position) => (
+                                        <React.Fragment key={category.id}>
+                                            {position > 0 && ", "}
+                                            <Link to={`/restaurants?category=${encodeURIComponent(category.slug)}`}>{category.name}</Link>
+                                        </React.Fragment>
+                                    ))}
+                                </span>
+                            </>
+                        )}
+                    </div>
+                    <div className="restaurant-status">
+                        <OpenStatus status={singleRestaurant.openStatus} className="restaurant-hero-status" />
+                        {hasHours && <a className="restaurant-see-hours" href="#hours">See hours</a>}
+                    </div>
+                </div>
+            </PhotoCarousel>
 
             <div className="restaurant-page">
 
@@ -243,26 +215,8 @@ function SingleRestaurant(): React.JSX.Element {
                 />
             )}
 
-            <header className="restaurant-header">
-                <div className="restaurant-heading">
-                    <h1 className="restaurant-name">{singleRestaurant.name}</h1>
-                    <div className="restaurant-rating">
-                        <RatingStar size="24" rating={average} />
-                        <span className="restaurant-rating-number">{average.toFixed(1)}</span>
-                        <a className="restaurant-rating-count" href="#reviews">
-                            {singleRestaurant.numReviews} {singleRestaurant.numReviews === 1 ? "review" : "reviews"}
-                        </a>
-                    </div>
-                    <div className="restaurant-meta">
-                        <span className="restaurant-price">{singleRestaurant.price}</span>
-                        <span aria-hidden="true">·</span>
-                        <span>{singleRestaurant.city}, {singleRestaurant.state}</span>
-                    </div>
-                    <CategoryChips categories={singleRestaurant.categories} className="single-restaurant-chips" />
-                    <OpenStatus status={singleRestaurant.openStatus} className="restaurant-header-status" />
-                </div>
-
-                {sessionUser && (
+            {sessionUser && (
+                <div className="restaurant-toolbar">
                     <div className="restaurant-actions">
                         <FavoriteButton
                             variant="labelled"
@@ -300,8 +254,8 @@ function SingleRestaurant(): React.JSX.Element {
                             </>
                         )}
                     </div>
-                )}
-            </header>
+                </div>
+            )}
 
             {/* Three areas, placed by CSS: the details and the reviews in one
                 column with the contact card beside them, sticking as you
@@ -326,7 +280,7 @@ function SingleRestaurant(): React.JSX.Element {
                     )}
 
                     {singleRestaurant.hours?.length > 0 && (
-                        <section className="restaurant-section restaurant-hours">
+                        <section id="hours" className="restaurant-section restaurant-hours">
                             <OpeningHoursTable
                                 hours={singleRestaurant.hours}
                                 timezone={singleRestaurant.timezone}

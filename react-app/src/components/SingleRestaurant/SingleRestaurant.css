@@ -18,10 +18,10 @@
 /* ---------- carousel ---------- */
 
 /*
- * Every photo in a strip, edge to edge, that scrolls sideways: the page's
- * old photo strip, kept, with its scrollbar hidden, arrows to step through
- * it, and each photo snapping into place. A photo keeps its own shape at a
- * fixed height, as before; a very wide one is cropped at 900px.
+ * Every photo in a strip, edge to edge, drifting sideways on its own and
+ * looping (PhotoCarousel.tsx), with what the restaurant is written across it
+ * in white over a shade. A photo keeps its own shape at a fixed height; a
+ * very wide one is cropped at 900px.
  */
 .restaurant-carousel {
     position: relative;
@@ -31,7 +31,7 @@
 .restaurant-carousel-track {
     display: flex;
     gap: 4px;
-    height: 420px;
+    height: 460px;
     overflow-x: auto;
     overflow-y: hidden;
     overscroll-behavior-x: contain;
@@ -45,6 +45,19 @@
     display: none;
 }
 
+/* Snapping would fight the drift, catching it at every photo. */
+.restaurant-carousel.rotating .restaurant-carousel-track {
+    scroll-snap-type: none;
+}
+
+/* A copy of the photos, and the one after it for the loop. */
+.restaurant-carousel-set {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 4px;
+    height: 100%;
+}
+
 .restaurant-carousel .restaurant-carousel-photo {
     position: relative;
     flex: 0 0 auto;
@@ -53,7 +66,7 @@
     padding: 0;
     border: none;
     border-radius: 0;
-    background-color: var(--color-gray-100);
+    background-color: var(--color-gray-800);
     overflow: hidden;
     scroll-snap-align: start;
     cursor: zoom-in;
@@ -67,21 +80,214 @@
     min-width: 240px;
     max-width: 900px;
     object-fit: cover;
-    transition: filter 0.2s ease;
-}
-
-.restaurant-carousel-photo:hover img {
-    filter: brightness(0.9);
 }
 
 .restaurant-carousel .restaurant-carousel-photo:focus-visible {
-    outline: 3px solid var(--color-primary);
+    outline: 3px solid white;
     outline-offset: -3px;
 }
 
+/* Dark along the bottom, where the writing is, and a little on the left. */
+.restaurant-carousel-shade {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(to top, rgba(0, 0, 0, 0.82) 0%, rgba(0, 0, 0, 0.5) 32%, rgba(0, 0, 0, 0) 68%),
+        linear-gradient(to right, rgba(0, 0, 0, 0.35) 0%, rgba(0, 0, 0, 0) 55%);
+}
+
+/*
+ * The writing and the controls, lined up with the page's own column so the
+ * name sits straight above the content under it. Clicks pass through to the
+ * photos, except on the links and buttons.
+ */
+.restaurant-carousel-overlay {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    box-sizing: border-box;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--space-6) var(--space-8);
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+    pointer-events: none;
+}
+
+.restaurant-carousel-overlay a,
+.restaurant-carousel-overlay button {
+    pointer-events: auto;
+}
+
+.restaurant-carousel-content {
+    min-width: 0;
+}
+
+.restaurant-carousel-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.restaurant-hero {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    color: white;
+    text-shadow: 0 1px 12px rgba(0, 0, 0, 0.45);
+}
+
+.restaurant-page-wrap h1.restaurant-name {
+    margin: 0 0 var(--space-1);
+    font-size: 48px;
+    font-weight: 800;
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    color: white;
+    overflow-wrap: anywhere;
+}
+
+.restaurant-hero .restaurant-rating {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    flex-wrap: wrap;
+}
+
+.restaurant-hero .rating-star {
+    display: inline-flex;
+    text-shadow: none;
+}
+
+.restaurant-rating-text {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+}
+
+.restaurant-page-wrap a.restaurant-rating-count {
+    display: inline;
+    font-size: inherit;
+    font-weight: inherit;
+    color: white;
+    text-decoration: underline;
+    text-decoration-color: rgba(255, 255, 255, 0.5);
+    text-underline-offset: 3px;
+}
+
+.restaurant-page-wrap a.restaurant-rating-count:hover {
+    text-decoration-color: white;
+}
+
+.restaurant-hero .restaurant-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+}
+
+.restaurant-claimed {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #9dd1ff;
+}
+
+.restaurant-meta-dot {
+    opacity: 0.8;
+}
+
+/* Inline, beating the global a:link { display: flex } in SearchBar.css,
+   which stacked the cuisines one per line. */
+.restaurant-page-wrap .restaurant-categories a {
+    display: inline;
+    font-size: inherit;
+    font-weight: inherit;
+    color: white;
+    text-decoration: none;
+}
+
+.restaurant-page-wrap .restaurant-categories a:hover {
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.restaurant-status {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin-top: var(--space-1);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+}
+
+/* Brighter than the page's own greens and reds, which are made for white. */
+.restaurant-hero-status .open-now { color: #6ee7a0; }
+.restaurant-hero-status .closed-now { color: #ff8f8f; }
+
+.restaurant-page-wrap a.restaurant-see-hours,
+.restaurant-carousel button.restaurant-carousel-all {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-1) var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: white;
+    text-shadow: none;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 999px;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    transition: background-color 0.15s ease;
+}
+
+.restaurant-carousel button.restaurant-carousel-all {
+    padding: var(--space-2) var(--space-4);
+}
+
+.restaurant-page-wrap a.restaurant-see-hours:hover,
+.restaurant-carousel button.restaurant-carousel-all:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: white;
+}
+
+.restaurant-carousel button.restaurant-carousel-pause {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 38px;
+    height: 38px;
+    margin: 0;
+    padding: 0;
+    font-size: var(--text-sm);
+    color: white;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.85);
+    border-radius: 50%;
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+}
+
+.restaurant-carousel button.restaurant-carousel-pause:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+}
+
+/* Arrows appear when the strip is pointed at or focused, and not before:
+   laid over the photos all the time, they were two white dots on every
+   picture. */
 .restaurant-carousel .restaurant-carousel-arrow {
     position: absolute;
-    top: 50%;
+    top: 38%;
     z-index: 2;
     display: flex;
     align-items: center;
@@ -96,8 +302,14 @@
     border: 1px solid rgba(0, 0, 0, 0.08);
     border-radius: 50%;
     box-shadow: var(--shadow-base);
+    opacity: 0;
     transform: translateY(-50%);
     transition: opacity 0.2s ease, transform 0.15s ease, background-color 0.15s ease;
+}
+
+.restaurant-carousel:hover .restaurant-carousel-arrow,
+.restaurant-carousel:focus-within .restaurant-carousel-arrow {
+    opacity: 1;
 }
 
 .restaurant-carousel .restaurant-carousel-arrow.back { left: var(--space-4); }
@@ -108,50 +320,21 @@
     transform: translateY(-50%) scale(1.06);
 }
 
-/* At an end, the arrow that would go nowhere goes. */
-.restaurant-carousel .restaurant-carousel-arrow:disabled {
-    opacity: 0;
-    pointer-events: none;
-}
-
 .restaurant-carousel-empty {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     gap: var(--space-2);
-    height: 220px;
-    background-color: var(--color-gray-100);
-    color: var(--color-gray-500);
+    height: 260px;
+    padding-bottom: 120px;
+    background-color: var(--color-gray-800);
+    color: var(--color-gray-400);
     font-weight: var(--font-semibold);
 }
 
 .restaurant-carousel-empty i {
     font-size: var(--text-4xl);
-}
-
-.restaurant-carousel button.restaurant-carousel-all {
-    position: absolute;
-    right: var(--space-4);
-    bottom: var(--space-4);
-    z-index: 2;
-    display: inline-flex;
-    align-items: center;
-    gap: var(--space-2);
-    margin: 0;
-    padding: var(--space-2) var(--space-4);
-    font-size: var(--text-sm);
-    font-weight: var(--font-bold);
-    color: var(--color-gray-800);
-    background-color: rgba(255, 255, 255, 0.95);
-    border: 1px solid rgba(0, 0, 0, 0.08);
-    border-radius: 999px;
-    box-shadow: var(--shadow-base);
-}
-
-.restaurant-carousel button.restaurant-carousel-all:hover {
-    background-color: white;
-    border-color: rgba(0, 0, 0, 0.15);
 }
 
 /* A touch screen swipes: the arrows would only sit on the photos. */
@@ -161,92 +344,20 @@
     }
 }
 
-/* ---------- header ---------- */
+/* ---------- actions ---------- */
 
-.restaurant-header {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: var(--space-6);
-    padding: var(--space-8) 0 var(--space-6);
+/* Save, Add photo, and for the owner Edit and Delete: one row of outlined
+   buttons under the photos. */
+.restaurant-toolbar {
+    padding: var(--space-5) 0;
     border-bottom: 1px solid var(--color-gray-200);
 }
 
-.restaurant-heading {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    min-width: 0;
-}
-
-.restaurant-page h1.restaurant-name {
-    margin: 0;
-    font-size: var(--text-4xl);
-    font-weight: var(--font-bold);
-    line-height: var(--leading-tight);
-    color: var(--color-gray-800);
-    overflow-wrap: anywhere;
-}
-
-.restaurant-rating {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    flex-wrap: wrap;
-}
-
-.restaurant-rating .rating-star {
-    display: inline-flex;
-}
-
-.restaurant-rating-number {
-    font-size: var(--text-lg);
-    font-weight: var(--font-bold);
-}
-
-.restaurant-page a.restaurant-rating-count {
-    display: inline;
-    font-size: var(--text-base);
-    font-weight: var(--font-semibold);
-    color: var(--color-gray-600);
-    text-decoration: underline;
-    text-underline-offset: 3px;
-}
-
-.restaurant-page a.restaurant-rating-count:hover {
-    color: var(--color-primary);
-}
-
-.restaurant-meta {
-    display: flex;
-    align-items: center;
-    gap: var(--space-2);
-    font-size: var(--text-base);
-    color: var(--color-gray-600);
-}
-
-.restaurant-price {
-    font-weight: var(--font-bold);
-    color: var(--color-gray-800);
-}
-
-.restaurant-heading .category-chips {
-    margin: var(--space-1) 0 0;
-}
-
-.open-status.restaurant-header-status {
-    font-size: var(--text-base);
-}
-
-/* Save, Add photo, and for the owner Edit and Delete: one row of outlined
-   buttons, the same height and shape. */
 .restaurant-actions {
     display: flex;
     flex-wrap: wrap;
-    justify-content: flex-end;
     align-items: flex-start;
     gap: var(--space-2);
-    flex-shrink: 0;
 }
 
 .restaurant-actions button.restaurant-action,
@@ -362,6 +473,11 @@
     font-size: var(--text-base);
 }
 
+/* "See hours" jumps here; clear of the floating bar. */
+.restaurant-hours {
+    scroll-margin-top: 100px;
+}
+
 .restaurant-hours .opening-hours {
     max-width: 440px;
     font-size: var(--text-base);
@@ -456,16 +572,15 @@
     }
 
     .restaurant-carousel-track {
-        height: 320px;
+        height: 400px;
     }
 
-    .restaurant-header {
-        flex-direction: column;
-        align-items: stretch;
+    .restaurant-carousel-overlay {
+        padding: 0 var(--space-4) var(--space-6);
     }
 
-    .restaurant-actions {
-        justify-content: flex-start;
+    .restaurant-page-wrap h1.restaurant-name {
+        font-size: 38px;
     }
 
     /* One column: the details, then the contact card, then the reviews. */
@@ -493,7 +608,7 @@
     }
 
     .restaurant-carousel-track {
-        height: 260px;
+        height: 380px;
     }
 
     .restaurant-carousel-photo img {
@@ -501,12 +616,36 @@
         max-width: 85vw;
     }
 
-    .restaurant-page h1.restaurant-name {
+    /* The writing takes the whole width, so the controls go to the top. */
+    .restaurant-carousel-overlay {
+        position: static;
+    }
+
+    .restaurant-carousel-content {
+        position: absolute;
+        left: var(--space-4);
+        right: var(--space-4);
+        bottom: var(--space-5);
+    }
+
+    .restaurant-carousel-controls {
+        position: absolute;
+        top: var(--space-3);
+        right: var(--space-3);
+    }
+
+    .restaurant-page-wrap h1.restaurant-name {
         font-size: var(--text-3xl);
     }
 
-    .restaurant-header {
-        padding: var(--space-6) 0 var(--space-5);
+    .restaurant-rating-text,
+    .restaurant-hero .restaurant-meta,
+    .restaurant-status {
+        font-size: var(--text-sm);
+    }
+
+    .restaurant-toolbar {
+        padding: var(--space-4) 0;
     }
 
     .restaurant-section {

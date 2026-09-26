@@ -24,8 +24,10 @@ const RESTAURANT = {
     { id: 12, url: "https://img/b.jpg", preview: false },
     { id: 13, url: "https://img/cover.jpg", preview: true },
   ],
-  numReviews: 4, avgStarRating: 3.75, categories: [], amenities: [{ id: 1, name: "Free Wi-Fi", slug: "wifi" }],
-  hours: [], openStatus: null, timezone: null, isFavorited: false,
+  numReviews: 4, avgStarRating: 3.75,
+  categories: [{ id: 1, name: "Cocktail Bars", slug: "cocktail-bars" }, { id: 2, name: "Wine Bars", slug: "wine-bars" }],
+  amenities: [{ id: 1, name: "Free Wi-Fi", slug: "wifi" }],
+  hours: [{ weekday: 1, opens: "17:00", closes: "22:00" }], openStatus: null, timezone: null, isFavorited: false,
 };
 
 function renderPage(user: any = null) {
@@ -68,37 +70,20 @@ test("the carousel leads with the cover, and a photo opens enlarged where it was
   expect(screen.getByAltText("Nancy's Hustle, 2 of 3")).toHaveAttribute("src", "https://img/b.jpg");
 });
 
-test("the arrows step through the photos, and each goes at its end", async () => {
+test("the name, rating, cuisines and hours are written over the photos", async () => {
   renderPage();
-  await screen.findAllByRole("button", { name: /^Enlarge photo/ });
-  // jsdom lays nothing out, so give the track a size: 500px showing of 1500.
-  const track = document.querySelector(".restaurant-carousel-track") as HTMLElement;
-  Object.defineProperty(track, "clientWidth", { value: 500, configurable: true });
-  Object.defineProperty(track, "scrollWidth", { value: 1500, configurable: true });
-  const scrollBy = jest.fn();
-  (track as any).scrollBy = scrollBy;
-  const back = screen.getByRole("button", { name: "Previous photos" });
-  const forward = screen.getByRole("button", { name: "Next photos" });
-
-  track.scrollLeft = 0;
-  fireEvent.scroll(track);
-  expect(back).toBeDisabled();
-  expect(forward).toBeEnabled();
-
-  fireEvent.click(forward);
-  expect(scrollBy).toHaveBeenCalledWith({ left: 400, behavior: "smooth" });
-
-  track.scrollLeft = 1000;
-  fireEvent.scroll(track);
-  expect(back).toBeEnabled();
-  expect(forward).toBeDisabled();
-});
-
-test("the header gives the rating as a number and jumps to the reviews", async () => {
-  renderPage();
-  expect(await screen.findByRole("heading", { level: 1, name: "Nancy's Hustle" })).toBeInTheDocument();
-  expect(screen.getByText("3.8")).toBeInTheDocument();
+  const heading = await screen.findByRole("heading", { level: 1, name: "Nancy's Hustle" });
+  // Inside the carousel, over the photos, as it was before the redesign.
+  expect(heading.closest(".restaurant-carousel")).not.toBeNull();
+  expect(document.querySelector(".restaurant-rating-text")).toHaveTextContent("3.8 (4 reviews)");
   expect(screen.getByRole("link", { name: "4 reviews" })).toHaveAttribute("href", "#reviews");
+  expect(screen.getByText("Claimed")).toBeInTheDocument();
+  expect(screen.getByText("$$$")).toBeInTheDocument();
+  // Each cuisine goes to the list filtered by it.
+  expect(screen.getByRole("link", { name: "Wine Bars" })).toHaveAttribute("href", "/restaurants?category=wine-bars");
+  expect(document.querySelector(".restaurant-categories")).toHaveTextContent("Cocktail Bars, Wine Bars");
+  expect(screen.getByRole("link", { name: "See hours" })).toHaveAttribute("href", "#hours");
+  expect(document.getElementById("hours")).not.toBeNull();
 });
 
 test("the contact card links out, calls, and gives directions", async () => {
