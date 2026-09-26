@@ -19,6 +19,7 @@
   left: 0;
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.7);
+  animation: modal-backdrop-in 200ms ease-out;
 }
 
 #modal-content {
@@ -30,13 +31,89 @@
    * button 270px below the bottom, both out of reach and neither scrollable.
    */
   position: relative;
+  display: flex;
+  flex-direction: column;
   /* Never wider than the window either: a form narrower than its preferred
      width is better than one running off the side of a phone. */
   max-width: 100%;
   max-height: calc(100vh - var(--space-8));
-  overflow-y: auto;
+  /* dvh where it is understood: on a phone, 100vh counts the space behind
+     the address bar, and the bottom of the modal went under it. */
+  max-height: calc(100dvh - var(--space-8));
+  /* Clips; does not scroll. See .modal-scroll. */
+  overflow: hidden;
   background-color:white;
   border-radius: 20px;
+  animation: modal-content-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/*
+ * Fading in and out. The names are the modal's own: several stylesheets
+ * already define a global `fadeIn`, and a second one would quietly replace
+ * theirs.
+ *
+ * Closing, the modal stays FADE_OUT_MS (Modal.tsx) with this class while it
+ * fades, taking no clicks. The out animations hold their last frame, so it
+ * does not flash back before it goes. Nobody who has asked for less motion
+ * sees any of it: the modal skips the fade, and index.css cuts the
+ * animations to nothing.
+ */
+#modal.closing {
+  pointer-events: none;
+}
+
+#modal.closing #modal-background {
+  animation: modal-backdrop-out 160ms ease-in forwards;
+}
+
+#modal.closing #modal-content {
+  animation: modal-content-out 160ms ease-in forwards;
+}
+
+@keyframes modal-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes modal-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* No fill: once it has arrived the box carries no transform, which would
+   otherwise trap the photo viewer's position: fixed inside it. */
+@keyframes modal-content-in {
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes modal-content-out {
+  from { opacity: 1; transform: none; }
+  to { opacity: 0; transform: translateY(8px) scale(0.98); }
+}
+
+/*
+ * Where a modal too tall for the window scrolls.
+ *
+ * Not #modal-content itself: a box does not clip its own scrollbar to its own
+ * rounded corners, so when that scrolled, the scrollbar ran square down its
+ * right edge and the two right corners no longer matched the left. A parent's
+ * rounded clip does cut a child's scrollbar, so the box clips and this
+ * scrolls, and all four corners come out the same.
+ *
+ * A column, so a modal that manages its own scrolling (the restaurant form,
+ * whose middle scrolls between a fixed header and footer) can shrink to fit
+ * with flex: 1 and min-height: 0. Anything else keeps its height and scrolls
+ * here.
+ */
+#modal-content > .modal-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 /* The dialog itself only takes focus when nothing inside it can, and a red

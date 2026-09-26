@@ -53,7 +53,7 @@ function renderModal(userId: number | null = OWNER_ID) {
   );
 }
 
-const submitButton = () => screen.getByRole("button", { name: /submit|saving/i });
+const submitButton = () => screen.getByRole("button", { name: /save changes|saving/i });
 
 /** A promise whose resolution this test controls, to observe the in-flight state. */
 function deferred<T>() {
@@ -167,7 +167,7 @@ test("client-side validation blocks the request entirely", async () => {
 test("a non-owner is not offered the form at all", () => {
   renderModal(OWNER_ID + 1);
   expect(screen.getByText("You are not the owner")).toBeInTheDocument();
-  expect(screen.queryByRole("button", { name: /submit/i })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: /save changes/i })).not.toBeInTheDocument();
 });
 
 test("a signed-out visitor is asked to log in", () => {

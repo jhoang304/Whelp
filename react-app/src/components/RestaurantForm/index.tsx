@@ -1,4 +1,4 @@
-import React, { useEffect, useId } from "react";
+import React, { useEffect, useId, useRef } from "react";
 
 import "./RestaurantForm.css";
 import ChipPicker from "../ChipPicker";
@@ -9,24 +9,24 @@ import { OpeningHours } from "../../types";
 import { MAX_DESCRIPTION_LENGTH, RestaurantFields } from "../../utils/restaurantValidation";
 
 /**
- * The ten fields a restaurant has, in one place.
+ * The fields a restaurant has, in one place, for the create and edit modals.
  *
- * The create and edit modals kept their own copy of these, and drifted twice
- * over rules that are now shared (a `.com` website test, a phone allowlist),
- * and once more over markup: adding the cuisine picker meant wiring it into
- * both, and then fixing the same CSS collision in both.
+ * The modals kept their own copies of these and drifted three times, over
+ * rules (a `.com` website test, a phone allowlist) and over markup. What is
+ * left in the modals is what genuinely differs: create uploads a cover photo
+ * and opens the new page, edit is behind an owner gate and closes itself.
+ * The form renders; it decides nothing.
  *
- * What is left in the modals is what genuinely differs -- create uploads a
- * cover photo and redirects to the new page, edit is behind an owner gate and
- * closes itself. The form renders; it decides nothing.
- *
- * Every field has a visible label above it, in both. Create used to name its
- * fields only with placeholders, which vanish as soon as you type, and edit
- * put its labels in a 100px column beside 500px inputs -- a form 700px wide
- * that no phone could show. Stacked labels suit both, at any width.
+ * Laid out as a modal of its own: a header that says what this is and can
+ * close it, the fields in short sections with a line on what each is for,
+ * and a footer whose Cancel and Save stay in reach however far down the
+ * hours you have scrolled. Every field has a visible label.
  */
 
 interface RestaurantFormProps {
+    /** "Add a restaurant", "Edit Nancy's Hustle": the modal's heading, and so its name. */
+    title: string;
+    subtitle?: string;
     value: RestaurantFields;
     onChange: (next: RestaurantFields) => void;
     categoryIds: number[];
@@ -48,47 +48,55 @@ interface RestaurantFormProps {
     submitLabel: React.ReactNode;
     busyLabel: React.ReactNode;
     onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
+    /** The header's close button and the footer's Cancel. */
+    onCancel: () => void;
     /** `.add-restaurant-form` or `.update-restaurant-form`, for what differs. */
     className: string;
-    /** create's cover-photo picker, which edit has no use for */
+    /** Create's cover-photo section, which edit has no use for. */
     children?: React.ReactNode;
 }
 
-type TextField = {
-    name: Exclude<keyof RestaurantFields, "price" | "description">;
-    label: string;
-    /** An example, where the format is not obvious -- never the label again. */
-    placeholder?: string;
-    type?: "text" | "tel";
-};
-
-const TEXT_FIELDS: TextField[] = [
-    { name: "name", label: "Business Name" },
-    { name: "address", label: "Address" },
-    { name: "city", label: "City" },
-    { name: "state", label: "State", placeholder: "CA" },
-    { name: "zipcode", label: "Zip Code" },
-    { name: "country", label: "Country" },
-    { name: "phone_number", label: "Phone Number", placeholder: "(555) 123-4567", type: "tel" },
-    // Not type="url": that makes the browser demand a scheme, and the form
-    // accepts "example.com" on purpose.
-    { name: "website", label: "Website", placeholder: "example.com" },
-];
-
-/** Where the price select sits: second, straight after the name. */
-const PRICE_AFTER = "name";
+type TextField = Exclude<keyof RestaurantFields, "price" | "description">;
 
 export const PRICE_OPTIONS = ["$", "$$", "$$$", "$$$$", "$$$$$"];
 
+/** What each price means, said under the picker and to a screen reader. */
+const PRICE_MEANINGS: Record<string, string> = {
+    "$": "Inexpensive",
+    "$$": "Moderate",
+    "$$$": "Pricey",
+    "$$$$": "High-end",
+    "$$$$$": "A splurge",
+};
+
+/** One titled group of fields. */
+export function RestaurantFormSection({ title, hint, children }: {
+    title: string;
+    hint?: string;
+    children: React.ReactNode;
+}): React.JSX.Element {
+    const id = useId();
+    return (
+        <section className="restaurant-form-section" aria-labelledby={id}>
+            <div className="restaurant-form-section-heading">
+                <h3 id={id}>{title}</h3>
+                {hint && <p>{hint}</p>}
+            </div>
+            {children}
+        </section>
+    );
+}
+
 function RestaurantForm({
-    value, onChange, categoryIds, onCategoryIdsChange, amenityIds, onAmenityIdsChange,
-    hours, onHoursChange, timezone, onTimezoneChange, required = false, errors, busy,
-    submitLabel, busyLabel, onSubmit, className, children,
+    title, subtitle, value, onChange, categoryIds, onCategoryIdsChange, amenityIds,
+    onAmenityIdsChange, hours, onHoursChange, timezone, onTimezoneChange, required = false,
+    errors, busy, submitLabel, busyLabel, onSubmit, onCancel, className, children,
 }: RestaurantFormProps): React.JSX.Element {
     const dispatch = useAppDispatch();
     const idPrefix = useId();
     const categories = useAppSelector((state) => state.categories.list);
     const amenities = useAppSelector((state) => state.categories.amenities);
+    const errorRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         // Two closed lists, shared by every form that offers them, so they are
@@ -98,112 +106,177 @@ function RestaurantForm({
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch]);
 
+    useEffect(() => {
+        // The list is at the top and Save is at the bottom, a long scroll
+        // apart. Taking focus brings it into view, and a screen reader reads
+        // it out as well as announcing the alert.
+        if (errors.length > 0) errorRef.current?.focus();
+    }, [errors]);
+
     const set = (name: keyof RestaurantFields) =>
-        (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
+        (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
             onChange({ ...value, [name]: event.target.value });
 
-    const labelled = (label: string, control: React.ReactNode) => (
-        <label className="restaurant-form-field" key={label}>
+    const field = (name: TextField, label: string, options: {
+        placeholder?: string;
+        type?: "text" | "tel";
+        wide?: boolean;
+        maxLength?: number;
+        /** Where the dialog puts focus when it opens, past the Close button. */
+        autoFocus?: boolean;
+    } = {}) => (
+        <label className={`restaurant-form-field${options.wide ? " wide" : ""}`}>
             <span className="restaurant-form-label">{label}</span>
-            {control}
-        </label>
-    );
-
-    const priceSelect = labelled("Price Range", (
-        <select
-            className="price-selector"
-            value={value.price}
-            onChange={set("price")}
-        >
-            {PRICE_OPTIONS.map((price) => (
-                <option key={price} value={price}>{price}</option>
-            ))}
-        </select>
-    ));
-
-    // Not wrapped in its label like the others: the counter would sit inside
-    // it and become part of the field's name ("Description 0/500").
-    const description = (
-        <div className="restaurant-form-field">
-            <label className="restaurant-form-label" htmlFor={`${idPrefix}-description`}>Description</label>
-            <textarea
-                id={`${idPrefix}-description`}
-                value={value.description}
-                onChange={set("description")}
-                rows={4}
-                maxLength={MAX_DESCRIPTION_LENGTH}
+            <input
+                type={options.type || "text"}
+                value={value[name]}
+                placeholder={options.placeholder}
+                maxLength={options.maxLength}
+                data-autofocus={options.autoFocus || undefined}
+                onChange={set(name)}
                 required={required}
-                aria-describedby={`${idPrefix}-description-count`}
             />
-            <span
-                id={`${idPrefix}-description-count`}
-                className={`description-count${value.description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}
-            >
-                {value.description.length}/{MAX_DESCRIPTION_LENGTH}
-            </span>
-        </div>
+        </label>
     );
 
     return (
         <form className={`restaurant-form ${className}`} onSubmit={onSubmit}>
-            {errors.length > 0 && (
-                <div className="error-container" role="alert">
-                    <div className="error-header">
-                        <i className="fa-solid fa-triangle-exclamation"></i>
-                        Please fix the following errors:
-                    </div>
-                    <ul className="error-list">
-                        {errors.map((error, index) => (
-                            <li key={index} className="error-item">{error}</li>
-                        ))}
-                    </ul>
+            <header className="restaurant-form-header">
+                <div>
+                    <h2 className="restaurant-form-title">{title}</h2>
+                    {subtitle && <p className="restaurant-form-subtitle">{subtitle}</p>}
                 </div>
-            )}
+                <button type="button" className="restaurant-form-close" onClick={onCancel} aria-label="Close">
+                    <i className="fa-solid fa-xmark" aria-hidden="true"></i>
+                </button>
+            </header>
 
-            {TEXT_FIELDS.map((field) => (
-                <React.Fragment key={field.name}>
-                    {labelled(field.label, (
-                        <input
-                            type={field.type || "text"}
-                            value={value[field.name]}
-                            placeholder={field.placeholder}
-                            onChange={set(field.name)}
-                            required={required}
-                        />
-                    ))}
-                    {field.name === PRICE_AFTER && priceSelect}
-                </React.Fragment>
-            ))}
+            <div className="restaurant-form-body">
+                {errors.length > 0 && (
+                    <div className="error-container" role="alert" ref={errorRef} tabIndex={-1}>
+                        <div className="error-header">
+                            <i className="fa-solid fa-triangle-exclamation" aria-hidden="true"></i>
+                            Please fix the following:
+                        </div>
+                        <ul className="error-list">
+                            {errors.map((error, index) => (
+                                <li key={index} className="error-item">{error}</li>
+                            ))}
+                        </ul>
+                    </div>
+                )}
 
-            {description}
+                <RestaurantFormSection title="The basics" hint="What people see first, on the list and at the top of its page.">
+                    <div className="restaurant-form-grid">
+                        {field("name", "Business name", { wide: true, autoFocus: true })}
 
-            <ChipPicker
-                title="Cuisines"
-                options={categories}
-                selected={categoryIds}
-                onChange={onCategoryIdsChange}
-                max={MAX_CATEGORIES}
-            />
+                        <fieldset className="restaurant-form-field wide restaurant-form-price">
+                            <legend className="restaurant-form-label">Price range</legend>
+                            <div className="price-options">
+                                {PRICE_OPTIONS.map((price) => (
+                                    <label key={price} className="price-option">
+                                        <input
+                                            type="radio"
+                                            name={`${idPrefix}-price`}
+                                            value={price}
+                                            checked={value.price === price}
+                                            onChange={set("price")}
+                                            aria-label={`${price}, ${PRICE_MEANINGS[price]}`}
+                                        />
+                                        <span aria-hidden="true">{price}</span>
+                                    </label>
+                                ))}
+                            </div>
+                            <span className="restaurant-form-hint">{PRICE_MEANINGS[value.price] || ""}</span>
+                        </fieldset>
 
-            <ChipPicker
-                title="Amenities"
-                options={amenities}
-                selected={amenityIds}
-                onChange={onAmenityIdsChange}
-            />
+                        {/* Not wrapped in its label like the others: the counter
+                            would sit inside it and become part of the field's
+                            name ("Description 0/500"). */}
+                        <div className="restaurant-form-field wide">
+                            <label className="restaurant-form-label" htmlFor={`${idPrefix}-description`}>Description</label>
+                            <textarea
+                                id={`${idPrefix}-description`}
+                                value={value.description}
+                                onChange={set("description")}
+                                rows={4}
+                                maxLength={MAX_DESCRIPTION_LENGTH}
+                                required={required}
+                                placeholder="What makes it worth the trip?"
+                                aria-describedby={`${idPrefix}-description-count`}
+                            />
+                            <span
+                                id={`${idPrefix}-description-count`}
+                                className={`description-count${value.description.length > MAX_DESCRIPTION_LENGTH - 50 ? " near-limit" : ""}`}
+                            >
+                                {value.description.length}/{MAX_DESCRIPTION_LENGTH}
+                            </span>
+                        </div>
+                    </div>
+                </RestaurantFormSection>
 
-            <HoursEditor
-                value={hours}
-                onChange={onHoursChange}
-                timezone={timezone}
-                onTimezoneChange={onTimezoneChange}
-            />
+                <RestaurantFormSection title="Location" hint="Unless you pick a time zone under Opening hours, the state decides it.">
+                    <div className="restaurant-form-grid">
+                        {field("address", "Street address", { wide: true })}
+                        {field("city", "City")}
+                        {field("state", "State", { placeholder: "TX", maxLength: 2 })}
+                        {field("zipcode", "ZIP code")}
+                        {field("country", "Country", { placeholder: "USA" })}
+                    </div>
+                </RestaurantFormSection>
 
-            {children}
+                <RestaurantFormSection title="Contact">
+                    <div className="restaurant-form-grid">
+                        {field("phone_number", "Phone", { type: "tel", placeholder: "(555) 123-4567" })}
+                        {/* Not type="url": that makes the browser demand a
+                            scheme, and the form accepts "example.com" on purpose. */}
+                        {field("website", "Website", { placeholder: "example.com" })}
+                    </div>
+                </RestaurantFormSection>
 
-            <button className="restaurant-form-submit" type="submit" disabled={busy}>
-                {busy ? busyLabel : submitLabel}
-            </button>
+                <RestaurantFormSection
+                    title="Cuisines and amenities"
+                    hint={`Up to ${MAX_CATEGORIES} cuisines, and anything it offers. People filter by both.`}
+                >
+                    <ChipPicker
+                        title="Cuisines"
+                        options={categories}
+                        selected={categoryIds}
+                        onChange={onCategoryIdsChange}
+                        max={MAX_CATEGORIES}
+                    />
+                    <ChipPicker
+                        title="Amenities"
+                        options={amenities}
+                        selected={amenityIds}
+                        onChange={onAmenityIdsChange}
+                    />
+                </RestaurantFormSection>
+
+                <RestaurantFormSection
+                    title="Opening hours"
+                    hint="Tick the days it opens. A closing time before the opening one runs past midnight."
+                >
+                    <HoursEditor
+                        title={null}
+                        value={hours}
+                        onChange={onHoursChange}
+                        timezone={timezone}
+                        onTimezoneChange={onTimezoneChange}
+                    />
+                </RestaurantFormSection>
+
+                {children}
+            </div>
+
+            <footer className="restaurant-form-footer">
+                <button type="button" className="restaurant-form-cancel" onClick={onCancel}>
+                    Cancel
+                </button>
+                <button className="restaurant-form-submit" type="submit" disabled={busy}>
+                    {busy ? busyLabel : submitLabel}
+                </button>
+            </footer>
         </form>
     );
 }

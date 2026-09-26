@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { render, screen, fireEvent } from "@testing-library/react";
-import { ModalProvider, Modal } from "./Modal";
+import { render, screen, fireEvent, act } from "@testing-library/react";
+import { ModalProvider, Modal, FADE_OUT_MS } from "./Modal";
 import OpenModalButton from "../components/OpenModalButton";
 import Lightbox from "../components/Lightbox";
 
@@ -59,6 +59,19 @@ test("a heading that only appears once the content has loaded still names it", a
 
   // A MutationObserver reports on a microtask, so this is found, not got.
   expect(await screen.findByRole("dialog", { name: "Photos for Somewhere" })).toBeInTheDocument();
+});
+
+test("a field marked data-autofocus takes focus ahead of a Close button before it", () => {
+  renderWith(
+    <form>
+      <h2>Edit Something</h2>
+      <button type="button" aria-label="Close">x</button>
+      <input aria-label="Name" data-autofocus />
+    </form>
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Open" }));
+
+  expect(screen.getByLabelText("Name")).toHaveFocus();
 });
 
 test("Escape closes it and focus returns to the button that opened it", () => {
@@ -169,4 +182,72 @@ test("the button that opens a modal does not submit the form it sits in", () => 
 
   expect(onSubmit).not.toHaveBeenCalled();
   expect(screen.getByRole("dialog", { name: "Hi" })).toBeInTheDocument();
+});
+
+describe("fading out", () => {
+  // jsdom has no matchMedia, which the modal reads as "don't animate"; these
+  // give it one, saying whether the reader asked for less motion.
+  const motion = (reduce: boolean) => {
+    (window as any).matchMedia = jest.fn((query: string) => ({
+      matches: reduce && query.includes("reduce"), media: query, onchange: null,
+      addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
+      dispatchEvent() { return false; },
+    }));
+  };
+
+  afterEach(() => {
+    delete (window as any).matchMedia;
+    jest.useRealTimers();
+  });
+
+  const openThenEscape = (onModalClose?: () => void) => {
+    renderWith(<Form />, onModalClose);
+    const opener = screen.getByRole("button", { name: "Open" });
+    opener.focus();
+    fireEvent.click(opener);
+    fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+    return opener;
+  };
+
+  test("a closing modal stays to fade, takes nothing, and has already given focus back", () => {
+    jest.useFakeTimers();
+    motion(false);
+    const onModalClose = jest.fn();
+    const opener = openThenEscape(onModalClose);
+
+    const overlay = document.getElementById("modal");
+    expect(overlay).toHaveClass("closing");
+    expect(overlay).toHaveAttribute("inert");
+    // Focus is back now, not when the fade finishes.
+    expect(opener).toHaveFocus();
+    // A click on the fading backdrop closes nothing a second time. In a
+    // browser, pointer-events: none stops it arriving at all; either way,
+    // closeModal has already used up its onModalClose.
+    fireEvent.click(document.getElementById("modal-background") as HTMLElement);
+    expect(onModalClose).toHaveBeenCalledTimes(1);
+
+    act(() => { jest.advanceTimersByTime(FADE_OUT_MS); });
+    expect(document.getElementById("modal")).toBeNull();
+  });
+
+  test("opened again mid-fade, it comes straight back and stays", () => {
+    jest.useFakeTimers();
+    motion(false);
+    const opener = openThenEscape();
+
+    fireEvent.click(opener);
+    act(() => { jest.advanceTimersByTime(FADE_OUT_MS * 2); });
+
+    expect(document.getElementById("modal")).not.toHaveClass("closing");
+    expect(screen.getByRole("dialog", { name: "Add Something" })).toBeInTheDocument();
+    expect(document.getElementById("modal")).not.toHaveAttribute("inert");
+  });
+
+  test("anyone who asked for less motion sees it go at once", () => {
+    motion(true);
+    const opener = openThenEscape();
+
+    expect(document.getElementById("modal")).toBeNull();
+    expect(opener).toHaveFocus();
+  });
 });

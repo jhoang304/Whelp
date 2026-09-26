@@ -1,5 +1,5 @@
 import "./CreateRestaurantModal.css"
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';
 import { addRestaurantThunk } from "../../store/restaurants";
@@ -9,7 +9,7 @@ import { RestaurantFields, validateRestaurant } from "../../utils/restaurantVali
 import { validateHours } from "../../utils/hours";
 import { OpeningHours } from "../../types";
 import { useAppDispatch } from "../../store";
-import RestaurantForm from "../RestaurantForm";
+import RestaurantForm, { RestaurantFormSection } from "../RestaurantForm";
 
 type ImageMode = "upload" | "url";
 
@@ -44,6 +44,26 @@ function CreateRestaurantModal() {
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
+
+    // A thumbnail of the chosen cover: the file's own blob url while one is
+    // picked (revoked when it changes or the modal closes), or the pasted url
+    // once it looks like one. A url that turns out not to be an image stops
+    // being previewed rather than showing a broken-image icon.
+    const [fileUrl, setFileUrl] = useState<string | null>(null);
+    const [brokenPreview, setBrokenPreview] = useState<string | null>(null);
+    useEffect(() => {
+        if (!imageFile) {
+            setFileUrl(null);
+            return;
+        }
+        const objectUrl = URL.createObjectURL(imageFile);
+        setFileUrl(objectUrl);
+        return () => URL.revokeObjectURL(objectUrl);
+    }, [imageFile]);
+    const candidate = imageMode === "upload"
+        ? fileUrl
+        : (/^https?:\/\/.+/.test(url.trim()) ? url.trim() : null);
+    const previewSrc = candidate && candidate !== brokenPreview ? candidate : null;
 
 
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -107,31 +127,35 @@ function CreateRestaurantModal() {
     };
 
     return (
-        <>
-            <h2 className="restaurant-form-title">Add Restaurant</h2>
-            <RestaurantForm
-                className="add-restaurant-form"
-                required
-                value={fields}
-                onChange={setFields}
-                categoryIds={categoryIds}
-                onCategoryIdsChange={setCategoryIds}
-                amenityIds={amenityIds}
-                onAmenityIdsChange={setAmenityIds}
-                hours={hours}
-                onHoursChange={setHours}
-                timezone={timezone}
-                onTimezoneChange={setTimezone}
-                errors={errors}
-                busy={isSubmitting}
-                submitLabel="Create Restaurant"
-                busyLabel={<><i className="fa-solid fa-spinner fa-spin"></i>Creating Restaurant...</>}
-                onSubmit={handleSubmit}
+        <RestaurantForm
+            className="add-restaurant-form"
+            title="Add a restaurant"
+            subtitle="Where it is, what it serves and when it's open. You can change any of it later."
+            required
+            value={fields}
+            onChange={setFields}
+            categoryIds={categoryIds}
+            onCategoryIdsChange={setCategoryIds}
+            amenityIds={amenityIds}
+            onAmenityIdsChange={setAmenityIds}
+            hours={hours}
+            onHoursChange={setHours}
+            timezone={timezone}
+            onTimezoneChange={setTimezone}
+            errors={errors}
+            busy={isSubmitting}
+            submitLabel="Create Restaurant"
+            busyLabel={<><i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>Creating Restaurant...</>}
+            onSubmit={handleSubmit}
+            onCancel={closeModal}
+        >
+            {/* The cover photo is create's own: an existing restaurant
+                changes its photos through the photo routes instead. */}
+            <RestaurantFormSection
+                title="Cover photo"
+                hint="Shown on the restaurant list and across the top of its page. You can add more photos once it's created."
             >
-                {/* The cover photo is create's own: an existing restaurant
-                    changes its photos through the photo routes instead. */}
                 <div className="image-picker">
-                    <span className="restaurant-form-label">Cover Photo</span>
                     <div className="image-picker-tabs" role="group" aria-label="Cover photo source">
                         <button
                             type="button"
@@ -139,7 +163,7 @@ function CreateRestaurantModal() {
                             className={imageMode === "upload" ? "active" : ""}
                             onClick={() => setImageMode("upload")}
                         >
-                            <i className="fa-solid fa-upload"></i> Upload cover photo
+                            <i className="fa-solid fa-upload" aria-hidden="true"></i> Upload cover photo
                         </button>
                         <button
                             type="button"
@@ -147,33 +171,46 @@ function CreateRestaurantModal() {
                             className={imageMode === "url" ? "active" : ""}
                             onClick={() => setImageMode("url")}
                         >
-                            <i className="fa-solid fa-link"></i> Use an image URL
+                            <i className="fa-solid fa-link" aria-hidden="true"></i> Use an image URL
                         </button>
                     </div>
-                    {imageMode === "upload" ? (
-                        <label className="image-picker-file">
-                            <input
-                                type="file"
-                                accept={ACCEPTED_IMAGE_TYPES}
-                                onChange={(e) => setImageFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
-                            />
-                            <span className="image-picker-file-button"><i className="fa-regular fa-image"></i> Choose photo</span>
-                            <span className="image-picker-file-name">
-                                {imageFile ? imageFile.name : `PNG, JPG, GIF, or WEBP up to ${MAX_UPLOAD_MB} MB`}
-                            </span>
-                        </label>
-                    ) : (
-                        <input
-                            type="text"
-                            aria-label="Cover image URL"
-                            placeholder="Cover Image URL (https://...)"
-                            value={url}
-                            onChange={(e) => setUrl(e.target.value)}
-                        />
-                    )}
+
+                    <div className="image-picker-row">
+                        <div className={`image-picker-preview${previewSrc ? "" : " empty"}`}>
+                            {previewSrc
+                                ? <img src={previewSrc} alt="" onError={() => setBrokenPreview(previewSrc)} />
+                                : <i className="fa-regular fa-image" aria-hidden="true"></i>}
+                        </div>
+                        {imageMode === "upload" ? (
+                            <label className="image-picker-file">
+                                <input
+                                    type="file"
+                                    accept={ACCEPTED_IMAGE_TYPES}
+                                    onChange={(e) => setImageFile(e.target.files && e.target.files[0] ? e.target.files[0] : null)}
+                                />
+                                <span className="image-picker-file-button">
+                                    {imageFile ? "Choose a different photo" : "Choose photo"}
+                                </span>
+                                <span className="image-picker-file-name">
+                                    {imageFile ? imageFile.name : `PNG, JPG, GIF or WEBP, up to ${MAX_UPLOAD_MB} MB`}
+                                </span>
+                            </label>
+                        ) : (
+                            <label className="image-picker-url">
+                                <span className="restaurant-form-label">Image URL</span>
+                                <input
+                                    type="text"
+                                    aria-label="Cover image URL"
+                                    placeholder="https://..."
+                                    value={url}
+                                    onChange={(e) => setUrl(e.target.value)}
+                                />
+                            </label>
+                        )}
+                    </div>
                 </div>
-            </RestaurantForm>
-        </>
+            </RestaurantFormSection>
+        </RestaurantForm>
     );
 }
 
