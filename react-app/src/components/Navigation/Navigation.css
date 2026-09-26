@@ -1,7 +1,8 @@
 .profile-dropdown {
     position: absolute;
     right: 0;
-    top: 60px;
+    /* Just under the floating bar, whatever its height. */
+    top: calc(100% + var(--space-2));
     width: 220px;
     background-color: white;
     border-radius: var(--radius-lg);
@@ -54,22 +55,42 @@
     transform: scale(1.05);
 }
 
+/*
+ * A floating bar: inset from the window's edges, rounded, and a little
+ * translucent, so the page reads through it -- blurred -- as it scrolls
+ * underneath. Sticky a few pixels below the top rather than flush with it,
+ * so it keeps looking like it floats once the page has moved.
+ */
 .navBar-container {
     position: sticky;
-    top: 0;
+    top: var(--space-3);
     z-index: 1000;
-    background-color: white;
-    padding: 0 var(--space-10);
-    border-bottom: 1px solid var(--color-gray-200);
-    box-shadow: var(--shadow-sm);
-    transition: all 0.3s ease;
+    box-sizing: border-box;
+    width: calc(100% - 2 * var(--space-4));
+    max-width: 1280px;
+    margin: var(--space-3) auto 0;
+    padding: 0 var(--space-5);
+    background-color: rgba(255, 255, 255, 0.86);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    backdrop-filter: saturate(180%) blur(14px);
+    border: 1px solid rgba(0, 0, 0, 0.06);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Where blur is not drawn, translucency is only a paler bar: stay solid. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .navBar-container {
+        background-color: white;
+    }
 }
 
 .navigationBar {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: var(--space-4) 0;
+    gap: var(--space-4);
+    padding: var(--space-3) 0;
     position: relative;
 }
 
@@ -80,17 +101,22 @@
     align-items: center;
 }
 
+/* The two sides take exactly the width they need, and the search takes
+   the rest, up to its max-width. With a basis of 0 the sides were squeezed
+   instead: logged out, "Log In" and "Sign Up" broke onto two lines each. */
 .nav-left {
-    flex: 1;
+    flex: 0 0 auto;
 }
 
+/* Most of the row, so the search box can be wide. */
 .nav-center {
-    flex: 2;
+    flex: 1 1 0;
+    min-width: 0;
     justify-content: center;
 }
 
 .nav-right {
-    flex: 1;
+    flex: 0 0 auto;
     justify-content: flex-end;
 }
 
@@ -121,10 +147,11 @@
     color: var(--color-primary);
 }
 
+/* Hovers change colour, not position: in a compact floating bar, things
+   jumping up by a few pixels looked loose. */
 .nav-link:hover {
-    background-color: var(--color-gray-50);
+    background-color: var(--color-gray-100);
     color: var(--color-primary);
-    transform: translateY(-2px);
 }
 
 .nav-link.active {
@@ -152,6 +179,7 @@
     align-items: center;
     justify-content: center;
     letter-spacing: 0.5px;
+    white-space: nowrap;
     position: relative;
     overflow: hidden;
     z-index: 1;
@@ -171,8 +199,6 @@
 
 .login-button:hover {
     color: var(--color-primary);
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-base);
 }
 
 .login-button:hover::before {
@@ -184,10 +210,11 @@
     color: white;
     font-weight: var(--font-semibold);
     font-size: var(--text-base);
-    padding: var(--space-3) var(--space-8);
+    /* The same height as Log In beside it, whose 2px border this matches. */
+    padding: var(--space-2) var(--space-6);
     border-radius: var(--radius-base);
     background-color: var(--color-primary);
-    border: none;
+    border: 2px solid var(--color-primary);
     transition: all 0.3s ease;
     display: flex;
     align-items: center;
@@ -213,8 +240,7 @@
 
 .signup-button:hover {
     background-color: var(--color-primary-dark);
-    transform: translateY(-3px);
-    box-shadow: 0 6px 16px rgba(240, 12, 19, 0.3);
+    border-color: var(--color-primary-dark);
 }
 
 .signup-button:hover::before {
@@ -267,28 +293,45 @@
     color: var(--color-primary);
 }
 
+/* The search component's own wrapper. Unstyled, it shrank to the input's
+   natural width, and the box inside -- width: 100% of that -- never grew
+   anywhere near its max-width: the "500px" search bar was about 275px. */
+.nav-search {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Filled rather than shadowed: a shadow inside a floating, shadowed bar
+   was one shadow too many. Up to 680px wide, from 500. */
 .nav-search-container {
     width: 100%;
-    max-width: 500px;
+    max-width: 680px;
     position: relative;
-    border-radius: 24px;
+    border-radius: 999px;
     overflow: hidden;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-    transition: all 0.3s ease;
+    background-color: var(--color-gray-100);
+    border: 1px solid transparent;
+    transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.nav-search-container:hover {
+    background-color: #eeeeee;
 }
 
 .nav-search-container:focus-within {
     /* The input itself draws no ring (the container clips it), so the
        container shows focus for it. */
-    box-shadow: 0 0 0 2px var(--color-primary), 0 4px 15px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
+    background-color: white;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }
 
 .search-bar-form {
     display: flex;
     align-items: center;
     width: 100%;
-    height: 48px;
+    height: 44px;
     position: relative;
 }
 
@@ -298,55 +341,68 @@
     width: 100%;
     box-sizing: border-box;
     height: 100%;
-    padding: 0 60px 0 24px;
+    padding: 0 56px 0 var(--space-5);
     border: none;
+    background: transparent;
     font-size: 16px;
+    color: var(--color-gray-800);
     outline: none;
 }
 
+.search-input-values::placeholder {
+    color: var(--color-gray-500);
+}
+
+/* Centred properly: it sat at top: 39% with its icon nudged back up 1px
+   to make up for it. */
 .search-button {
     position: absolute;
     right: 5px;
-    top: 39%;
+    top: 50%;
     transform: translateY(-50%);
-    background-color: #f00c13;
+    margin: 0;
+    padding: 0;
+    background-color: var(--color-primary);
     color: white;
     border: none;
     border-radius: 50%;
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: background-color 0.15s ease, transform 0.15s ease;
 }
 
 .search-button i {
-    position: relative;
-    top: -1px;
-    font-size: 16px;
+    font-size: 14px;
 }
 
-.search-button:hover {
-    background-color: #e00b12;
+.search-button:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
     transform: translateY(-50%) scale(1.05);
 }
 
-.search-button:hover i {
-    top: -1px;
+.search-button:disabled {
+    cursor: default;
+    opacity: 0.85;
 }
 
 @media (max-width: 900px) {
     .navigationBar {
         flex-wrap: wrap;
-        padding: 10px 0;
+        row-gap: var(--space-3);
+        padding: var(--space-3) 0;
     }
 
     .nav-center {
         order: 3;
         flex: 0 0 100%;
-        margin-top: 15px;
+    }
+
+    .nav-search-container {
+        max-width: none;
     }
 
     .nav-left,
@@ -357,7 +413,11 @@
 
 @media (max-width: 600px) {
     .navBar-container {
-        padding: 0 var(--space-4);
+        top: var(--space-2);
+        width: calc(100% - 2 * var(--space-2));
+        margin-top: var(--space-2);
+        padding: 0 var(--space-3);
+        border-radius: var(--radius-lg);
     }
 
     .nav-links {
@@ -368,9 +428,13 @@
         gap: 10px;
     }
 
+    .navigationBar {
+        column-gap: var(--space-2);
+    }
+
     .login-button,
     .signup-button {
-        padding: 8px 16px;
+        padding: 8px 10px;
         font-size: 14px;
         letter-spacing: 0.3px;
         /* Logged out, the two buttons had half the row between them and
@@ -379,31 +443,23 @@
         white-space: nowrap;
     }
 
-    /* Log In's 2px border, so the two are the same height side by side. */
-    .signup-button {
-        border: 2px solid var(--color-primary);
-    }
-
-    .nav-left {
-        min-width: 0;
-    }
-
+    /* Neither side shrinks: allowed to, the logo's side got narrower than
+       the logo, which then ran under the Log In button at 320px. Instead
+       the logo, the gaps and the buttons' padding each give a little, which
+       fits both sides into a 320px phone inside the floating bar. */
+    .nav-left,
     .nav-right {
         flex: 0 0 auto;
     }
 
     .nav-logo {
-        margin-right: var(--space-2);
+        margin-right: 0;
     }
 
     .logo-img {
-        width: 96px;
+        width: 88px;
     }
 
-    .login-button:hover,
-    .signup-button:hover {
-        transform: translateY(-2px);
-    }
 }
 
 .user-profile-button {
