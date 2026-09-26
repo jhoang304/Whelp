@@ -11,6 +11,7 @@ import { avatarUrl, onAvatarError } from "../../../utils/images";
 import OpenModalButton from "../../OpenModalButton";
 import ConfirmDeleteModal from "../../ConfirmDeleteModal";
 import "./OwnerResponse.css";
+import "../../RowActions/RowActions.css";
 
 export const MAX_RESPONSE_LENGTH = 1000;
 
@@ -164,14 +165,16 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
           </div>
         </div>
         {canManage && !isEditing && (
-          <div className="owner-response-actions">
-            <button type="button" onClick={startEditing}>
-              <i className="fa-solid fa-pen"></i>
+          <div className="owner-response-actions row-actions">
+            {/* "Edit" alone is ambiguous with the review's own Edit beside it. */}
+            <button type="button" onClick={startEditing} aria-label="Edit your response">
+              <i className="fa-solid fa-pen" aria-hidden="true"></i>
               Edit
             </button>
             <OpenModalButton
               className="danger"
-              buttonText={<><i className="fa-solid fa-trash"></i>Delete</>}
+              ariaLabel="Delete your response"
+              buttonText={<><i className="fa-solid fa-trash" aria-hidden="true"></i>Delete</>}
               modalComponent={
                 <ConfirmDeleteModal
                   title="Delete Response"

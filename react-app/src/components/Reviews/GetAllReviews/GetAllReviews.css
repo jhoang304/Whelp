@@ -12,6 +12,10 @@
 
     margin-bottom: 5px;
     display: flex;
+    /* In a narrow column the author's Edit and Delete drop to a line of
+       their own, rather than squeezing the name and date beside them. */
+    flex-wrap: wrap;
+    row-gap: var(--space-1);
   }
 
   .review-user-data img {
@@ -29,11 +33,10 @@
     margin-right: 30px;
   }
 
-  .delete-update {
-    margin-top: 20px;
-    display: flex;
-    /* flex-direction: column; */
-    height: 60px;
+  /* The author's Edit and Delete, at the right end of the review's header. */
+  .review-actions {
+    margin-left: auto;
+    align-self: flex-start;
   }
 
   .write-a-review {
@@ -100,7 +103,7 @@
     margin: var(--space-2) var(--space-3) var(--space-4);
   }
 
-  .delete-update button {
+  .review-actions button {
     white-space: nowrap;
   }
 
@@ -130,16 +133,8 @@
 }
 
 @media (max-width: 600px) {
-    /* The author's Update and Delete sat beside the review, squeezing the
-       text into what was left; on a phone they go under it. */
     .single-review-container {
-        flex-direction: column;
         margin-right: 0;
-    }
-
-    .delete-update {
-        height: auto;
-        margin: 0 0 var(--space-4) var(--space-2);
     }
 
     .review-body {

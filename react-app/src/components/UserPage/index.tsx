@@ -19,6 +19,7 @@ import {
     onRestaurantImageError,
 } from "../../utils/images";
 import "./UserProfilePage.css";
+import "../RowActions/RowActions.css";
 
 type Tab = "reviews" | "businesses" | "saved";
 type Status = "loading" | "ready" | "error";
@@ -180,24 +181,51 @@ export default function UserProfilePage(): React.JSX.Element {
                         <div className="profile-review-list">
                             {reviews.map((review) => (
                                 <article className="profile-review" key={review.id}>
-                                    <Link to={`/single/${review.restaurant_id}`} className="profile-review-restaurant">
-                                        <img
-                                            className="profile-review-thumb"
-                                            src={(review.restaurant && review.restaurant.previewImage) || DEFAULT_RESTAURANT_IMAGE}
-                                            alt=""
-                                            onError={onRestaurantImageError}
-                                        />
-                                        <div>
-                                            <div className="profile-review-restaurant-name">
-                                                {review.restaurant ? review.restaurant.name : "Restaurant"}
-                                            </div>
-                                            {review.restaurant && (
-                                                <div className="profile-review-restaurant-location">
-                                                    {review.restaurant.city}, {review.restaurant.state}
+                                    <div className="profile-review-header">
+                                        <Link to={`/single/${review.restaurant_id}`} className="profile-review-restaurant">
+                                            <img
+                                                className="profile-review-thumb"
+                                                src={(review.restaurant && review.restaurant.previewImage) || DEFAULT_RESTAURANT_IMAGE}
+                                                alt=""
+                                                onError={onRestaurantImageError}
+                                            />
+                                            <div>
+                                                <div className="profile-review-restaurant-name">
+                                                    {review.restaurant ? review.restaurant.name : "Restaurant"}
                                                 </div>
-                                            )}
-                                        </div>
-                                    </Link>
+                                                {review.restaurant && (
+                                                    <div className="profile-review-restaurant-location">
+                                                        {review.restaurant.city}, {review.restaurant.state}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </Link>
+                                        {isOwnProfile && (
+                                            <div className="profile-review-actions row-actions">
+                                                <button
+                                                    type="button"
+                                                    aria-label={`Edit your review of ${review.restaurant ? review.restaurant.name : "this restaurant"}`}
+                                                    onClick={() => history.push(`/${review.restaurant_id}/reviews/${review.id}/update`)}
+                                                >
+                                                    <i className="fa-solid fa-pen" aria-hidden="true"></i> Edit
+                                                </button>
+                                                <OpenModalButton
+                                                    className="danger"
+                                                    ariaLabel={`Delete your review of ${review.restaurant ? review.restaurant.name : "this restaurant"}`}
+                                                    buttonText={<><i className="fa-solid fa-trash" aria-hidden="true"></i> Delete</>}
+                                                    modalComponent={
+                                                        <ConfirmDeleteModal
+                                                            title="Delete Review"
+                                                            message={<>Delete your review of <strong>{review.restaurant ? review.restaurant.name : "this restaurant"}</strong>?</>}
+                                                            detail="This cannot be undone. Its photos go with it."
+                                                            confirmLabel="Delete Review"
+                                                            onConfirm={() => handleDeleteReview(review)}
+                                                        />
+                                                    }
+                                                />
+                                            </div>
+                                        )}
+                                    </div>
                                     <div className="profile-review-rating">
                                         <RatingStar size="18" rating={review.rating} />
                                         <span className="profile-review-date">{formatDate(review.createdAt, LONG_DATE)}</span>
@@ -209,29 +237,6 @@ export default function UserProfilePage(): React.JSX.Element {
                                         canManage={false}
                                         businessName={review.restaurant ? review.restaurant.name : undefined}
                                     />
-                                    {isOwnProfile && (
-                                        <div className="profile-review-actions">
-                                            <button
-                                                type="button"
-                                                onClick={() => history.push(`/${review.restaurant_id}/reviews/${review.id}/update`)}
-                                            >
-                                                <i className="fa-solid fa-pen"></i> Edit
-                                            </button>
-                                            <OpenModalButton
-                                                className="danger"
-                                                buttonText={<><i className="fa-solid fa-trash"></i> Delete</>}
-                                                modalComponent={
-                                                    <ConfirmDeleteModal
-                                                        title="Delete Review"
-                                                        message={<>Delete your review of <strong>{review.restaurant ? review.restaurant.name : "this restaurant"}</strong>?</>}
-                                                        detail="This cannot be undone. Its photos go with it."
-                                                        confirmLabel="Delete Review"
-                                                        onConfirm={() => handleDeleteReview(review)}
-                                                    />
-                                                }
-                                            />
-                                        </div>
-                                    )}
                                 </article>
                             ))}
                         </div>
