@@ -1,198 +1,343 @@
-.singlePhoto {
+/*
+ * A restaurant's page.
+ *
+ * Everything sits in one centred column up to 1200px wide: the gallery, the
+ * header under it, and then the details and reviews with the contact card
+ * beside them. It used to run a 435px strip of photos edge to edge, with a
+ * scrollbar under it and the name written in white across whichever photo
+ * happened to be first.
+ */
+.restaurant-page {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-6) var(--space-16);
+    color: var(--color-gray-800);
+}
+
+/* ---------- gallery ---------- */
+
+.restaurant-gallery {
+    position: relative;
+}
+
+.restaurant-gallery-grid {
+    display: grid;
+    gap: var(--space-2);
+    height: 420px;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+}
+
+/* The cover large on the left; the others fill in beside it. */
+.restaurant-gallery-grid.count-1 { grid-template-columns: 1fr; }
+.restaurant-gallery-grid.count-2 { grid-template-columns: 2fr 1fr; }
+.restaurant-gallery-grid.count-3 { grid-template-columns: 2fr 1fr; grid-template-rows: 1fr 1fr; }
+.restaurant-gallery-grid.count-4 { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+.restaurant-gallery-grid.count-5 { grid-template-columns: 2fr 1fr 1fr; grid-template-rows: 1fr 1fr; }
+
+.restaurant-gallery-grid.count-3 .tile-0,
+.restaurant-gallery-grid.count-4 .tile-0,
+.restaurant-gallery-grid.count-5 .tile-0 {
+    grid-row: 1 / 3;
+}
+
+/* Four: the third photo takes the whole bottom right. */
+.restaurant-gallery-grid.count-4 .tile-3 {
+    grid-column: 2 / 4;
+}
+
+.restaurant-gallery .restaurant-gallery-tile {
+    position: relative;
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background-color: var(--color-gray-100);
+    overflow: hidden;
+    cursor: zoom-in;
+}
+
+.restaurant-gallery-tile img {
+    display: block;
+    width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: transform 0.4s ease, filter 0.2s ease;
 }
 
-.side-bar {
+.restaurant-gallery-tile:hover img {
+    transform: scale(1.03);
+    filter: brightness(0.92);
+}
+
+.restaurant-gallery .restaurant-gallery-tile:focus-visible {
+    outline: 3px solid var(--color-primary);
+    outline-offset: -3px;
+}
+
+.restaurant-gallery-empty {
     display: flex;
     flex-direction: column;
-    margin-right: 40px;
-}
-
-.summary-line span {
-    margin: var(--space-1);
-}
-
-.only-for-owner button {
-    margin: var(--space-1);
-}
-
-.photos {
-    height: 435px;
-    /* Not 100vw: that counts the vertical scrollbar, so the strip was 17px
-       wider than the page and every desktop window could scroll sideways. */
-    width: 100%;
-    overflow-y: hidden;
-    overflow-x: scroll;
-    white-space: nowrap;
-}
-
-.top-section {
-    position: relative;
-    /* The page centres its children, which would otherwise size this to its
-       content -- the whole photo strip, end to end. */
-    width: 100%;
-}
-
-.summary-line {
-    position: absolute;
-    font-weight: var(--font-bold);
-    color: white;
-    /* Anchored to the foot of the photo strip rather than 150px from its top:
-       the strip is a fixed 435px, so a block pinned by its top grows downward
-       out of it. The cuisine chips are one more line of it, and a long name
-       that wraps is another -- this way the last line stays where it is and
-       the extra height goes up into the photo. */
-    bottom: 0;
-    margin: var(--space-12);
-}
-
-.see-all-photos button {
-    position: absolute;
-    bottom: 50px;
-    right: 50px;
-    font-weight: 900;
-    background-color: transparent;
-    color: white;
-    font-size: 16px;
-    padding: 12px 32px 12px 32px;
-    border: 4px solid white;
-    border-radius: 4px;
-    transition: all 0.3s ease;
-    backdrop-filter: blur(5px);
-}
-
-.see-all-photos button:hover {
-    cursor: pointer;
-    background-color: rgba(255, 255, 255, 0.15);
-    transform: translateY(-3px);
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
-    border-color: rgba(255, 255, 255, 0.9);
-}
-
-h1 {
-    font-size: var(--text-5xl);
-    margin: var(--space-2);
-}
-
-.one-line-review {
-    display: flex;
     align-items: center;
-}
-
-.price {
-    margin: var(--space-2);
-}
-
-.single-green-word {
-    color: var(--color-success);
-}
-
-.buttons {
-    margin: var(--space-5);
-    padding-bottom: var(--space-5);
-    border-bottom: 1px solid var(--color-gray-300);
-}
-
-.buttons button {
-    color: var(--color-gray-800);
-    background-color: initial;
-    border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
-    font-weight: var(--font-bold);
-    text-align: center;
-    font-size: var(--text-base);
-    transition: all 0.3s ease;
-}
-
-/* The Save heart, in line with the buttons beside it. */
-.buttons .favorite {
-    margin: var(--space-1);
-    vertical-align: top;
-}
-
-.buttons button:hover {
-    cursor: pointer;
-    background-color: var(--color-gray-200);
-}
-
-.bottom-section {
-    width: 70%;
-    display: flex;
     justify-content: center;
-    gap: var(--space-12);
-}
-
-.bottom-left-section {
-    margin-right: var(--space-5);
-}
-
-.side-bar {
-    border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
-    padding: var(--space-2);
-    margin-top: var(--space-5);
+    gap: var(--space-2);
+    height: 220px;
+    border-radius: var(--radius-xl);
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-500);
     font-weight: var(--font-semibold);
-    color: var(--color-gray-600);
-    max-width: 365px;
 }
 
-.bottom-border {
-    padding: var(--space-5);
+.restaurant-gallery-empty i {
+    font-size: var(--text-4xl);
 }
 
-.website-link {
-    padding-left: var(--space-2);
-}
-
-a {
-    color: var(--color-gray-700);
+.restaurant-gallery button.restaurant-gallery-all {
+    position: absolute;
+    right: var(--space-4);
+    bottom: var(--space-4);
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
     font-weight: var(--font-bold);
-    font-size: var(--text-base);
+    color: var(--color-gray-800);
+    background-color: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+    border-radius: 999px;
+    box-shadow: var(--shadow-base);
 }
 
-.single-page-container {
+.restaurant-gallery button.restaurant-gallery-all:hover {
+    background-color: white;
+    border-color: rgba(0, 0, 0, 0.15);
+}
+
+/* ---------- header ---------- */
+
+.restaurant-header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: var(--space-6);
+    padding: var(--space-8) 0 var(--space-6);
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.restaurant-heading {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    margin-bottom: var(--space-16);
+    gap: var(--space-2);
+    min-width: 0;
 }
 
+.restaurant-page h1.restaurant-name {
+    margin: 0;
+    font-size: var(--text-4xl);
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-gray-800);
+    overflow-wrap: anywhere;
+}
 
-.amenities {
+.restaurant-rating {
     display: flex;
-    justify-content: space-between;
+    align-items: center;
+    gap: var(--space-2);
     flex-wrap: wrap;
 }
 
+.restaurant-rating .rating-star {
+    display: inline-flex;
+}
 
-.indi-amenity {
-    flex-basis: 40%;
-    margin: var(--space-2);
-    display: flex;
+.restaurant-rating-number {
+    font-size: var(--text-lg);
+    font-weight: var(--font-bold);
+}
+
+.restaurant-page a.restaurant-rating-count {
+    display: inline;
     font-size: var(--text-base);
     font-weight: var(--font-semibold);
-    align-items: center;
+    color: var(--color-gray-600);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
-.indi-amenity .icon_svg {
-    margin: var(--space-1);
+.restaurant-page a.restaurant-rating-count:hover {
+    color: var(--color-primary);
 }
 
-.website-line {
+.restaurant-meta {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    border-bottom: 1px solid rgb(211, 211, 211);
+    gap: var(--space-2);
+    font-size: var(--text-base);
+    color: var(--color-gray-600);
+}
+
+.restaurant-price {
+    font-weight: var(--font-bold);
+    color: var(--color-gray-800);
+}
+
+.restaurant-heading .category-chips {
+    margin: var(--space-1) 0 0;
+}
+
+.open-status.restaurant-header-status {
+    font-size: var(--text-base);
+}
+
+/* Save, Add photo, and for the owner Edit and Delete: one row of outlined
+   buttons, the same height and shape. */
+.restaurant-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    align-items: flex-start;
+    gap: var(--space-2);
+    flex-shrink: 0;
+}
+
+.restaurant-actions button.restaurant-action,
+.restaurant-actions .favorite .favorite-button-labelled {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    min-height: 40px;
+    margin: 0;
+    padding: var(--space-2) var(--space-4);
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-800);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-base);
+    white-space: nowrap;
+}
+
+.restaurant-actions button.restaurant-action:hover {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+}
+
+.restaurant-actions button.restaurant-action i {
+    color: var(--color-gray-600);
+}
+
+.restaurant-actions button.restaurant-action.danger:hover {
+    color: var(--color-primary-dark);
+    border-color: rgba(214, 11, 18, 0.4);
+    background-color: rgba(240, 12, 19, 0.05);
+}
+
+.restaurant-actions button.restaurant-action.danger:hover i {
+    color: var(--color-primary-dark);
+}
+
+/* ---------- body ---------- */
+
+.restaurant-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 340px;
+    grid-template-areas:
+        "details sidebar"
+        "reviews sidebar";
+    column-gap: var(--space-12);
+    align-items: start;
+}
+
+.restaurant-details { grid-area: details; min-width: 0; }
+.restaurant-reviews { grid-area: reviews; min-width: 0; }
+
+.restaurant-sidebar {
+    grid-area: sidebar;
+    /* Stays in view down the page, just under the floating navigation. */
+    position: sticky;
+    top: 110px;
+    padding-top: var(--space-8);
+}
+
+.restaurant-section {
+    padding: var(--space-8) 0;
+    border-bottom: 1px solid var(--color-gray-200);
+}
+
+.restaurant-section:last-child {
+    border-bottom: none;
+}
+
+.restaurant-page .restaurant-section h2 {
+    margin: 0 0 var(--space-5);
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-800);
+}
+
+/* The review link in the header jumps here; the floating bar would sit on
+   top of the heading without this. */
+.restaurant-reviews {
+    scroll-margin-top: 100px;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.restaurant-amenities {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: var(--space-4) var(--space-6);
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.restaurant-amenities li {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-700);
+}
+
+.restaurant-amenity-icon {
+    flex-shrink: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-700);
+    font-size: var(--text-base);
+}
+
+.restaurant-hours .opening-hours {
+    max-width: 440px;
+    font-size: var(--text-base);
+}
+
+.restaurant-hours .opening-hours th,
+.restaurant-hours .opening-hours td {
+    padding: var(--space-2) 0;
+    border-bottom: 1px solid var(--color-gray-100);
 }
 
 .restaurant-description {
-    font-size: 16px;
-    font-weight: 400;
-    color: rgb(45, 46, 47);
-    line-height: 1.6;
-    margin-top: 20px;
-    max-width: 988px; /* Set a maximum width for the container */
+    margin: 0;
+    font-size: var(--text-base);
+    line-height: var(--leading-relaxed);
+    color: var(--color-gray-700);
     overflow-wrap: break-word;
     /* The description is written in a textarea and stored with its newlines,
        so keep them: without this the browser collapses every line break into
@@ -200,39 +345,162 @@ a {
     white-space: pre-wrap;
 }
 
-.phone-line {
+/* ---------- contact card ---------- */
+
+.restaurant-contact {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-xl);
+    background-color: white;
+    box-shadow: var(--shadow-base);
+    overflow: hidden;
+}
+
+.restaurant-page a.restaurant-contact-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding-right: 0;
-    padding-left: 10px;
-    border-bottom: 1px solid rgb(211, 211, 211);
+    gap: var(--space-4);
+    padding: var(--space-4) var(--space-5);
+    font-size: var(--text-base);
+    font-weight: var(--font-normal);
+    color: var(--color-gray-800);
+    text-decoration: none;
+    border-bottom: 1px solid var(--color-gray-200);
+    transition: background-color 0.15s ease;
 }
 
-.address-line {
+.restaurant-page a.restaurant-contact-row:last-child {
+    border-bottom: none;
+}
+
+.restaurant-page a.restaurant-contact-row:hover {
+    background-color: var(--color-gray-50);
+}
+
+.restaurant-contact-text {
     display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding-right: 0;
-    padding-left: 10px;
-    margin-top: 10px;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
 }
 
-.bottom-left-section {
-    margin-left: 40px;
+.restaurant-contact-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-800);
 }
 
-.map-direction {
-    margin-top: 20px;
+.restaurant-contact-value {
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+    overflow-wrap: anywhere;
 }
 
-.map-link {
-    margin-left: 10px;
+.restaurant-contact-row i {
+    flex-shrink: 0;
+    color: var(--color-gray-600);
+    font-size: var(--text-lg);
 }
 
-.address-icon_svg {
-    position: relative;
-    bottom: 10px;
+.restaurant-page a.restaurant-contact-row:hover i {
+    color: var(--color-primary);
+}
+
+/* ---------- smaller screens ---------- */
+
+@media (max-width: 900px) {
+    .restaurant-page {
+        padding: var(--space-4) var(--space-4) var(--space-12);
+    }
+
+    .restaurant-gallery-grid {
+        height: 320px;
+    }
+
+    .restaurant-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .restaurant-actions {
+        justify-content: flex-start;
+    }
+
+    /* One column: the details, then the contact card, then the reviews. */
+    .restaurant-layout {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-areas:
+            "details"
+            "sidebar"
+            "reviews";
+    }
+
+    .restaurant-sidebar {
+        position: static;
+        padding-top: 0;
+    }
+
+    .restaurant-reviews {
+        margin-top: var(--space-8);
+    }
+}
+
+@media (max-width: 600px) {
+    /* The cover alone; the rest are a tap away under See all photos. */
+    .restaurant-gallery-grid {
+        grid-template-columns: 1fr !important;
+        grid-template-rows: 1fr !important;
+        height: 240px;
+        border-radius: var(--radius-lg);
+    }
+
+    .restaurant-gallery-tile:not(.tile-0) {
+        display: none !important;
+    }
+
+    .restaurant-gallery-grid .tile-0 {
+        grid-row: auto !important;
+    }
+
+    .restaurant-page h1.restaurant-name {
+        font-size: var(--text-3xl);
+    }
+
+    .restaurant-header {
+        padding: var(--space-6) 0 var(--space-5);
+    }
+
+    .restaurant-section {
+        padding: var(--space-6) 0;
+    }
+
+    .restaurant-page .restaurant-section h2 {
+        font-size: var(--text-xl);
+    }
+
+    .restaurant-amenities {
+        grid-template-columns: 1fr;
+    }
+}
+
+/*
+ * Global rules that happen to live here, and that other pages have been
+ * laid out against for years. They are kept exactly as they were: moving or
+ * changing them would restyle every h1 and link in the app, which is a
+ * change of its own.
+ */
+
+h1 {
+    font-size: var(--text-5xl);
+    margin: var(--space-2);
+}
+
+a {
+    color: var(--color-gray-700);
+    font-weight: var(--font-bold);
+    font-size: var(--text-base);
 }
 
 button:hover {
@@ -352,90 +620,4 @@ button:hover {
     background-color: var(--color-primary-dark);
     border-color: var(--color-primary-dark);
     color: white;
-}
-
-/* ---------- responsive ---------- */
-
-@media (max-width: 900px) {
-    .bottom-section {
-        width: 100%;
-        box-sizing: border-box;
-        padding: 0 var(--space-4);
-        gap: var(--space-6);
-    }
-
-    .bottom-left-section {
-        margin-left: 0;
-        margin-right: 0;
-        min-width: 0;
-    }
-
-    .side-bar {
-        max-width: 300px;
-    }
-}
-
-@media (max-width: 600px) {
-    /* Still tall: on a phone the name, stars, price, chips and hours stack
-       up to about 260px over the photo, and the button needs room above. */
-    .photos {
-        height: 380px;
-    }
-
-    .summary-line {
-        margin: var(--space-4);
-        right: 0;
-    }
-
-    .summary-line h1 {
-        font-size: var(--text-3xl);
-        margin: var(--space-1) 0;
-    }
-
-    /* Top right, out of the way of the name and stars along the bottom. */
-    .see-all-photos button {
-        top: var(--space-4);
-        right: var(--space-4);
-        bottom: auto;
-        padding: var(--space-1) var(--space-4);
-        border-width: 2px;
-        font-size: var(--text-sm);
-    }
-
-    /*
-     * One column, with the contact box under the description and ahead of
-     * the reviews rather than after all of them. The two wrappers step aside
-     * (display: contents) so their children line up in this column with the
-     * sidebar, and order puts the reviews last.
-     */
-    .bottom-section {
-        flex-direction: column;
-        gap: 0;
-    }
-
-    .bottom-left-section,
-    .bottom-left-section .restaurant-details {
-        display: contents;
-    }
-
-    .bottom-right-section {
-        order: 1;
-        margin-bottom: var(--space-4);
-    }
-
-    .bottom-section .reviews-container {
-        order: 2;
-    }
-
-    .side-bar {
-        max-width: none;
-    }
-
-    .buttons {
-        margin: var(--space-4) 0;
-    }
-
-    .indi-amenity {
-        flex-basis: 100%;
-    }
 }

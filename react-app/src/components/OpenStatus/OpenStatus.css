@@ -15,8 +15,3 @@
 .open-status-detail {
     color: inherit;
 }
-
-/* On the detail page the line sits with the price and reads a size larger. */
-.open-status.single-restaurant-status .open-now {
-    color: var(--color-success);
-}
