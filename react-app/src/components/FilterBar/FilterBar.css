@@ -47,6 +47,8 @@
 
 .filter-prices {
     display: flex;
+    /* Five pills are about 280px: on a 320px phone they need a second row. */
+    flex-wrap: wrap;
     gap: var(--space-2);
 }
 
