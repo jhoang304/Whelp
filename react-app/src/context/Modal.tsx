@@ -94,7 +94,11 @@ export function Modal(): React.JSX.Element | null {
     <div id="modal">
       <div id="modal-background" onClick={closeModal} />
       <div id="modal-content" ref={contentRef} role="dialog" aria-modal="true" tabIndex={-1}>
-        {modalContent}
+        {/* The scrolling happens in here, not on the rounded box around it:
+            see .modal-scroll in Modal.css. */}
+        <div className="modal-scroll">
+          {modalContent}
+        </div>
       </div>
     </div>,
     modalRef.current as HTMLDivElement

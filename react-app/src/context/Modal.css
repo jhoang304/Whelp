@@ -30,13 +30,43 @@
    * button 270px below the bottom, both out of reach and neither scrollable.
    */
   position: relative;
+  display: flex;
+  flex-direction: column;
   /* Never wider than the window either: a form narrower than its preferred
      width is better than one running off the side of a phone. */
   max-width: 100%;
   max-height: calc(100vh - var(--space-8));
-  overflow-y: auto;
+  /* dvh where it is understood: on a phone, 100vh counts the space behind
+     the address bar, and the bottom of the modal went under it. */
+  max-height: calc(100dvh - var(--space-8));
+  /* Clips; does not scroll. See .modal-scroll. */
+  overflow: hidden;
   background-color:white;
   border-radius: 20px;
+}
+
+/*
+ * Where a modal too tall for the window scrolls.
+ *
+ * Not #modal-content itself: a box does not clip its own scrollbar to its own
+ * rounded corners, so when that scrolled, the scrollbar ran square down its
+ * right edge and the two right corners no longer matched the left. A parent's
+ * rounded clip does cut a child's scrollbar, so the box clips and this
+ * scrolls, and all four corners come out the same.
+ *
+ * A column, so a modal that manages its own scrolling (the restaurant form,
+ * whose middle scrolls between a fixed header and footer) can shrink to fit
+ * with flex: 1 and min-height: 0. Anything else keeps its height and scrolls
+ * here.
+ */
+#modal-content > .modal-scroll {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
 }
 
 /* The dialog itself only takes focus when nothing inside it can, and a red

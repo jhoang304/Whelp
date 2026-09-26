@@ -2,14 +2,18 @@
  * The add and edit restaurant forms: a header, the fields in sections, and
  * a footer that stays put.
  *
- * The header and footer are sticky inside the modal's own scroll box, so the
- * title, Close, Cancel and Save stay where they are while the sections move
- * between them. Every rule names the form, so nothing here leaks into the
- * page, and the global `button` rule (grey, 4px margin) cannot reach in.
+ * The form fills the modal (flex: 1, min-height: 0 inside .modal-scroll) and
+ * only its middle scrolls, so the title, Close, Cancel and Save stay where
+ * they are while the sections move between them -- and the scrollbar runs
+ * between the header and footer, well away from the modal's rounded
+ * corners. Every rule names the form, so nothing here leaks into the page,
+ * and the global `button` rule (grey, 4px margin) cannot reach in.
  */
 .restaurant-form {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
     width: 640px;
     max-width: 100%;
     box-sizing: border-box;
@@ -19,9 +23,7 @@
 /* ---------- header ---------- */
 
 .restaurant-form .restaurant-form-header {
-    position: sticky;
-    top: 0;
-    z-index: 2;
+    flex-shrink: 0;
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
@@ -71,6 +73,11 @@
 .restaurant-form .restaurant-form-body {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
     padding: var(--space-2) var(--space-8) var(--space-6);
 }
 
@@ -255,9 +262,7 @@
 /* ---------- footer ---------- */
 
 .restaurant-form .restaurant-form-footer {
-    position: sticky;
-    bottom: 0;
-    z-index: 2;
+    flex-shrink: 0;
     display: flex;
     justify-content: flex-end;
     gap: var(--space-3);
