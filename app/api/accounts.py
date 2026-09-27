@@ -9,7 +9,7 @@ by "Deleted user": they are part of other businesses' ratings, and an owner's
 reply to one should not end up replying to nothing.
 """
 from app.api.aws_helpers import remove_keys_from_s3
-from app.api.utils import key_still_referenced
+from app.api.utils import key_still_referenced, lock_restaurant, promote_oldest_photo
 from app.models import (
     Favorite, Restaurant, RestaurantImage, Review, ReviewImage, db)
 
@@ -57,6 +57,25 @@ def delete_account(user):
     owned_ids = [restaurant.id for restaurant in owned]
     own_reviews = Review.query.filter_by(user_id=user.id).all()
 
+    # Someone else's restaurant whose cover is this user's photo loses it
+    # below, and needs another photo promoted, as deleting the photo on its
+    # own would do (#107). Lock every restaurant they have a photo on first,
+    # in id order, then read which covers are theirs: a cover chosen while
+    # this runs cannot slip in between the read and the promotion.
+    photographed = sorted(
+        restaurant_id for (restaurant_id,) in db.session.query(RestaurantImage.restaurant_id)
+        .filter(RestaurantImage.createdByUserId == user.id).distinct().all()
+        if restaurant_id not in owned_ids)
+    for restaurant_id in photographed:
+        lock_restaurant(restaurant_id)
+    losing_cover = []
+    if photographed:
+        losing_cover = [restaurant_id for (restaurant_id,) in db.session.query(
+            RestaurantImage.restaurant_id).filter(
+            RestaurantImage.createdByUserId == user.id,
+            RestaurantImage.preview == True,  # noqa: E712 - SQLAlchemy column comparison
+            RestaurantImage.restaurant_id.in_(photographed)).all()]
+
     keys = [user.profile_image_key]
     # Photos they added, to their own restaurants or anyone else's.
     keys += [key for (key,) in db.session.query(RestaurantImage.s3_key).filter(
@@ -94,6 +113,10 @@ def delete_account(user):
     # The account itself. Its photos on other restaurants, its replies to
     # reviews and its saved list cascade from the user.
     db.session.delete(user)
+    db.session.flush()
+
+    for restaurant_id in losing_cover:
+        promote_oldest_photo(restaurant_id)
     db.session.commit()
 
     remove_keys_from_s3(sorted({key for key in keys if key and not key_still_referenced(key)}))
