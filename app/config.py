@@ -1,6 +1,7 @@
 import os
 
 from app.environment import current_environment, is_production
+from app.api.aws_helpers import MAX_UPLOAD_BYTES
 
 
 def _flag(name, default=False):
@@ -52,6 +53,12 @@ class Config:
     #     pip install "flask-limiter[redis]"
     RATELIMIT_ENABLED = _flag("RATELIMIT_ENABLED", default=True)
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
+
+    # No request body may be bigger than an image upload and its multipart
+    # wrapping. Werkzeug enforces it while the body streams in, so it also
+    # stops a chunked upload, which carries no Content-Length to check first
+    # and used to reach the bucket at any size (#110). A larger body is a 413.
+    MAX_CONTENT_LENGTH = MAX_UPLOAD_BYTES + 64 * 1024
 
     # The session cookie is what keeps someone signed in. In production it
     # goes over https only, and not on requests other sites start: Flask's

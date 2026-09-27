@@ -52,14 +52,18 @@ def configure_s3(monkeypatch, acls_disabled=False, public=True):
     return fake
 
 
-CONTENT = b"\x89PNG fake bytes that must survive a retry"
+# A real PNG signature: the route looks at what the bytes are (#110).
+PNG = b"\x89PNG\r\n\x1a\n"
+CONTENT = PNG + b" fake bytes that must survive a retry"
 
 
-def upload(client, filename="photo.png", content=CONTENT):
+def upload(client, filename="photo.png", content=CONTENT, mimetype=None, **kwargs):
+    part = (io.BytesIO(content), filename) if mimetype is None else (io.BytesIO(content), filename, mimetype)
     return client.post(
         "/api/images/upload",
-        data={"image": (io.BytesIO(content), filename)},
+        data={"image": part},
         content_type="multipart/form-data",
+        **kwargs,
     )
 
 
@@ -120,18 +124,147 @@ def test_upload_fails_clearly_when_object_is_not_publicly_readable(client, monke
     assert fake.deleted[0][1] == fake.uploaded[-1]["Key"]
 
 
-def test_upload_reports_other_s3_errors(client, monkeypatch):
+def test_s3_errors_are_logged_not_shown(client, monkeypatch, caplog):
+    """S3's own message named the bucket's configuration to anyone uploading a photo (#110)."""
     fake = configure_s3(monkeypatch)
 
     def failing_put(**kwargs):
         raise botocore.exceptions.ClientError(
-            {"Error": {"Code": "AccessDenied", "Message": "Access Denied"}}, "PutObject")
+            {"Error": {"Code": "InvalidAccessKeyId",
+                       "Message": "The AWS Access Key Id you provided does not exist in our records."}},
+            "PutObject")
 
     fake.put_object = failing_put
     login(client, "reviewer@test.io")
     res = upload(client)
+    assert res.status_code == 502
+    assert res.get_json()["errors"] == [aws_helpers.UPLOAD_FAILED_MESSAGE]
+    assert "InvalidAccessKeyId" in caplog.text, "the real error still reaches the log"
+
+
+SIX_MB = 6 * 1024 * 1024
+
+
+def test_a_chunked_upload_cannot_skip_the_size_limit(client, monkeypatch):
+    """
+    Chunked, the request has no Content-Length, which is all the old check
+    read: a 6 MB file went straight to the bucket (#110). gunicorn marks such
+    input as terminated, and so does this request.
+    """
+    fake = configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    res = upload(client, content=PNG + b"0" * SIX_MB,
+                 headers={"Transfer-Encoding": "chunked"},
+                 environ_overrides={"wsgi.input_terminated": True})
+    assert res.status_code == 413
+    assert res.get_json()["errors"] == ["Images must be smaller than 5 MB."]
+    assert fake.uploaded == []
+
+
+def test_no_route_reads_a_body_past_the_limit(client, ids):
+    """
+    The limit is the app's, not the upload route's: a body past it is refused
+    before any route reads it into memory -- here a review, a route with no
+    size check of its own, which would otherwise read the lot and object to
+    its length.
+    """
+    login(client, "bystander@test.io")
+    res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews",
+                      data=b'{"review": "' + b"x" * SIX_MB + b'", "rating": 5}',
+                      content_type="application/json")
+    assert res.status_code == 413
+    assert res.get_json()["errors"] == ["The data value transmitted exceeds the capacity limit."]
+
+
+def test_a_chunked_body_past_the_limit_is_refused_whatever_it_carries(client, monkeypatch):
+    """
+    A small, valid photo with 6 MB riding along in another part. The route
+    reads only its `image`, so without the body limit this went through: the
+    rest was read and spooled for nothing, at any size.
+    """
+    fake = configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    res = client.post("/api/images/upload",
+                      data={"image": (io.BytesIO(CONTENT), "photo.png"),
+                            "padding": (io.BytesIO(b"0" * SIX_MB), "padding.bin")},
+                      content_type="multipart/form-data",
+                      headers={"Transfer-Encoding": "chunked"},
+                      environ_overrides={"wsgi.input_terminated": True})
+    assert res.status_code == 413
+    assert res.get_json()["errors"] == ["Images must be smaller than 5 MB."]
+    assert fake.uploaded == []
+
+
+def test_a_file_just_over_the_limit_is_refused(client, monkeypatch):
+    """Inside the body's allowance for multipart overhead, but over 5 MB itself."""
+    fake = configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    res = upload(client, content=PNG + b"0" * (aws_helpers.MAX_UPLOAD_BYTES - len(PNG) + 1))
+    assert res.status_code == 413
+    assert res.get_json()["errors"] == ["Images must be smaller than 5 MB."]
+    assert fake.uploaded == []
+
+
+def test_a_file_just_under_the_limit_goes_through(client, monkeypatch):
+    """The old check measured the whole body, so a file just under 5 MB was refused."""
+    fake = configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    res = upload(client, content=PNG + b"0" * (aws_helpers.MAX_UPLOAD_BYTES - len(PNG)))
+    assert res.status_code == 201, res.get_json()
+    assert len(fake.uploaded[0]["Body"]) == aws_helpers.MAX_UPLOAD_BYTES
+
+
+def test_a_page_named_like_a_photo_is_refused(client, monkeypatch):
+    """Stored as text/html in a public bucket, it rendered as a web page on the bucket's domain."""
+    fake = configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    page = b"<html><body><script>alert(document.domain)</script></body></html>"
+    res = upload(client, filename="cute-cat.png", content=page, mimetype="text/html")
     assert res.status_code == 400
-    assert "AccessDenied" in res.get_json()["errors"][0]
+    assert res.get_json()["errors"] == ["That file isn't a PNG, JPG, GIF or WEBP image."]
+    assert fake.uploaded == []
+
+
+def test_the_stored_type_and_extension_come_from_the_bytes(client, monkeypatch):
+    """Not from the filename or the Content-Type the browser sent."""
+    fake = configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    res = upload(client, filename="really-a-png.jpg", mimetype="text/html")
+    assert res.status_code == 201, res.get_json()
+    assert fake.uploaded[0]["ContentType"] == "image/png"
+    assert fake.uploaded[0]["Key"].endswith(".png")
+    assert res.get_json()["url"].endswith(".png")
+
+
+def test_each_kind_of_image_is_recognised():
+    assert aws_helpers.sniff_image(CONTENT) == ("png", "image/png")
+    assert aws_helpers.sniff_image(b"\xff\xd8\xff\xe0 jpeg") == ("jpg", "image/jpeg")
+    assert aws_helpers.sniff_image(b"GIF87a gif") == ("gif", "image/gif")
+    assert aws_helpers.sniff_image(b"GIF89a gif") == ("gif", "image/gif")
+    assert aws_helpers.sniff_image(b"RIFF\x10\x00\x00\x00WEBPVP8 webp") == ("webp", "image/webp")
+    assert aws_helpers.sniff_image(b"RIFF\x10\x00\x00\x00WAVEfmt ") is None
+    assert aws_helpers.sniff_image(b"%PDF-1.7") is None
+    assert aws_helpers.sniff_image(b"") is None
+
+
+def test_uploads_are_rate_limited_per_user(client, monkeypatch):
+    """Every upload lands in a paid bucket."""
+    from app.extensions import limiter
+
+    configure_s3(monkeypatch)
+    login(client, "reviewer@test.io")
+    limiter.enabled = True
+    limiter.reset()
+    try:
+        responses = [upload(client) for _ in range(21)]
+    finally:
+        limiter.reset()
+        limiter.enabled = False
+    assert [res.status_code for res in responses[:20]] == [201] * 20
+    assert responses[20].status_code == 429
+    # In words, not the limit's own "20 per 1 minute".
+    assert responses[20].get_json()["errors"] == [
+        "That's a lot of photos at once. Please wait a few minutes and try again."]
 
 
 def test_upload_rejects_disallowed_extension(client, monkeypatch):

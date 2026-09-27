@@ -10,7 +10,7 @@ three routes the issue names.
 from app.api import aws_helpers
 from app.models import RestaurantImage, ReviewImage, User, db
 from tests.conftest import login
-from tests.test_images import BUCKET_URL, configure_s3
+from tests.test_images import BUCKET_URL, CONTENT, configure_s3
 
 
 def their_upload(user_id, name="private.png"):
@@ -22,7 +22,7 @@ def test_an_upload_gets_a_key_scoped_to_its_uploader(client, ids, monkeypatch):
     fake = configure_s3(monkeypatch)
     login(client, "reviewer@test.io")
 
-    res = client.post("/api/images/upload", data={"image": (__import__("io").BytesIO(b"png"), "x.png")},
+    res = client.post("/api/images/upload", data={"image": (__import__("io").BytesIO(CONTENT), "x.png")},
                       content_type="multipart/form-data")
     assert res.status_code == 201, res.get_json()
 

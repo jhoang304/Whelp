@@ -18,12 +18,45 @@ import os
 import urllib.error
 import urllib.request
 import uuid
+from collections import namedtuple
 
 import boto3
 import botocore
+from flask import current_app
 
 ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
 MAX_UPLOAD_BYTES = 5 * 1024 * 1024  # 5 MB
+
+# What an upload's bytes turn out to be. The type stored with the object, and
+# the key's extension, come from here -- never from the client's filename or
+# Content-Type, which let an HTML page named photo.png be stored as text/html
+# in a public bucket, where it rendered as a web page on the bucket's domain
+# (#110).
+ImageKind = namedtuple("ImageKind", ["extension", "content_type"])
+
+_SIGNATURES = (
+    (b"\x89PNG\r\n\x1a\n", ImageKind("png", "image/png")),
+    (b"\xff\xd8\xff", ImageKind("jpg", "image/jpeg")),
+    (b"GIF87a", ImageKind("gif", "image/gif")),
+    (b"GIF89a", ImageKind("gif", "image/gif")),
+)
+
+
+def sniff_image(data):
+    """The ImageKind these bytes start like, or None when they are not a PNG, JPEG, GIF or WebP."""
+    for signature, kind in _SIGNATURES:
+        if data.startswith(signature):
+            return kind
+    # RIFF, four bytes of length, then WEBP.
+    if data[:4] == b"RIFF" and data[8:12] == b"WEBP":
+        return ImageKind("webp", "image/webp")
+    return None
+
+
+# Shown instead of whatever S3 said, which named the bucket's configuration
+# ("The AWS Access Key Id you provided does not exist in our records") to
+# anyone uploading a photo. The real error goes to the log.
+UPLOAD_FAILED_MESSAGE = "The photo could not be uploaded. Please try again."
 
 NOT_PUBLIC_MESSAGE = (
     "The photo was uploaded, but the bucket does not allow public reads, so it "
@@ -68,7 +101,7 @@ def allowed_file(filename):
 UPLOAD_PREFIX = "uploads"
 
 
-def get_unique_filename(filename, user_id):
+def upload_key(user_id, extension):
     """
     The key this app mints for an upload, scoped to whoever uploaded it.
 
@@ -76,9 +109,10 @@ def get_unique_filename(filename, user_id):
     may only claim a key that names the caller, so attaching a stranger's URL
     records no key and can never delete their object. Keys minted before this
     (a bare uuid) name nobody, which is the safe answer.
+
+    `extension` is the one the bytes were sniffed as, not the filename's.
     """
-    ext = filename.rsplit(".", 1)[1].lower()
-    return f"{UPLOAD_PREFIX}/{user_id}/{uuid.uuid4().hex}.{ext}"
+    return f"{UPLOAD_PREFIX}/{user_id}/{uuid.uuid4().hex}.{extension}"
 
 
 def key_from_url(image_url):
@@ -103,32 +137,29 @@ def key_uploaded_by(image_url, user_id):
     return None
 
 
-def upload_file_to_s3(file, acl="public-read"):
-    """Upload a werkzeug FileStorage to S3 and return {"url": ...} or {"errors": ...}.
+def upload_file_to_s3(key, data, content_type, acl="public-read"):
+    """
+    Put `data` in the bucket at `key`, stored as `content_type`, and return
+    {"url": ...} -- or {"errors": message, "status": code} for the route to
+    answer with.
 
-    The bytes are read once up front and sent with put_object. boto3's
+    Takes bytes, read once up front and sent with put_object: boto3's
     upload_fileobj closes the file object even when the request fails, which
     made the ACL retry below read from a closed file. Uploads are capped at
     MAX_UPLOAD_BYTES, so holding them in memory is fine.
     """
     s = _settings()
     if not s3_configured():
-        return {"errors": "Image uploads are not configured on this server."}
+        return {"errors": "Image uploads are not configured on this server.", "status": 503}
 
-    try:
-        data = file.read()
-    except Exception as e:
-        return {"errors": f"Could not read the uploaded file: {e}"}
-
-    content_type = file.content_type or "application/octet-stream"
-    result = _put_object(s, file.filename, data, content_type, acl)
+    result = _put_object(s, key, data, content_type, acl)
 
     if "url" in result and not _object_is_public(result["url"]):
         # Don't leave an unreadable object behind; tell the owner what to fix.
-        # By key, like every other delete -- file.filename is the key we just
-        # minted, so this needs no url to work backwards from.
-        remove_key_from_s3(file.filename)
-        return {"errors": NOT_PUBLIC_MESSAGE}
+        # By key, like every other delete, so this needs no url to work
+        # backwards from.
+        remove_key_from_s3(key)
+        return {"errors": NOT_PUBLIC_MESSAGE, "status": 400}
 
     return result
 
@@ -151,9 +182,11 @@ def _put_object(s, key, data, content_type, acl):
         # grant public read.
         if acl and e.response.get("Error", {}).get("Code") == "AccessControlListNotSupported":
             return _put_object(s, key, data, content_type, None)
-        return {"errors": str(e)}
-    except Exception as e:
-        return {"errors": str(e)}
+        current_app.logger.exception("S3 refused an upload to %s", key)
+        return {"errors": UPLOAD_FAILED_MESSAGE, "status": 502}
+    except Exception:
+        current_app.logger.exception("Uploading %s to S3 failed", key)
+        return {"errors": UPLOAD_FAILED_MESSAGE, "status": 502}
 
     return {"url": f"{s['location']}{key}"}
 
