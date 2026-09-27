@@ -6,7 +6,7 @@ A save is a private bookmark. Only its owner can read the list, and the
 looking at the same page see their own hearts.
 """
 from app.models import Favorite, Restaurant, User, db
-from tests.conftest import login
+from tests.conftest import login, visit
 from tests.test_query_counts import add_restaurants, counted
 
 
@@ -51,6 +51,7 @@ def test_unsaving_takes_it_off_and_is_safe_to_repeat(client, ids):
 
 
 def test_saving_needs_someone_logged_in(client, ids):
+    visit(client)
     # login_required answers by redirecting to /api/auth/unauthorized (a 401).
     assert save(client, ids["restaurant"]).status_code in (302, 401)
     assert unsave(client, ids["restaurant"]).status_code in (302, 401)

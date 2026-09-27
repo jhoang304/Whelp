@@ -2,6 +2,7 @@ import { AnyAction } from 'redux';
 
 import { Amenity, CategoriesState, Category } from '../types';
 import { AppDispatch } from './index';
+import { apiFetch } from '../utils/api';
 
 /**
  * The closed lists a form or a filter bar offers rather than free text nobody
@@ -39,7 +40,7 @@ const loadAmenities = (amenities: Amenity[]) => ({
  */
 async function listFrom<T>(url: string): Promise<T[] | null> {
     try {
-        const response = await fetch(url);
+        const response = await apiFetch(url);
         if (!response.ok) return null;
         const body = await response.json();
         return Array.isArray(body?.items) ? (body.items as T[]) : null;

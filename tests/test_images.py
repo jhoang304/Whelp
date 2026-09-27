@@ -5,7 +5,7 @@ import botocore.exceptions
 
 from app.api import aws_helpers
 from app.models import Restaurant, RestaurantImage, Review, ReviewImage, db
-from tests.conftest import login
+from tests.conftest import login, visit
 
 
 class FakeS3:
@@ -64,6 +64,7 @@ def upload(client, filename="photo.png", content=CONTENT):
 
 
 def test_upload_requires_login(client):
+    visit(client)
     assert upload(client).status_code in (302, 401)  # Flask-Login redirects to /api/auth/unauthorized
 
 

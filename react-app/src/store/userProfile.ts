@@ -5,6 +5,7 @@ import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { setUser } from './session';
 import { FAVORITE_CHANGED } from './favorites';
+import { apiFetch } from '../utils/api';
 
 const LOAD_PROFILE = 'userProfile/LOAD_PROFILE';
 const CLEAR_PROFILE = 'userProfile/CLEAR_PROFILE';
@@ -24,8 +25,8 @@ export const clearProfile = () => ({ type: CLEAR_PROFILE });
  */
 export const getProfileThunk = (userId: string | number) => async (dispatch: AppDispatch) => {
     const [profileRes, reviewsRes] = await Promise.all([
-        fetch(`/api/users/get/${userId}`),
-        fetch(`/api/reviews/${userId}`),
+        apiFetch(`/api/users/get/${userId}`),
+        apiFetch(`/api/reviews/${userId}`),
     ]);
 
     if (profileRes.ok && reviewsRes.ok) {
@@ -55,7 +56,7 @@ export interface ProfileUpdates {
  * Returns null on success or a list of error messages.
  */
 export const editProfileThunk = (updates: ProfileUpdates, userId: string | number) => async (dispatch: AppDispatch) => {
-    const response = await fetch(`/api/users/${userId}/edit`, {
+    const response = await apiFetch(`/api/users/${userId}/edit`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(updates),

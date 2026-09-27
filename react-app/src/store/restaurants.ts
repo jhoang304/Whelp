@@ -11,6 +11,7 @@ import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { NO_FILTERS, RestaurantFilters, filterParams } from '../utils/filters';
 import { FAVORITE_CHANGED } from './favorites';
+import { apiFetch } from '../utils/api';
 
 /**
  * A list's ids, in the order the API sent them: page 1 replaces them, "Show
@@ -109,7 +110,7 @@ export const getAllRestaurants = (
 
     // With the trailing slash: without it every listing costs a 308 to the
     // rule that has one, and then the request again.
-    const response = await fetch(`/api/restaurants/?${params.toString()}`);
+    const response = await apiFetch(`/api/restaurants/?${params.toString()}`);
     if (response.ok) {
         const body: RestaurantsResponse = await response.json();
         dispatch(loadRestaurants(body, page > 1));
@@ -164,7 +165,7 @@ export const search_restaurants = (
     params.set("per_page", String(PER_PAGE));
 
     try {
-        const response = await fetch(`/api/restaurants/search?${params.toString()}`);
+        const response = await apiFetch(`/api/restaurants/search?${params.toString()}`);
 
         if (response.ok) {
             const data = await response.json();
@@ -231,7 +232,7 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: Ap
 
     let response: Response
     try {
-        response = await fetch(`/api/restaurants/${restaurantId}`)
+        response = await apiFetch(`/api/restaurants/${restaurantId}`)
     } catch (networkError) {
         // fetch rejects, rather than resolving with a status, when the browser
         // is offline or the connection drops. Without this the promise the page
@@ -260,7 +261,7 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: Ap
 //Create a restaurant
 export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () => {
     let createdRestaurantId;
-    const response = await fetch("/api/restaurants/", {
+    const response = await apiFetch("/api/restaurants/", {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -281,7 +282,7 @@ export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () =
         preview:true
     }
 
-    const responseObj = await fetch(`/api/restaurants/${createdRestaurantId}/images`, {
+    const responseObj = await apiFetch(`/api/restaurants/${createdRestaurantId}/images`, {
         method: "POST",
         headers: {
             'Content-Type': 'application/json'
@@ -308,7 +309,7 @@ export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number
 
     let res: Response
     try {
-        res = await fetch(`/api/restaurants/${+id}`, {
+        res = await apiFetch(`/api/restaurants/${+id}`, {
             method: "PUT",
             headers: {
                 'Content-Type': 'application/json'
@@ -338,7 +339,7 @@ export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number
 //Delete a restaurant
 export const deleteRestaurantThunk = (id: number) => async (dispatch: AppDispatch) => {
 
-    const res = await fetch(`/api/restaurants/${id}`, {
+    const res = await apiFetch(`/api/restaurants/${id}`, {
         method: "DELETE"
     })
     if (res.ok) {

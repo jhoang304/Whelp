@@ -8,7 +8,7 @@ Cover photo (`preview`) rules for restaurant images, per issue #23:
 from sqlalchemy import text
 
 from app.models import RestaurantImage, db
-from tests.conftest import login
+from tests.conftest import login, visit
 
 
 def previews(restaurant_id):
@@ -21,6 +21,7 @@ def add_image(client, restaurant_id, url, preview=False):
 
 
 def test_add_photo_requires_login(client, ids):
+    visit(client)
     assert add_image(client, ids["restaurant"], "https://example.com/b.jpg").status_code in (302, 401)
 
 
@@ -123,6 +124,7 @@ def test_only_the_owner_can_promote_a_photo(client, ids):
 
 
 def test_promoting_requires_login_and_an_existing_image(client, ids):
+    visit(client)
     assert client.put(f"/api/restaurant-images/{ids['image']}/cover").status_code in (302, 401)
     login(client, "owner@test.io")
     assert client.put("/api/restaurant-images/9999/cover").status_code == 404

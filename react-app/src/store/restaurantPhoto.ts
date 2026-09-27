@@ -4,6 +4,7 @@ import { AnyAction } from "redux";
 import { PhotosState, RestaurantImage } from "../types";
 import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
+import { apiFetch } from "../utils/api";
 
 export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
 
@@ -15,7 +16,7 @@ export const loadRestaurantImages = (list: RestaurantImage[]) => ({
 })
 
 export const getRestaurantRestaurantImages = (restaurantId: string | number) => async (dispatch: AppDispatch) => {
-    const response = await fetch(`/api/restaurant-images/${restaurantId}/images`)
+    const response = await apiFetch(`/api/restaurant-images/${restaurantId}/images`)
     if (response.ok) {
         const listObj = await response.json()
         dispatch(loadRestaurantImages(listObj))
@@ -27,7 +28,7 @@ export const getRestaurantRestaurantImages = (restaurantId: string | number) => 
 export const addRestaurantImage = (newRestaurantImage: { url: string; preview?: boolean }, restaurantId: string | number) => async (dispatch: AppDispatch) => {
     let response: Response
     try {
-        response = await fetch(`/api/restaurants/${restaurantId}/images`, {
+        response = await apiFetch(`/api/restaurants/${restaurantId}/images`, {
             method: "POST",
             headers: {
                 'Content-Type': 'application/json'
@@ -55,7 +56,7 @@ export const addRestaurantImage = (newRestaurantImage: { url: string; preview?: 
 export const setCoverPhotoThunk = (photoId: string | number, restaurantId: string | number) => async (dispatch: AppDispatch) => {
     let res: Response
     try {
-        res = await fetch(`/api/restaurant-images/${photoId}/cover`, {
+        res = await apiFetch(`/api/restaurant-images/${photoId}/cover`, {
             method: "PUT"
         })
     } catch (networkError) {
@@ -85,7 +86,7 @@ export const deleteRestaurantImage = (photoId: string | number) => ({
 export const deleteRestaurantImageThunk = (photoId: string | number, restaurantId: string | number) => async (dispatch: AppDispatch) => {
     let res: Response
     try {
-        res = await fetch(`/api/restaurant-images/${photoId}`, {
+        res = await apiFetch(`/api/restaurant-images/${photoId}`, {
             method: "DELETE"
         })
     } catch (networkError) {

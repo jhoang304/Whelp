@@ -85,6 +85,24 @@ test("unsaving a saved one sends DELETE", async () => {
   await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/restaurants/7/favorite", { method: "DELETE" }));
 });
 
+test("the save carries the CSRF token the server set (#109)", async () => {
+  // A cross-site form can make the browser send this cookie, but only the
+  // page can read it back into the header, which is what the API checks.
+  document.cookie = "csrf_token=the-token";
+  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
+  render(
+    <Provider store={makeStore() as any}>
+      <FavoriteButton restaurantId={7} name="Nancy's Hustle" isFavorited={false} />
+    </Provider>
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Save Nancy's Hustle" }));
+
+  await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith(
+    "/api/restaurants/7/favorite", { method: "POST", headers: { "X-CSRFToken": "the-token" } }));
+  document.cookie = "csrf_token=; expires=Thu, 01 Jan 1970 00:00:00 GMT";
+});
+
 test("a failure leaves the heart as it was and says why", async () => {
   (global as any).fetch = jest.fn(() => Promise.resolve({
     ok: false, status: 404, json: () => Promise.resolve({ errors: ["Restaurant couldn't be found"] }),

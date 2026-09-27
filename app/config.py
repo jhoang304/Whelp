@@ -53,6 +53,17 @@ class Config:
     RATELIMIT_ENABLED = _flag("RATELIMIT_ENABLED", default=True)
     RATELIMIT_STORAGE_URI = os.environ.get("RATELIMIT_STORAGE_URI", "memory://")
 
+    # The session cookie is what keeps someone signed in. In production it
+    # goes over https only, and not on requests other sites start: Flask's
+    # defaults set neither, so it crossed plain http on a first visit to
+    # http:// (before the redirect) and rode along on cross-site POSTs in
+    # browsers that do not default to Lax (#109). Lax, not Strict: following
+    # a link to Whelp from elsewhere should arrive signed in.
+    SESSION_COOKIE_SECURE = is_production()
+    SESSION_COOKIE_SAMESITE = "Lax"
+    REMEMBER_COOKIE_SECURE = is_production()
+    REMEMBER_COOKIE_SAMESITE = "Lax"
+
     # Echoing every statement is a debugging tool. It used to be on
     # unconditionally, which meant production logged the whole query storm of
     # every page load. Opt in with SQLALCHEMY_ECHO=1, and never in production.

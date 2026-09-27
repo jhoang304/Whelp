@@ -3,6 +3,7 @@ import { AnyAction } from 'redux';
 
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
+import { apiFetch } from '../utils/api';
 
 /** What a review form sends: the API fills in the author and the restaurant. */
 export interface ReviewDraft {
@@ -40,7 +41,7 @@ export const fetchAllReviewsByRestaurantId = (
     sort: ReviewSort = "newest",
     page = 1,
 ) => async (dispatch: AppDispatch) => {
-    const res = await fetch(
+    const res = await apiFetch(
         `/api/restaurants/${restaurantId}/reviews?sort=${sort}&page=${page}&per_page=${REVIEWS_PER_PAGE}`)
     if(res.ok){
         const body: Page<Review> = await res.json();
@@ -59,7 +60,7 @@ const loadUserIdRev = (reviews: Review[]) => ({
 })
 
 export const getAllReviewsByUserId = (user_id: Id) => async (dispatch: AppDispatch) => {
-  const response = await fetch(`/api/reviews/${user_id}`)
+  const response = await apiFetch(`/api/reviews/${user_id}`)
   if(response.ok){
     const data = await response.json()
     await dispatch(loadUserIdRev(data))
@@ -78,7 +79,7 @@ const deleteReview = (reviewId: Id) => {
 }
 
 export const deleteReviewById = (reviewId: Id) => async (dispatch: AppDispatch) => {
-    const res = await fetch(`/api/reviews/${reviewId}`, {
+    const res = await apiFetch(`/api/reviews/${reviewId}`, {
         method:"DELETE"
     })
     if(res.ok){
@@ -106,7 +107,7 @@ export type CreateReviewResult = { review: Review; errors?: undefined } | { revi
 export const createOneReview = (newReview: ReviewDraft, restaurantId: Id) => async (dispatch: AppDispatch): Promise<CreateReviewResult> => {
     let res: Response
     try {
-        res = await fetch(`/api/restaurants/${restaurantId}/reviews`, {
+        res = await apiFetch(`/api/restaurants/${restaurantId}/reviews`, {
             method:"POST",
             headers: {"Content-Type":"application/json"},
             body:JSON.stringify(newReview)
@@ -137,7 +138,7 @@ const updateReview = (review: Review) => {
 export const updateOneReview = (newReview: ReviewDraft, reviewId: Id) => async (dispatch: AppDispatch) => {
     let res: Response
     try {
-        res = await fetch(`/api/reviews/${reviewId}`, {
+        res = await apiFetch(`/api/reviews/${reviewId}`, {
             method: "PUT",
             headers: {"Content-Type":"application/json"},
             body:JSON.stringify(newReview)
@@ -168,7 +169,7 @@ export const MAX_REVIEW_PHOTOS = 10;
 export const attachReviewImage = (reviewId: Id, url: string) => async (): Promise<string[] | null> => {
     let res: Response
     try {
-        res = await fetch(`/api/reviews/${reviewId}/images`, {
+        res = await apiFetch(`/api/reviews/${reviewId}/images`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ url }),
@@ -192,7 +193,7 @@ const removeReviewImage = (reviewId: number, imageId: number) => ({
 export const deleteReviewImage = (reviewId: number, imageId: number) => async (dispatch: AppDispatch): Promise<string[] | null> => {
     let res: Response
     try {
-        res = await fetch(`/api/review-images/${imageId}`, { method: "DELETE" })
+        res = await apiFetch(`/api/review-images/${imageId}`, { method: "DELETE" })
     } catch (networkError) {
         return [NETWORK_ERROR]
     }
@@ -222,7 +223,7 @@ const removeReviewResponse = (reviewId: number) => ({
 
 /** Post the owner's reply. Returns null on success or a list of error messages. */
 export const createReviewResponse = (reviewId: number, response: string) => async (dispatch: AppDispatch) => {
-    const res = await fetch(`/api/reviews/${reviewId}/response`, {
+    const res = await apiFetch(`/api/reviews/${reviewId}/response`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ response }),
@@ -236,7 +237,7 @@ export const createReviewResponse = (reviewId: number, response: string) => asyn
 
 /** Edit the owner's reply. Returns null on success or a list of error messages. */
 export const updateReviewResponse = (reviewId: number, response: string) => async (dispatch: AppDispatch) => {
-    const res = await fetch(`/api/reviews/${reviewId}/response`, {
+    const res = await apiFetch(`/api/reviews/${reviewId}/response`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ response }),
@@ -250,7 +251,7 @@ export const updateReviewResponse = (reviewId: number, response: string) => asyn
 
 /** Remove the owner's reply. Returns null on success or a list of error messages. */
 export const deleteReviewResponse = (reviewId: number) => async (dispatch: AppDispatch) => {
-    const res = await fetch(`/api/reviews/${reviewId}/response`, { method: "DELETE" })
+    const res = await apiFetch(`/api/reviews/${reviewId}/response`, { method: "DELETE" })
     if (res.ok) {
         dispatch(removeReviewResponse(reviewId))
         return null

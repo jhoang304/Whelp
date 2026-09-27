@@ -103,12 +103,19 @@ def test_signup_without_a_csrf_cookie_is_a_400(app):
     assert any("csrf" in message.lower() for message in res.get_json()["errors"])
 
 
-def test_login_without_a_csrf_cookie_is_refused_not_crashed(app):
-    """Login answers 401 for every rejected attempt, rather than telling an
-    unauthenticated caller which half of the request it disliked."""
+def test_login_without_a_csrf_token_is_refused_not_crashed(app):
+    """
+    It used to KeyError on the missing cookie (#28). Now the token is checked
+    before the route runs (#109), so a login with no token is refused before
+    the credentials are read -- and the refusal says nothing about them, so it
+    tells a caller nothing about which accounts exist.
+    """
     fresh = app.test_client()
     res = fresh.post("/api/auth/login", json={"email": "owner@test.io", "password": "password"})
-    assert res.status_code == 401
+    assert res.status_code == 400
+    [message] = res.get_json()["errors"]
+    assert "csrf" in message.lower()
+    assert "email" not in message.lower() and "password" not in message.lower()
 
 
 def test_editing_without_a_csrf_cookie_is_a_400(client, ids):

@@ -1,4 +1,5 @@
 import { parseErrors } from "./parseErrors";
+import { apiFetch } from "./api";
 
 export interface UploadResult {
   url?: string;
@@ -23,7 +24,7 @@ export async function uploadImage(file: File): Promise<UploadResult> {
 
   try {
     // No Content-Type header: the browser sets the multipart boundary itself.
-    const response = await fetch("/api/images/upload", { method: "POST", body });
+    const response = await apiFetch("/api/images/upload", { method: "POST", body });
     if (response.ok) {
       const data = await response.json().catch(() => ({}));
       if (data.url) return { url: data.url };
