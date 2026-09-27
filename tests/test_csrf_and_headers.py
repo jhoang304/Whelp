@@ -95,7 +95,10 @@ def test_production_sends_the_cookies_over_https_only(monkeypatch):
 
 
 def test_every_response_carries_the_security_headers(client):
-    for path in ("/api/auth/", "/api/restaurants/", "/", "/single/1"):
+    # A page, a refusal and a miss. Not the React routes: they serve the
+    # built index.html, which the backend CI job never builds. The headers
+    # come from one after_request hook, so any response shows them.
+    for path in ("/api/restaurants/", "/api/auth/", "/api/no-such-thing"):
         res = client.get(path)
         assert res.headers["X-Content-Type-Options"] == "nosniff", path
         assert res.headers["X-Frame-Options"] == "DENY", path
