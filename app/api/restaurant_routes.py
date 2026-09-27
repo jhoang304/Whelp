@@ -381,6 +381,20 @@ def delete_restaurant(restaurantId):
 
 
 # Search Restaurants
+@restaurant_routes.route("/search")
+def search_restaurants_by_query():
+    """
+    GET /api/restaurants/search?q=... -- the keyword as a query parameter.
+
+    In the path it could not hold a "/": the server decodes %2F before
+    routing, so "24/7 Diner" was a 404 (#108). A query string is decoded
+    once and carries anything.
+    """
+    return search_restaurant(request.args.get("q", ""))
+
+
+# The keyword-in-the-path form, kept for a browser still running the
+# previous bundle while a deploy lands. Nothing in the current app calls it.
 @restaurant_routes.route("/search/<keyword>")
 def search_restaurant(keyword):
     """

@@ -157,14 +157,14 @@ export const search_restaurants = (
 
     dispatch(searchLoading());
 
-    const params = filterParams(filters);
+    // The keyword as a query parameter: in the path, a "/" in it was a 404.
+    const params = new URLSearchParams({ q: keyword.trim() });
+    filterParams(filters).forEach((value, name) => params.append(name, value));
     params.set("page", String(page));
     params.set("per_page", String(PER_PAGE));
 
     try {
-        const response = await fetch(
-            `/api/restaurants/search/${encodeURIComponent(keyword.trim())}`
-            + `?${params.toString()}`);
+        const response = await fetch(`/api/restaurants/search?${params.toString()}`);
 
         if (response.ok) {
             const data = await response.json();

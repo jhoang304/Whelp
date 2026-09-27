@@ -1,18 +1,15 @@
 import React, { useState } from 'react';
 import { useHistory } from "react-router-dom";
-import { search_restaurants } from '../../store/restaurants';
-import { useAppDispatch } from "../../store";
+import { searchLocation } from "../../utils/filters";
 
 function SearchBar(): React.JSX.Element {
-    const dispatch = useAppDispatch();
     const history = useHistory();
     const [keyword, setKeyword] = useState<string>("");
     const [isFocused, setIsFocused] = useState<boolean>(false);
-    const [isSearching, setIsSearching] = useState<boolean>(false);
 
-    const handleSearch = async (e: React.FormEvent<HTMLFormElement>) => {
+    const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
-      
+
       const trimmedKeyword = keyword.trim();
       // Nothing typed: the search icon is the way to every restaurant, now
       // that the bar has no separate Restaurants link.
@@ -21,19 +18,11 @@ function SearchBar(): React.JSX.Element {
         return;
       }
 
-      setIsSearching(true);
-      
-      try {
-        const response = await dispatch(search_restaurants(trimmedKeyword));
-        if (response) {
-          history.push(`/search/${encodeURIComponent(trimmedKeyword)}`);
-        }
-        setKeyword("");
-      } catch (error) {
-        console.error('Search failed:', error);
-      } finally {
-        setIsSearching(false);
-      }
+      // Just go there: the results page runs the search. Running it here
+      // first as well sent every search twice, and a failed one emptied the
+      // box and put its error on whatever results page was already open.
+      history.push(searchLocation(trimmedKeyword));
+      setKeyword("");
     };
 
     const handleKeywordChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -59,20 +48,14 @@ function SearchBar(): React.JSX.Element {
               onFocus={() => setIsFocused(true)}
               onBlur={() => setIsFocused(false)}
               maxLength={100}
-              disabled={isSearching}
             />
             <button
               type="submit"
               className="search-button"
               aria-label={browsing ? "Browse all restaurants" : "Search"}
               title={browsing ? "Browse all restaurants" : "Search"}
-              disabled={isSearching}
             >
-              {isSearching ? (
-                <i className="fa-solid fa-spinner fa-spin"></i>
-              ) : (
-                <i className="fa-solid fa-magnifying-glass"></i>
-              )}
+              <i className="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
             </button>
           </form>
         </div>

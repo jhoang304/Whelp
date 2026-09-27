@@ -1,7 +1,22 @@
+from app.models import Restaurant, db
+
+
 def search(client, keyword):
-    res = client.get(f"/api/restaurants/search/{keyword}")
+    # The query string, as the app sends it: `query_string` encodes the value
+    # once, the way URLSearchParams does in the browser.
+    res = client.get("/api/restaurants/search", query_string={"q": keyword})
     assert res.status_code == 200, res.get_json()
     return res.get_json()["items"]
+
+
+def add_restaurant(owner_id, name):
+    restaurant = Restaurant(
+        user_id=owner_id, name=name, price="$", address="2 Side St", city="Austin", state="TX",
+        zipcode="78701", country="USA", phone_number="(555) 000-0000",
+        website="http://extra.com", description="Somewhere else.")
+    db.session.add(restaurant)
+    db.session.commit()
+    return restaurant.id
 
 
 def test_search_matches_a_name(client, ids):
@@ -35,9 +50,31 @@ def test_search_with_no_matches_is_an_empty_list(client):
 
 
 def test_a_blank_keyword_is_rejected(client):
-    res = client.get("/api/restaurants/search/%20")
-    assert res.status_code == 400
-    assert res.get_json()["errors"] == ["Search keyword cannot be empty"]
+    for query in ({"q": " "}, {"q": ""}, {}):
+        res = client.get("/api/restaurants/search", query_string=query)
+        assert res.status_code == 400, query
+        assert res.get_json()["errors"] == ["Search keyword cannot be empty"]
+
+
+def test_a_keyword_can_hold_a_slash(client, ids):
+    """In the path, the server decoded %2F before routing and answered 404 (#108)."""
+    diner = add_restaurant(ids["owner"], "24/7 Diner")
+    assert [restaurant["id"] for restaurant in search(client, "24/7")] == [diner]
+
+
+def test_a_keyword_can_hold_an_ampersand_or_a_plus(client, ids):
+    grill = add_restaurant(ids["owner"], "Bar & Grill")
+    plus = add_restaurant(ids["owner"], "C++ Cafe")
+    assert [restaurant["id"] for restaurant in search(client, "bar & grill")] == [grill]
+    assert [restaurant["id"] for restaurant in search(client, "c++")] == [plus]
+
+
+def test_the_keyword_in_the_path_still_answers(client, ids):
+    """For a tab still running the previous bundle while a deploy lands."""
+    res = client.get("/api/restaurants/search/bistro")
+    assert res.status_code == 200
+    assert [restaurant["id"] for restaurant in res.get_json()["items"]] == [ids["restaurant"]]
+    assert client.get("/api/restaurants/search/%20").status_code == 400
 
 
 def test_search_results_carry_ratings_and_preview(client):

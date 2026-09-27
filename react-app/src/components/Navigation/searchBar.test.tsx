@@ -5,14 +5,13 @@ import thunk from "redux-thunk";
 import { MemoryRouter, Route } from "react-router-dom";
 import restaurantsReducer from "../../store/restaurants";
 import Navigation from "./index";
+import { readKeyword } from "../../utils/filters";
 
 /**
  * The bar has no Restaurants link: the search button is the way to every
- * restaurant. With nothing typed it browses them all; with a word, it
- * searches for it.
+ * restaurant. With nothing typed it browses them all; with a word, it goes
+ * to that word's results -- and leaves the searching to the results page.
  */
-
-const okJson = (body: any) => ({ ok: true, status: 200, json: () => Promise.resolve(body) });
 
 function renderBar() {
   const store = createStore(
@@ -24,7 +23,7 @@ function renderBar() {
       <MemoryRouter initialEntries={["/single/7"]}>
         <Navigation />
         <Route path="/restaurants">Every restaurant</Route>
-        <Route path="/search/:keyword" render={({ match }) => `Results for ${match.params.keyword}`} />
+        <Route path="/search" render={({ location }) => `Results for ${readKeyword(location.search)}`} />
       </MemoryRouter>
     </Provider>
   );
@@ -61,16 +60,27 @@ test("only spaces count as nothing typed", () => {
   expect(screen.getByText("Every restaurant")).toBeInTheDocument();
 });
 
-test("with a word typed, the same button searches for it", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ items: [], total: 0, page: 1, pages: 0 })));
+test("with a word typed, the same button goes to its results", async () => {
+  (global as any).fetch = jest.fn();
   renderBar();
   fireEvent.change(input(), { target: { value: "tacos" } });
 
   fireEvent.click(screen.getByRole("button", { name: "Search" }));
 
   expect(await screen.findByText("Results for tacos")).toBeInTheDocument();
-  expect((global as any).fetch.mock.calls[0][0]).toMatch(/^\/api\/restaurants\/search\/tacos\?/);
   expect(screen.queryByText("Every restaurant")).not.toBeInTheDocument();
+  // The results page runs the search. The bar running it too sent every
+  // search twice, and a failed one emptied the page already open (#108).
+  expect((global as any).fetch).not.toHaveBeenCalled();
+});
+
+test("a keyword with % & / + in it arrives at its results intact", async () => {
+  renderBar();
+  fireEvent.change(input(), { target: { value: "100% beef & 24/7 c++" } });
+
+  fireEvent.click(screen.getByRole("button", { name: "Search" }));
+
+  expect(await screen.findByText("Results for 100% beef & 24/7 c++")).toBeInTheDocument();
 });
 
 test("Enter in the empty box browses too", async () => {

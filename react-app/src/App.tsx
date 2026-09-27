@@ -11,7 +11,7 @@ import CreateNewReview from "./components/Reviews/CreateNewReview";
 import UpdateReview from "./components/Reviews/UpdateReview";
 import UserProfilePage from "./components/UserPage";
 import Footer from "./components/Footer";
-import RestaurantBySearch from "./components/SearchBar";
+import RestaurantBySearch, { LegacySearchRedirect } from "./components/SearchBar";
 import HomePage from "./components/HomePage";
 import AccountSettings from "./components/AccountSettings";
 
@@ -41,8 +41,11 @@ function App(): React.JSX.Element {
             <Route exact path="/signup">
               <SignupFormPage />
             </Route>
-            <Route path="/search/:keyword" >
+            <Route exact path="/search">
               <RestaurantBySearch />
+            </Route>
+            <Route path="/search/:keyword">
+              <LegacySearchRedirect />
             </Route>
             <Route exact path="/">
               <HomePage />
