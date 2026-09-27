@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useParams, useHistory, useLocation } from "react-router-dom";
-import { search_restaurants } from '../../store/restaurants';
+import { inOrder, search_restaurants } from '../../store/restaurants';
 import RestaurantListEntry from '../RestaurantListEntry';
 import FilterBar from '../FilterBar';
 import { useAppDispatch, useAppSelector } from "../../store";
@@ -51,10 +51,11 @@ function RestaurantBySearch(): React.JSX.Element {
         performSearch();
     }, [dispatch, keyword, history, filters, attempt]);
 
-    const restaurant = useAppSelector((state) =>
-        state.Restaurants.searchedRestaurants || {}
-    );
-    const restaurantArr = Object.values(restaurant);
+    const byId = useAppSelector((state) => state.Restaurants.searchedRestaurants);
+    const ids = useAppSelector((state) => state.Restaurants.searchedIds);
+    // Most relevant first, or in the chosen sort: the map on its own lists
+    // them by id.
+    const restaurantArr = useMemo(() => inOrder(byId, ids), [byId, ids]);
     const total = useAppSelector((state) => state.Restaurants.totalSearched ?? 0);
     const loadedPage = useAppSelector((state) => state.Restaurants.searchedPage ?? 1);
     // A filter the API refused reads as "no results" unless it is shown.

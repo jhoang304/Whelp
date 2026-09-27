@@ -12,6 +12,35 @@ import { parseErrors } from '../utils/parseErrors';
 import { NO_FILTERS, RestaurantFilters, filterParams } from '../utils/filters';
 import { FAVORITE_CHANGED } from './favorites';
 
+/**
+ * A list's ids, in the order the API sent them: page 1 replaces them, "Show
+ * more" adds the new page's after them. A restaurant already listed keeps its
+ * first place -- something saved or edited between pages can shift the rest
+ * down one, and it would otherwise appear twice.
+ */
+const orderedIds = (previous: number[] | undefined, page: Restaurant[], append: boolean): number[] => {
+    const ids = append ? [...(previous ?? [])] : [];
+    const seen = new Set(ids);
+    page.forEach(({ id }) => {
+        if (!seen.has(id)) {
+            seen.add(id);
+            ids.push(id);
+        }
+    });
+    return ids;
+};
+
+/**
+ * A list's restaurants in the order the API sorted them. The map alone cannot
+ * say: JavaScript walks integer keys in ascending order whatever order they
+ * went in, so `Object.values` listed every page by id and threw away Highest
+ * rated, Most reviewed, Newest and search's relevance.
+ */
+export const inOrder = (
+    byId: { [key: number]: Restaurant } | undefined, ids: number[] | undefined,
+): Restaurant[] =>
+    (ids ?? []).map((id) => byId?.[id]).filter((restaurant): restaurant is Restaurant => !!restaurant);
+
 /** The same map with one restaurant's flag changed, if it is in there. */
 const withFlag = (
     map: { [key: number]: Restaurant } | undefined, id: number, isFavorited: boolean,
@@ -337,6 +366,7 @@ export default function restaurantsReducer(
             return {
                 ...state,
                 allRestaurants: loaded,
+                allRestaurantIds: orderedIds(state.allRestaurantIds, action.allRestaurants, action.append),
                 totalRestaurants: action.total,
                 loadedPage: action.page,
                 listError: null
@@ -369,7 +399,8 @@ export default function restaurantsReducer(
                 ...state,
                 searchLoading: false,
                 searchError: action.error,
-                searchedRestaurants: {}
+                searchedRestaurants: {},
+                searchedIds: []
             };
         case SEARCH_RESTAURANTS: {
             const found: { [key: number]: Restaurant } = action.append
@@ -381,6 +412,7 @@ export default function restaurantsReducer(
             return {
                 ...state,
                 searchedRestaurants: found,
+                searchedIds: orderedIds(state.searchedIds, action.restaurants.items, action.append),
                 totalSearched: action.restaurants.total,
                 searchedPage: action.restaurants.page,
                 searchLoading: false,
@@ -396,6 +428,7 @@ export default function restaurantsReducer(
             return {
                 ...state,
                 searchedRestaurants: {},
+                searchedIds: [],
                 searchLoading: false,
                 searchError: null
             };

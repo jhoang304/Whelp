@@ -3,16 +3,15 @@ import { useHistory, useLocation } from "react-router-dom"
 import "./RestaurantList.css"
 import RestaurantListEntry from "../RestaurantListEntry";
 import FilterBar from "../FilterBar";
-import { getAllRestaurants } from "../../store/restaurants";
+import { getAllRestaurants, inOrder } from "../../store/restaurants";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { NO_FILTERS, RestaurantFilters, filterSearch, isFiltered, readFilters } from "../../utils/filters";
 
 function RestaurantList(): React.JSX.Element {
-    const allRestaurantObj = useAppSelector((state) => {
-        return state.Restaurants.allRestaurants
-    });
-
-    const allRestaurants = allRestaurantObj ? Object.values(allRestaurantObj) : [];
+    const byId = useAppSelector((state) => state.Restaurants.allRestaurants);
+    const ids = useAppSelector((state) => state.Restaurants.allRestaurantIds);
+    // In the order the API sorted them: the map on its own lists them by id.
+    const allRestaurants = useMemo(() => inOrder(byId, ids), [byId, ids]);
 
     const total = useAppSelector((state) => state.Restaurants.totalRestaurants ?? 0);
     const loadedPage = useAppSelector((state) => state.Restaurants.loadedPage ?? 1);

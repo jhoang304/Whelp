@@ -156,6 +156,18 @@ def test_sort_by_newest_reads_created_at_not_the_id(client, ids):
         "Just Opened", "Test Bistro", "Old Timer"]
 
 
+def test_sort_by_newest_breaks_a_tie_with_the_later_restaurant(client, ids):
+    """createdAt is to the second: a batch created together -- the seeds -- ties."""
+    same_second = datetime(2024, 1, 1, 12, 0, 0)
+    db.session.get(Restaurant, ids["restaurant"]).createdAt = same_second
+    db.session.commit()
+    add_restaurant(ids["owner"], "Second In", created=same_second)
+    add_restaurant(ids["owner"], "Third In", created=same_second)
+
+    assert names(client.get("/api/restaurants/?sort=newest")) == [
+        "Third In", "Second In", "Test Bistro"]
+
+
 def test_filters_combine(client, ids):
     add_categories(("Pizza", "pizza"))
     add_restaurant(ids["owner"], "Cheap Slice", price="$", categories=["pizza"], ratings=(5,))
