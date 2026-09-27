@@ -19,7 +19,7 @@ from sqlalchemy import create_engine, text
 from app.models import (
     Favorite, Restaurant, RestaurantHours, RestaurantImage, Review, ReviewImage,
     ReviewResponse, User, db)
-from tests.conftest import login
+from tests.conftest import login, visit
 from tests.test_images import configure_s3
 
 
@@ -93,6 +93,7 @@ def test_nobody_changes_anyone_elses_password(client, ids):
 
 
 def test_changing_a_password_needs_someone_logged_in(client, ids):
+    visit(client)
     assert change_password(client, ids["bystander"], "password", "a-new-password").status_code in (302, 401)
 
 

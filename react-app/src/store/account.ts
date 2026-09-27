@@ -1,6 +1,7 @@
 import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
 import { removeUser } from "./session";
+import { apiFetch } from "../utils/api";
 
 const UNREACHABLE = "Couldn't reach the server. Please try again.";
 
@@ -16,7 +17,7 @@ export interface DeletionSummary {
 }
 
 const sendJson = (url: string, method: string, body: object) =>
-    fetch(url, {
+    apiFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -45,7 +46,7 @@ export const fetchDeletionSummary = (userId: number) =>
     async (): Promise<SummaryResult> => {
         let response: Response;
         try {
-            response = await fetch(`/api/users/${userId}/deletion`);
+            response = await apiFetch(`/api/users/${userId}/deletion`);
         } catch {
             return { errors: [UNREACHABLE] };
         }

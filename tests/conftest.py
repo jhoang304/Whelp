@@ -24,6 +24,8 @@ for var in ("S3_BUCKET", "S3_KEY", "S3_SECRET"):
 import logging  # noqa: E402
 
 import pytest  # noqa: E402
+from flask.testing import FlaskClient  # noqa: E402
+from werkzeug.datastructures import Headers  # noqa: E402
 
 from app import app as flask_app  # noqa: E402
 from app.extensions import limiter  # noqa: E402
@@ -38,6 +40,29 @@ limiter.enabled = False
 for _logger_name in ("sqlalchemy.engine", "sqlalchemy.engine.Engine"):
     logging.getLogger(_logger_name).setLevel(logging.WARNING)
     logging.getLogger(_logger_name).handlers.clear()
+
+
+class PageClient(FlaskClient):
+    """
+    A test client that behaves like the app's pages: every request that
+    changes something sends the CSRF cookie back as the X-CSRFToken header,
+    as `react-app/src/utils/csrf.ts` does (#109). Without the cookie -- no
+    GET yet, or a test that deleted it -- nothing is added, and the request
+    is refused the way a forged one is.
+    """
+
+    def open(self, *args, **kwargs):
+        method = str(kwargs.get("method", "GET")).upper()
+        if method not in ("GET", "HEAD", "OPTIONS", "TRACE"):
+            cookie = self.get_cookie("csrf_token")
+            headers = Headers(kwargs.pop("headers", None) or {})
+            if cookie is not None and "X-CSRFToken" not in headers:
+                headers["X-CSRFToken"] = cookie.value
+            kwargs["headers"] = headers
+        return super().open(*args, **kwargs)
+
+
+flask_app.test_client_class = PageClient
 
 
 @pytest.fixture()
@@ -91,6 +116,15 @@ def ids(app):
         "review": Review.query.one().id,
         "image": RestaurantImage.query.one().id,
     }
+
+
+def visit(client):
+    """
+    Be a signed-out visitor who has a page open. Every response sets the CSRF
+    cookie, so they hold one: what refuses them afterwards is the login check,
+    not the CSRF one.
+    """
+    client.get("/api/auth/")
 
 
 def login(client, email, password="password"):

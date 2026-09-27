@@ -1,4 +1,4 @@
-from tests.conftest import login
+from tests.conftest import login, visit
 
 
 def respond(client, review_id, text="Thanks for visiting!"):
@@ -27,6 +27,7 @@ def test_non_owner_cannot_respond(client, ids):
 
 
 def test_response_requires_login_and_existing_review(client, ids):
+    visit(client)
     assert respond(client, ids["review"]).status_code in (302, 401)  # redirect to /api/auth/unauthorized
     login(client, "owner@test.io")
     assert respond(client, 9999).status_code == 404

@@ -71,14 +71,49 @@ def https_redirect():
             return redirect(url, code=code)
 
 
+# Every POST, PUT, PATCH and DELETE must carry the CSRF token in an
+# X-CSRFToken header (or a csrf_token form field), checked before the route
+# runs. It used to be checked only inside routes that validate a FlaskForm,
+# by copying the token out of the request's own cookie -- which a browser
+# attaches to a forged request too, so the only defence was that cookie's
+# SameSite, and routes with no form (favorites, every delete, set cover)
+# were not checked at all (#109). A page on another origin cannot read the
+# cookie to fill in the header, nor send a custom header without a CORS
+# preflight this app never answers.
+CSRFProtect(app)
+
+
 @app.after_request
 def inject_csrf_token(response):
+    # Readable by the page, which sends it back as X-CSRFToken (the
+    # double-submit pattern): only a script on this origin can read it.
     response.set_cookie(
         'csrf_token',
         generate_csrf(),
         secure=is_production(),
         samesite='Strict' if is_production() else None,
-        httponly=True)
+        httponly=False)
+    return response
+
+
+# Headers every response carries. HSTS only in production, where the site
+# is https: a browser that has seen it goes straight to https afterwards,
+# rather than sending a first request over http for the redirect.
+SECURITY_HEADERS = {
+    'X-Content-Type-Options': 'nosniff',
+    # Nobody frames Whelp: a framed Account settings page is a clickjack.
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'strict-origin-when-cross-origin',
+}
+
+
+@app.after_request
+def add_security_headers(response):
+    for name, value in SECURITY_HEADERS.items():
+        response.headers.setdefault(name, value)
+    if is_production():
+        response.headers.setdefault(
+            'Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     return response
 
 

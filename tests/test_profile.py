@@ -1,4 +1,4 @@
-from tests.conftest import login
+from tests.conftest import login, visit
 
 
 def test_public_profile_includes_businesses_and_counts(client, ids):
@@ -26,6 +26,7 @@ def test_missing_profile_is_404(client):
 
 
 def test_edit_profile_requires_login(client, ids):
+    visit(client)
     res = client.put(f"/api/users/{ids['owner']}/edit", json={"username": "x"})
     assert res.status_code in (302, 401)  # Flask-Login redirects to /api/auth/unauthorized
 

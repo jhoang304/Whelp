@@ -3,6 +3,7 @@ import { AnyAction } from "redux";
 import { SessionState, User } from "../types";
 import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
+import { apiFetch } from "../utils/api";
 
 // constants
 const SET_USER = "session/SET_USER";
@@ -20,7 +21,7 @@ export const removeUser = () => ({
 const initialState = { user: null };
 
 export const authenticate = () => async (dispatch: AppDispatch) => {
-	const response = await fetch("/api/auth/", {
+	const response = await apiFetch("/api/auth/", {
 		headers: {
 			"Content-Type": "application/json",
 		},
@@ -31,7 +32,7 @@ export const authenticate = () => async (dispatch: AppDispatch) => {
 };
 
 export const login = (email: string, password: string) => async (dispatch: AppDispatch) => {
-	const response = await fetch("/api/auth/login", {
+	const response = await apiFetch("/api/auth/login", {
 		method: "POST",
 		headers: {
 			"Content-Type": "application/json",
@@ -51,7 +52,7 @@ export const login = (email: string, password: string) => async (dispatch: AppDi
 };
 
 export const logout = () => async (dispatch: AppDispatch) => {
-	const response = await fetch("/api/auth/logout", {
+	const response = await apiFetch("/api/auth/logout", {
 		headers: {
 			"Content-Type": "application/json",
 		},
@@ -64,7 +65,7 @@ export const logout = () => async (dispatch: AppDispatch) => {
 
 
 export const signUp = (username: string, email: string, first_name: string, last_name: string, password: string) => async (dispatch: AppDispatch) => {
-	const response = await fetch("/api/auth/signup", {
+	const response = await apiFetch("/api/auth/signup", {
 	  method: "POST",
 	  headers: {
 		"Content-Type": "application/json",

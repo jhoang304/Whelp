@@ -1,6 +1,7 @@
 import { FavoriteChangedAction, Page, Restaurant } from "../types";
 import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
+import { apiFetch } from "../utils/api";
 
 export const FAVORITE_CHANGED = "favorites/changed" as const;
 
@@ -25,7 +26,7 @@ export const setFavorite = (restaurantId: number, save: boolean, wasFavorited: b
     async (dispatch: AppDispatch): Promise<string[] | null> => {
         let response: Response;
         try {
-            response = await fetch(`/api/restaurants/${restaurantId}/favorite`, {
+            response = await apiFetch(`/api/restaurants/${restaurantId}/favorite`, {
                 method: save ? "POST" : "DELETE",
             });
         } catch {
@@ -56,7 +57,7 @@ export const fetchFavorites = (userId: number, page = 1) =>
     async (): Promise<FavoritesResult> => {
         let response: Response;
         try {
-            response = await fetch(`/api/users/${userId}/favorites?page=${page}&per_page=${SAVED_PER_PAGE}`);
+            response = await apiFetch(`/api/users/${userId}/favorites?page=${page}&per_page=${SAVED_PER_PAGE}`);
         } catch {
             return { errors: ["Couldn't reach the server. Please try again."] };
         }

@@ -6,7 +6,7 @@ The rest of the suite reaches these routes only through conftest's `login`,
 which asserts success -- so every refusal path was untested.
 """
 from app.models import Restaurant, User, db
-from tests.conftest import login
+from tests.conftest import login, visit
 
 
 def signup_body(**overrides):
@@ -105,6 +105,7 @@ def test_signup_refuses_an_address_that_is_not_one(client):
 
 def test_creating_a_restaurant_requires_login(client):
     """Edit and delete have this check; create never did."""
+    visit(client)
     res = client.post("/api/restaurants/", json={
         "name": "Uninvited", "price": "$", "address": "1 Main St", "city": "Houston",
         "state": "TX", "zipcode": "77001", "country": "USA",
