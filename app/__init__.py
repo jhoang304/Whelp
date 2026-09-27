@@ -4,7 +4,7 @@ from flask import Flask, make_response, render_template, request, session, redir
 from flask_migrate import Migrate
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_login import LoginManager
-from werkzeug.exceptions import HTTPException, InternalServerError
+from werkzeug.exceptions import HTTPException, InternalServerError, RequestEntityTooLarge
 from werkzeug.middleware.proxy_fix import ProxyFix
 from .models import db, User
 from .api.user_routes import user_routes
@@ -15,7 +15,7 @@ from .api.amenity_routes import amenity_routes
 from .api.restaurant_image_routes import resImage_routes
 from .api.review_routes import review_routes
 from .api.review_image_routes import review_image_routes
-from .api.image_routes import image_routes
+from .api.image_routes import TOO_LARGE_MESSAGE, image_routes
 from .cli import check_db
 from .seeds import seed_commands
 from .config import Config
@@ -209,6 +209,18 @@ def http_exception_to_json(e):
     response.data = json.dumps({'errors': [e.description]})
     response.content_type = 'application/json'
     return response
+
+
+@app.errorhandler(RequestEntityTooLarge)
+def request_too_large(e):
+    """
+    A body past MAX_CONTENT_LENGTH, which is sized for the image upload --
+    the only route that takes one that big -- so say it in the upload's terms
+    there, rather than "The data value transmitted exceeds the capacity limit."
+    """
+    if request.path == '/api/images/upload':
+        e.description = TOO_LARGE_MESSAGE
+    return http_exception_to_json(e)
 
 
 @app.errorhandler(Exception)
