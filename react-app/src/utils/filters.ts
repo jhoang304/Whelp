@@ -78,6 +78,27 @@ export function filterSearch(filters: RestaurantFilters): string {
     return params ? `?${params}` : "";
 }
 
+/**
+ * A search as a location: `/search?q=bar+%26+grill&sort=rating`.
+ *
+ * The keyword lives in the query string, not the path. In the path it was
+ * decoded twice -- the router's history already runs decodeURI on the
+ * pathname -- so "100% beef" threw during render and blanked the app, and
+ * "bar & grill" came back as "bar %26 grill" for Show more (#108).
+ * URLSearchParams encodes and decodes it exactly once, whatever it holds.
+ */
+export function searchLocation(keyword: string, filters: RestaurantFilters = NO_FILTERS) {
+    // q first, so the address reads as the search it is.
+    const params = new URLSearchParams({ q: keyword.trim() });
+    filterParams(filters).forEach((value, name) => params.append(name, value));
+    return { pathname: "/search", search: `?${params.toString()}` };
+}
+
+/** The keyword a search URL holds, decoded, or "" when it has none. */
+export function readKeyword(search: string): string {
+    return (new URLSearchParams(search).get("q") ?? "").trim();
+}
+
 /** True when something is actually narrowed or reordered. */
 export function isFiltered(filters: RestaurantFilters): boolean {
     return Boolean(

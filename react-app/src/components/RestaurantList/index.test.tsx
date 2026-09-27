@@ -69,7 +69,7 @@ test("Show more puts the next page after the first, not among it", async () => {
 });
 
 test("search results keep the API's order too", async () => {
-  renderAt("/search/bistro?sort=rating", "/search/:keyword", <RestaurantBySearch />);
+  renderAt("/search?q=bistro&sort=rating", "/search", <RestaurantBySearch />);
 
   await waitFor(() => expect(shown()).toEqual(["Best", "Second", "Third"]));
 });

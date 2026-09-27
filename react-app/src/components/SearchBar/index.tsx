@@ -1,24 +1,43 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useParams, useHistory, useLocation } from "react-router-dom";
+import { Link, Redirect, useParams, useHistory, useLocation } from "react-router-dom";
 import { inOrder, search_restaurants } from '../../store/restaurants';
 import RestaurantListEntry from '../RestaurantListEntry';
 import FilterBar from '../FilterBar';
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
-    NO_FILTERS, RestaurantFilters, filterSearch, isFiltered, readFilters,
+    NO_FILTERS, RestaurantFilters, isFiltered, readFilters, readKeyword, searchLocation,
 } from "../../utils/filters";
 
 import './SearchBar.css';
 
-interface SearchParams {
-    keyword: string;
+/**
+ * `/search/:keyword`, the old form of a search link: bookmarks and shared
+ * links still use it. Sends it on to `/search?q=`, keeping any filters.
+ *
+ * The router has already run decodeURI over the path, so what arrives is
+ * half-decoded: "bar %26 grill" (decodeURI leaves &, /, ? and # escaped)
+ * or "100% beef" (a lone % it did decode). Decode the rest, and keep it as
+ * it is when it will not decode.
+ */
+export function LegacySearchRedirect(): React.JSX.Element {
+    const { keyword } = useParams<{ keyword: string }>();
+    const location = useLocation();
+    let decoded = keyword;
+    try {
+        decoded = decodeURIComponent(keyword);
+    } catch {
+        // a literal % in the keyword: it is already as decoded as it gets
+    }
+    return <Redirect to={searchLocation(decoded, readFilters(location.search))} />;
 }
 
 function RestaurantBySearch(): React.JSX.Element {
     const dispatch = useAppDispatch();
     const history = useHistory();
     const location = useLocation();
-    const { keyword } = useParams<SearchParams>();
+    // Decoded exactly once, by URLSearchParams, and used as it is everywhere
+    // below: the first page, Show more, the filters and the caption.
+    const keyword = useMemo(() => readKeyword(location.search), [location.search]);
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
     // Bumped by Try Again, to run the search again without reloading the
@@ -30,8 +49,10 @@ function RestaurantBySearch(): React.JSX.Element {
 
     useEffect(() => {
         const performSearch = async () => {
-            if (!keyword || keyword.trim().length === 0) {
-                history.push('/restaurants');
+            if (!keyword) {
+                // Replace, not push: Back from the listing would otherwise
+                // land here again and bounce straight back to it.
+                history.replace('/restaurants');
                 return;
             }
 
@@ -39,7 +60,7 @@ function RestaurantBySearch(): React.JSX.Element {
             setError(null);
 
             try {
-                await dispatch(search_restaurants(decodeURIComponent(keyword), 1, filters));
+                await dispatch(search_restaurants(keyword, 1, filters));
             } catch (err) {
                 setError('Search failed. Please try again.');
                 console.error('Search error:', err);
@@ -63,7 +84,7 @@ function RestaurantBySearch(): React.JSX.Element {
     const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
     const applyFilters = (next: RestaurantFilters) => {
-        history.push({ pathname: `/search/${keyword}`, search: filterSearch(next) });
+        history.push(searchLocation(keyword, next));
     };
 
     const showMore = async () => {
@@ -116,12 +137,12 @@ function RestaurantBySearch(): React.JSX.Element {
                         <div className='search-cap'>
                             {/* the total, not how many are on screen: "20 search
                                 results" under a Show more button is a lie */}
-                            {total} search result{total !== 1 ? 's' : ''} for "{decodeURIComponent(keyword)}"
+                            {total} search result{total !== 1 ? 's' : ''} for "{keyword}"
                             {isFiltered(filters) ? ", filtered" : ""}
                         </div>
                     ) : (
                         <div className='search-cap'>
-                            We couldn't find any results for "{decodeURIComponent(keyword)}"
+                            We couldn't find any results for "{keyword}"
                         </div>
                     )}
                 </div>

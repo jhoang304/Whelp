@@ -344,19 +344,14 @@
    so it always answers the pointer: darker, a touch bigger, with a soft ring.
    Small enough, ring and all, to stay inside the 5px the box leaves around
    it, which clips anything further out. */
-.search-button:hover:not(:disabled) {
+.search-button:hover {
     background-color: var(--color-primary-dark);
     box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.18);
     transform: translateY(-50%) scale(1.08);
 }
 
-.search-button:active:not(:disabled) {
+.search-button:active {
     transform: translateY(-50%) scale(0.96);
-}
-
-.search-button:disabled {
-    cursor: default;
-    opacity: 0.85;
 }
 
 @media (max-width: 900px) {
