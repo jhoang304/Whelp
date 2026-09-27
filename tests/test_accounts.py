@@ -178,6 +178,52 @@ def test_a_reviewers_photos_go_everywhere(client, ids):
     assert db.session.get(Restaurant, ids["restaurant"]) is not None
 
 
+def test_a_cover_they_added_to_someone_elses_restaurant_is_replaced(client, ids):
+    """
+    The fixture's cover is the reviewer's photo on the owner's restaurant.
+    It goes with their account, and the oldest photo left takes over, as it
+    would if the photo were deleted on its own (#107).
+    """
+    owners = RestaurantImage(restaurant_id=ids["restaurant"], url="https://example.com/o.jpg",
+                             preview=False, createdByUserId=ids["owner"])
+    bystanders = RestaurantImage(restaurant_id=ids["restaurant"], url="https://example.com/b.jpg",
+                                 preview=False, createdByUserId=ids["bystander"])
+    db.session.add_all([owners, bystanders])
+    db.session.commit()
+    owners_id, bystanders_id = owners.id, bystanders.id
+    login(client, "reviewer@test.io")
+
+    assert delete(client, ids["reviewer"]).status_code == 200
+
+    covers = [(image.id, image.preview) for image in
+              RestaurantImage.query.order_by(RestaurantImage.id).all()]
+    assert covers == [(owners_id, True), (bystanders_id, False)]
+    listing = client.get("/api/restaurants/").get_json()["items"]
+    assert listing[0]["previewImage"] == "https://example.com/o.jpg"
+
+
+def test_a_cover_that_was_not_theirs_stays_put(client, ids):
+    """Only a cover that leaves with the account is replaced."""
+    db.session.get(RestaurantImage, ids["image"]).preview = False
+    # Older than the cover, so promoting "the oldest" by mistake would show.
+    older = RestaurantImage(restaurant_id=ids["restaurant"], url="https://example.com/b.jpg",
+                            preview=False, createdByUserId=ids["bystander"])
+    db.session.add(older)
+    db.session.commit()
+    cover = RestaurantImage(restaurant_id=ids["restaurant"], url="https://example.com/o.jpg",
+                            preview=True, createdByUserId=ids["owner"])
+    db.session.add(cover)
+    db.session.commit()
+    older_id, cover_id = older.id, cover.id
+    login(client, "reviewer@test.io")
+
+    assert delete(client, ids["reviewer"]).status_code == 200
+
+    assert [(image.id, image.preview) for image in
+            RestaurantImage.query.order_by(RestaurantImage.id).all()] == [
+        (older_id, False), (cover_id, True)]
+
+
 def test_an_owners_restaurants_go_with_everything_on_them(client, ids):
     db.session.add(RestaurantHours(restaurant_id=ids["restaurant"], weekday=0,
                                    opens=time(9), closes=time(17)))

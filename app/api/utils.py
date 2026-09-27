@@ -104,14 +104,22 @@ def clear_other_previews(restaurant_id, keep_image_id=None):
     """
     Drop `preview` from a restaurant's other images so at most one row is its
     cover photo. Call it inside the transaction that sets the new preview;
-    it stages the changes and leaves the commit to the caller.
+    it writes the demotion (a flush, not a commit) and leaves the commit to
+    the caller.
 
     Takes the restaurant lock: without it, two cover changes racing on the same
     restaurant would both read the old cover, both demote it, and both commit a
     preview=True row, leaving the listing to pick whichever iterated last.
     Re-taking a lock the caller already holds is free within one transaction.
+
+    Flushes the demotion before returning. Left staged, it went out in the
+    same flush as the caller's `preview = True`, and SQLAlchemy writes a
+    table's UPDATEs in primary-key order: promoting a photo older than the
+    current cover set it first, while the old cover was still true, and the
+    one-cover index (uq_restaurant_images_one_preview) refused it -- a 500 on
+    "Set as cover" for any photo older than the current one (#107).
     """
-    from app.models import RestaurantImage
+    from app.models import RestaurantImage, db
 
     lock_restaurant(restaurant_id)
 
@@ -123,6 +131,26 @@ def clear_other_previews(restaurant_id, keep_image_id=None):
         query = query.filter(RestaurantImage.id != keep_image_id)
     for image in query.all():
         image.preview = False
+    db.session.flush()
+
+
+def promote_oldest_photo(restaurant_id):
+    """
+    Make a restaurant's oldest remaining photo its cover, and return it (None
+    when it has no photos left). For when the cover has just gone: call it
+    after that row's delete is flushed, under the restaurant lock, inside the
+    transaction that removed it. The caller commits.
+    """
+    from app.models import RestaurantImage
+
+    replacement = (RestaurantImage.query
+                   .filter(RestaurantImage.restaurant_id == restaurant_id)
+                   .order_by(RestaurantImage.id)
+                   .first())
+    if replacement:
+        clear_other_previews(restaurant_id, keep_image_id=replacement.id)
+        replacement.preview = True
+    return replacement
 
 
 def preview_image_urls(restaurant_ids):

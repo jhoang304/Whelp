@@ -84,6 +84,32 @@ def test_setting_the_current_cover_again_is_a_no_op(client, ids):
     assert [image.id for image in previews(ids["restaurant"])] == [ids["image"]]
 
 
+def test_an_older_photo_can_become_the_cover_again(client, ids):
+    """
+    Back and forth, older and newer. The demotion and the promotion used to
+    go out in one flush, UPDATEs in id order: promoting a photo with a lower
+    id than the cover set it first, while the old cover was still true, and
+    the one-cover index refused it -- a 500 (#107).
+    """
+    login(client, "owner@test.io")
+    newer = add_image(client, ids["restaurant"], "https://example.com/b.jpg").get_json()["id"]
+
+    for target in (newer, ids["image"], newer, ids["image"]):
+        res = client.put(f"/api/restaurant-images/{target}/cover")
+        assert res.status_code == 200, res.get_json()
+        assert [image.id for image in previews(ids["restaurant"])] == [target]
+
+
+def test_the_old_cover_comes_back_after_a_new_cover_is_added(client, ids):
+    """The same failure, reached the other way: a new cover photo, then the old one."""
+    login(client, "owner@test.io")
+    add_image(client, ids["restaurant"], "https://example.com/new-cover.jpg", preview=True)
+
+    res = client.put(f"/api/restaurant-images/{ids['image']}/cover")
+    assert res.status_code == 200, res.get_json()
+    assert [image.id for image in previews(ids["restaurant"])] == [ids["image"]]
+
+
 def test_only_the_owner_can_promote_a_photo(client, ids):
     login(client, "owner@test.io")
     new_id = add_image(client, ids["restaurant"], "https://example.com/b.jpg").get_json()["id"]

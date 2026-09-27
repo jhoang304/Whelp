@@ -3,7 +3,8 @@ from flask_login import login_required, current_user
 from app.models import RestaurantImage
 from app.models import db
 from app.api.aws_helpers import remove_key_from_s3
-from app.api.utils import clear_other_previews, key_still_referenced, lock_restaurant
+from app.api.utils import (
+    clear_other_previews, key_still_referenced, lock_restaurant, promote_oldest_photo)
 
 resImage_routes = Blueprint('restaurantImages', __name__)
 
@@ -53,13 +54,7 @@ def delete_res_image(imageId):
         # row at all, so the listing fell back to the placeholder until someone
         # noticed and set a new one. Promote the oldest remaining photo; the
         # lock above is what makes it still be there at commit.
-        replacement = (RestaurantImage.query
-                       .filter(RestaurantImage.restaurant_id == restaurant_id)
-                       .order_by(RestaurantImage.id)
-                       .first())
-        if replacement:
-            clear_other_previews(restaurant_id, keep_image_id=replacement.id)
-            replacement.preview = True
+        promote_oldest_photo(restaurant_id)
 
     db.session.commit()
     if not key_still_referenced(object_key):
