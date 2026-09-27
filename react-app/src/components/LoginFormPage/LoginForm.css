@@ -173,11 +173,6 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes toastFadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-20px); }
-}
-
 .toast-notification {
   position: fixed; /* Position relative to viewport */
   top: 100px; /* Below the sticky nav */

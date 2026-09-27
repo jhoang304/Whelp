@@ -51,10 +51,6 @@
     font-size: 1em;
 }
 
-.create-review-container input[type="text"] {
-    /* Specific styles if different from select */
-}
-
 .create-review-container select {
     background-color: white;
 }

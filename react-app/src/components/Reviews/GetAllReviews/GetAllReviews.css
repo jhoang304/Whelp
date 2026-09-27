@@ -5,6 +5,8 @@
 
   .single-review {
     margin: 10px;
+    flex: 1;
+    min-width: 0;
   }
 
   .review-user-data {
@@ -44,11 +46,6 @@
     font-weight: 500;
   }
 
-  .user-title {
-    font-size: 16px;
-    font-weight: 700;
-  }
-
   .review-time {
     font-size: 14px;
     font-weight: 400;
@@ -81,20 +78,11 @@
     padding: 0px;
   }
 
-  .review-time-star {
-    padding: 0px 10px;
-  }
-
   .review-right-section {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 64px;
-  }
-
-  .single-review {
-    flex: 1;
-    min-width: 0;
   }
 
   .reviews-empty {

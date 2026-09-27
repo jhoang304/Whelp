@@ -24,8 +24,3 @@
     border-color: var(--color-gray-400);
 }
 
-/* On the detail page the chips carry a heading's worth of weight. */
-.category-chips.single-restaurant-chips .category-chip {
-    font-size: var(--text-sm);
-    padding: var(--space-1) var(--space-4);
-}
