@@ -49,15 +49,19 @@ export type FavoritesResult =
     | { page?: undefined; errors: string[] };
 
 /**
- * A page of the reader's own saved restaurants, newest first. Kept out of the
- * store: only the Saved tab shows it, and it is fetched fresh each time the
- * tab opens.
+ * The reader's own saved restaurants, newest first, after the first
+ * `offset` of them. Kept out of the store: only the Saved tab shows it, and
+ * it is fetched fresh each time the tab opens.
+ *
+ * An offset, not a page number: unsaving one on the tab moves the rest up,
+ * and "page 2" would then start one late and skip it (#113). The tab asks
+ * for what comes after the cards it still has.
  */
-export const fetchFavorites = (userId: number, page = 1) =>
+export const fetchFavorites = (userId: number, offset = 0) =>
     async (): Promise<FavoritesResult> => {
         let response: Response;
         try {
-            response = await apiFetch(`/api/users/${userId}/favorites?page=${page}&per_page=${SAVED_PER_PAGE}`);
+            response = await apiFetch(`/api/users/${userId}/favorites?offset=${offset}&per_page=${SAVED_PER_PAGE}`);
         } catch {
             return { errors: ["Couldn't reach the server. Please try again."] };
         }

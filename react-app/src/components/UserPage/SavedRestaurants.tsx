@@ -23,7 +23,6 @@ function SavedRestaurants({ userId }: SavedRestaurantsProps): React.JSX.Element 
     const dispatch = useAppDispatch();
     const [items, setItems] = useState<Restaurant[]>([]);
     const [total, setTotal] = useState(0);
-    const [page, setPage] = useState(1);
     const [status, setStatus] = useState<"loading" | "ready" | "error">("loading");
     const [errors, setErrors] = useState<string[]>([]);
     const [loadingMore, setLoadingMore] = useState(false);
@@ -36,7 +35,7 @@ function SavedRestaurants({ userId }: SavedRestaurantsProps): React.JSX.Element 
     useEffect(() => {
         let cancelled = false;
         setStatus("loading");
-        dispatch(fetchFavorites(userId, 1)).then((result) => {
+        dispatch(fetchFavorites(userId)).then((result) => {
             if (cancelled) return;
             if (result.errors) {
                 setErrors(result.errors);
@@ -45,7 +44,6 @@ function SavedRestaurants({ userId }: SavedRestaurantsProps): React.JSX.Element 
             }
             setItems(result.page.items);
             setTotal(result.page.total);
-            setPage(1);
             setStatus("ready");
         });
         return () => {
@@ -55,21 +53,24 @@ function SavedRestaurants({ userId }: SavedRestaurantsProps): React.JSX.Element 
 
     const showMore = async () => {
         setLoadingMore(true);
-        const result = await dispatch(fetchFavorites(userId, page + 1));
+        // What comes after the cards still here. Unsaving one here takes it
+        // off the server's list too, so this count is where the rest start.
+        const result = await dispatch(fetchFavorites(userId, items.length));
         setLoadingMore(false);
         if (result.errors) {
             setErrors(result.errors);
             return;
         }
         const next = result.page;
-        // Something unsaved since the first page moves the rest up by one, so
+        // Something saved since, on another page, moves the rest down one, so
         // a card can arrive twice; keep the first copy.
-        setItems((current) => [
-            ...current,
-            ...next.items.filter((item) => !current.some((kept) => kept.id === item.id)),
-        ]);
-        setTotal(next.total);
-        setPage(next.page);
+        const fresh = next.items.filter((item) => !items.some((kept) => kept.id === item.id));
+        setItems((current) => [...current, ...fresh]);
+        // Nothing new means the end, whatever the count says: a save made
+        // elsewhere is counted in the total but sits at the top, above this
+        // list, so the count stays one ahead and the button would otherwise
+        // stay, fetching nothing.
+        setTotal(fresh.length ? next.total : items.length);
     };
 
     const removed = (restaurantId: number) => {

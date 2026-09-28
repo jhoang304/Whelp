@@ -36,13 +36,20 @@ export const REVIEW_SORTS: { value: ReviewSort; label: string }[] = [
 
 export const REVIEWS_PER_PAGE = 20;
 
+/**
+ * A page of a restaurant's reviews in the given order, after the first
+ * `offset` of them. An offset, not a page number, so "Show more" after you
+ * delete your own review starts where the list now is rather than one late
+ * (#113). The reviews are added to the store, not swapped in for it: the
+ * page picks which to show by the ids each answer returns.
+ */
 export const fetchAllReviewsByRestaurantId = (
     restaurantId: Id,
     sort: ReviewSort = "newest",
-    page = 1,
+    offset = 0,
 ) => async (dispatch: AppDispatch) => {
     const res = await apiFetch(
-        `/api/restaurants/${restaurantId}/reviews?sort=${sort}&page=${page}&per_page=${REVIEWS_PER_PAGE}`)
+        `/api/restaurants/${restaurantId}/reviews?sort=${sort}&offset=${offset}&per_page=${REVIEWS_PER_PAGE}`)
     if(res.ok){
         const body: Page<Review> = await res.json();
         dispatch(loadAllReviewsByRestaurantId(body.items));
@@ -91,13 +98,15 @@ const deleteReview = (reviewId: Id) => {
     }
 }
 
-export const deleteReviewById = (reviewId: Id) => async (dispatch: AppDispatch) => {
+/** Delete a review. Resolves to whether it was deleted. */
+export const deleteReviewById = (reviewId: Id) => async (dispatch: AppDispatch): Promise<boolean> => {
     const res = await apiFetch(`/api/reviews/${reviewId}`, {
         method:"DELETE"
     })
     if(res.ok){
         dispatch(deleteReview(reviewId))
     }
+    return res.ok
 }
 
 // Create a review
@@ -290,10 +299,12 @@ const reviewReducer = (state: ReviewsState = initialState, incoming: AnyAction):
     let newState: ReviewsState
     switch (action.type) {
         case LOAD_ALL_REVIEWS_BY_RESTAURANTID:
-            newState = {};
-            const allReviews = action.reviews
-            allReviews.forEach((review: Review) =>{
-                newState[review["id"]] = review
+            // Added, not swapped in: "Show more" keeps the pages before it,
+            // and a slow answer to an earlier request must not wipe out the
+            // reviews a later one brought.
+            newState = {...state};
+            action.reviews.forEach((review: Review) =>{
+                newState[review.id] = review
             })
             return newState
 
