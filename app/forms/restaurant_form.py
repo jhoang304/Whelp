@@ -1,7 +1,10 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField
-from wtforms.validators import DataRequired, Length, Regexp
+from wtforms.validators import AnyOf, DataRequired, Length, Regexp
 
+from app.api.filters import PRICES
+
+from .fields import TextField
 from .phone import phone_format
 from .postcode import (
     coerce_to_text, postcode_type,
@@ -15,18 +18,21 @@ class RestaurantForm(FlaskForm):
     so WTForms' "Field must be between 1 and 50 characters long" would leave
     the reader of a ten-field form guessing which box to fix.
     """
-    name = StringField("name", validators=[
+    name = TextField("name", validators=[
         DataRequired(message="Restaurant name is required."),
         Length(min=1, max=100, message="Restaurant name must be 100 characters or fewer.")])
-    price = StringField("price", validators=[
-        DataRequired(message="Price is required.")])
-    address = StringField("address", validators=[
+    price = TextField("price", validators=[
+        DataRequired(message="Price is required."),
+        # The column is five characters, and the price filter knows only
+        # these: "cheap" saved fine and could never be filtered to (#111).
+        AnyOf(PRICES, message=f"Price must be one of {', '.join(PRICES)}.")])
+    address = TextField("address", validators=[
         DataRequired(message="Address is required."),
         Length(min=1, max=100, message="Address must be 100 characters or fewer.")])
-    city = StringField("city", validators=[
+    city = TextField("city", validators=[
         DataRequired(message="City is required."),
         Length(min=1, max=50, message="City must be 50 characters or fewer.")])
-    state = StringField("state", validators=[
+    state = TextField("state", validators=[
         DataRequired(message="State is required."),
         Length(min=2, max=2, message="State must be a 2-letter abbreviation.")])
     zipcode = StringField("zipcode", filters=[coerce_to_text], validators=[
@@ -35,16 +41,16 @@ class RestaurantForm(FlaskForm):
         Length(min=POSTCODE_MIN, max=POSTCODE_MAX,
                message=f"Postal code must be between {POSTCODE_MIN} and {POSTCODE_MAX} characters."),
         Regexp(POSTCODE_REGEX, message=POSTCODE_MESSAGE)])
-    country = StringField("country", validators=[
+    country = TextField("country", validators=[
         DataRequired(message="Country is required."),
         Length(min=1, max=56, message="Country must be 56 characters or fewer.")])
-    phone_number = StringField("phone_number", validators=[
+    phone_number = TextField("phone_number", validators=[
         DataRequired(message="Phone number is required."),
         Length(min=1, max=20, message="Phone number must be 20 characters or fewer."),
         phone_format])
-    website = StringField("website", validators=[
+    website = TextField("website", validators=[
         DataRequired(message="Website is required."),
         Length(min=1, max=70, message="Website must be 70 characters or fewer.")])
-    description = StringField("description", validators=[
+    description = TextField("description", validators=[
         DataRequired(message="Description is required."),
         Length(min=1, max=500, message="Description must be 500 characters or fewer.")])

@@ -1,10 +1,11 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField
 from wtforms.validators import DataRequired, Length
+
+from .fields import TextField
 
 
 class ReviewResponseForm(FlaskForm):
-    response = StringField(
+    response = TextField(
         "response",
         validators=[
             DataRequired(message="Response text is required."),

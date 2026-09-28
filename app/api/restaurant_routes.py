@@ -201,18 +201,20 @@ def create_restaurant():
 
         restaurant = Restaurant(
             user_id = int(current_user.id),
-            name = request.get_json()["name"],
-            price = request.get_json()["price"],
-            address = request.get_json()["address"],
-            city = request.get_json()["city"],
-            state = request.get_json()["state"],
-            # form.data, not the raw JSON: the postcode filter normalises a
-            # numeric zipcode to text, and a VARCHAR column will not take an int.
+            # form.data, not the raw JSON, for every field: the form checked
+            # these values (and turned a numeric zipcode into text). The raw
+            # JSON could still hold a list the form had read only the first
+            # element of, and a list reached the INSERT as a 500 (#111).
+            name = form.data["name"],
+            price = form.data["price"],
+            address = form.data["address"],
+            city = form.data["city"],
+            state = form.data["state"],
             zipcode = form.data["zipcode"],
-            country = request.get_json()["country"],
-            phone_number = request.get_json()["phone_number"],
-            website = request.get_json()["website"],
-            description = request.get_json()["description"],
+            country = form.data["country"],
+            phone_number = form.data["phone_number"],
+            website = form.data["website"],
+            description = form.data["description"],
             timezone = timezone,
         )
 
@@ -310,16 +312,16 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         if timezone_error:
             return {"errors": [timezone_error]}, 400
 
-        restaurant.name = request.get_json()["name"]
-        restaurant.price = request.get_json()["price"]
-        restaurant.address = request.get_json()["address"]
-        restaurant.city = request.get_json()["city"]
-        restaurant.state = request.get_json()["state"]
+        restaurant.name = form.data["name"]
+        restaurant.price = form.data["price"]
+        restaurant.address = form.data["address"]
+        restaurant.city = form.data["city"]
+        restaurant.state = form.data["state"]
         restaurant.zipcode = form.data["zipcode"]
-        restaurant.country = request.get_json()["country"]
-        restaurant.phone_number = request.get_json()["phone_number"]
-        restaurant.website = request.get_json()["website"]
-        restaurant.description = request.get_json()["description"]
+        restaurant.country = form.data["country"]
+        restaurant.phone_number = form.data["phone_number"]
+        restaurant.website = form.data["website"]
+        restaurant.description = form.data["description"]
         # None means the body never mentioned categories, which is what every
         # client written before this feature sends; [] means clear them.
         if categories is not None:

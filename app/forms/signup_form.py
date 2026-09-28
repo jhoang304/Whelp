@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField
 from wtforms.validators import DataRequired, Email, ValidationError, Length
 from app.models import User
+from .fields import TextField
 
 # Mirrored in react-app/src/components/SignupFormPage, which checks it before
 # the round trip. Keep the two in step.
@@ -30,22 +30,22 @@ class SignUpForm(FlaskForm):
     so "Field must be between 1 and 40 characters long" would leave the signup
     form's reader guessing which box to fix.
     """
-    username = StringField('username', validators=[
+    username = TextField('username', validators=[
         DataRequired(message="Username is required."),
         username_exists,
         Length(min=1, max=40, message="Username must be 40 characters or fewer.")])
-    email = StringField('email', validators=[
+    email = TextField('email', validators=[
         DataRequired(message="Email is required."),
         user_exists,
         Email(message="Please enter a valid email address."),
         Length(min=1, max=50, message="Email must be 50 characters or fewer.")])
-    first_name = StringField('first_name', validators=[
+    first_name = TextField('first_name', validators=[
         DataRequired(message="First name is required."),
         Length(min=1, max=50, message="First name must be 50 characters or fewer.")])
-    last_name = StringField('last_name', validators=[
+    last_name = TextField('last_name', validators=[
         DataRequired(message="Last name is required."),
         Length(min=1, max=50, message="Last name must be 50 characters or fewer.")])
-    password = StringField('password', validators=[
+    password = TextField('password', validators=[
         DataRequired(message="Password is required."),
         Length(min=PASSWORD_MIN_LENGTH,
                message=f"Password must be at least {PASSWORD_MIN_LENGTH} characters.")])

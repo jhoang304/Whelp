@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField
 from wtforms.validators import DataRequired, Email, ValidationError
 from app.models import User
+from .fields import TextField
 
 
 def user_exists(form, field):
@@ -16,6 +16,10 @@ def password_matches(form, field):
     # Checking if password matches
     password = field.data
     email = form.data['email']
+    if not isinstance(email, str):
+        # The email field has already said what is wrong with it; querying
+        # with a number is a type error on Postgres (#111).
+        raise ValidationError('No such user exists.')
     user = User.query.filter(User.email == email).first()
     if not user:
         raise ValidationError('No such user exists.')
@@ -24,5 +28,5 @@ def password_matches(form, field):
 
 
 class LoginForm(FlaskForm):
-    email = StringField('email', validators=[DataRequired(), user_exists])
-    password = StringField('password', validators=[DataRequired(), password_matches])
+    email = TextField('email', validators=[DataRequired(), user_exists])
+    password = TextField('password', validators=[DataRequired(), password_matches])
