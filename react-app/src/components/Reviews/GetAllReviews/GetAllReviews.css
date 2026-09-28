@@ -110,10 +110,22 @@
 
 .reviews-heading {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 16px;
     flex-wrap: wrap;
+}
+
+/* The sort and "Write a review", together at the right of the heading. */
+.reviews-heading-actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    flex-wrap: wrap;
+}
+
+.reviews-heading-actions .red-button {
+    margin: 0;
 }
 
 .reviews-sort {
