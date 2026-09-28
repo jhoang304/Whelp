@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { Link, NavLink, useHistory } from "react-router-dom";
 import {
   fetchAllReviewsByRestaurantId,
@@ -40,13 +40,27 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
 
   const [sort, setSort] = useState<ReviewSort>("newest");
   const [order, setOrder] = useState<number[]>([]);
+  const [total, setTotal] = useState<number>(0);
+  // Whether a first page has come back. Until then the list is empty only
+  // because it hasn't arrived, not because there are no reviews.
+  const [loaded, setLoaded] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  // Counts each time the list starts over, for a new restaurant or sort. An
+  // answer to a request made before -- a slower first page, or a Show more
+  // still on its way -- is then dropped rather than mixed into this list.
+  const listVersion = useRef<number>(0);
 
   useEffect(() => {
+    const version = ++listVersion.current;
+    setLoadingMore(false);
     // The API decides the order now, and the store is keyed by id, so keep
     // the ids it returned: re-sorting a page of "highest rated" by date here
     // would quietly undo the sort the reader asked for.
     dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort)).then((page) => {
-      if (page) setOrder(page.items.map((review) => review.id));
+      if (!page || version !== listVersion.current) return;
+      setOrder(page.items.map((review) => review.id));
+      setTotal(page.total);
+      setLoaded(true);
     });
   }, [dispatch, restaurantId, sort]);
 
@@ -56,13 +70,39 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
       !!review && String(review.restaurant_id) === String(restaurantId));
 
   const isOwner = !!sessionUser && !!currentRestaurant && sessionUser.id === currentRestaurant.user_id;
-  const hasReviewed = !!sessionUser && reviews.some((review) => review.user_id === sessionUser.id);
+  // Asked of the server rather than looked for among the reviews shown: the
+  // restaurant's answer is there before the first page of reviews is, and
+  // "Write a review" would otherwise offer a second one the server refuses.
+  const viewerReviewId = (sessionUser && currentRestaurant?.viewerReviewId) || null;
+
+  const showMore = async () => {
+    const version = listVersion.current;
+    setLoadingMore(true);
+    // What comes after the reviews still here. Deleting yours takes it off
+    // the server's list too, so this count is where the rest start.
+    const page = await dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort, reviews.length));
+    if (version !== listVersion.current) return;
+    setLoadingMore(false);
+    if (!page) return;
+    // A review posted since moves the rest down one, so one can arrive
+    // twice; keep the first copy.
+    const fresh = page.items.map((review) => review.id).filter((id) => !order.includes(id));
+    setOrder((current) => [...current, ...fresh]);
+    // Nothing new means the end, even if the count says otherwise: the new
+    // review is counted, but sits above the pages already shown.
+    setTotal(fresh.length ? page.total : reviews.length);
+  };
 
   const handleDelete = (reviewId: number) => async () => {
-    await dispatch(deleteReviewById(reviewId));
-    const page = await dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort));
-    if (page) setOrder(page.items.map((review) => review.id));
-    dispatch(getSingleRestaurant(+restaurantId));
+    const deleted = await dispatch(deleteReviewById(reviewId));
+    // The restaurant first, for its rating and for viewerReviewId: until it
+    // says you have no review, "Write a review" is not offered.
+    await dispatch(getSingleRestaurant(+restaurantId));
+    if (deleted) {
+      // The rest stay as they are; the next Show more starts after them.
+      setOrder((current) => current.filter((id) => id !== reviewId));
+      setTotal((count) => Math.max(count - 1, 0));
+    }
   };
 
   const handleUpdate = (reviewId: number) => () => {
@@ -88,15 +128,18 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
         )}
       </div>
 
-      {reviews.length === 0 && (
+      {loaded && reviews.length === 0 && (
         <p className="reviews-empty">No reviews yet. Be the first to share your experience.</p>
       )}
 
       {reviews.map((review) => {
         const isAuthor = !!sessionUser && review.user_id === sessionUser.id;
         return (
-          <div className="single-review-container" key={review.id}>
+          // Yours comes first in every order (the API puts it there), set
+          // apart so it is the first thing you find.
+          <div className={`single-review-container${isAuthor ? " your-review" : ""}`} key={review.id}>
             <div className="single-review">
+              {isAuthor && <div className="your-review-label">Your review</div>}
               <div className="review-user-data">
                 <img
                   className="review-photo"
@@ -161,7 +204,20 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
         );
       })}
 
-      {sessionUser && !isOwner && !hasReviewed && (
+      {reviews.length < total && (
+        <div className="restaurant-list-more">
+          <button
+            type="button"
+            className="restaurant-list-more-button"
+            onClick={showMore}
+            disabled={loadingMore}
+          >
+            {loadingMore ? "Loading…" : `Show more reviews (${reviews.length} of ${total})`}
+          </button>
+        </div>
+      )}
+
+      {sessionUser && !isOwner && !viewerReviewId && (
         // A link that looks like a button, not a button inside a link: the
         // two nested are two stops for Tab and two things for a screen reader
         // to announce, and HTML does not allow it.

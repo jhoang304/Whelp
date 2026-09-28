@@ -9,33 +9,44 @@ DEFAULT_PER_PAGE = 20
 MAX_PER_PAGE = 50
 # Half a million rows in at 50 a page: past any real list, well short of overflow.
 MAX_PAGE = 10_000
+MAX_OFFSET = MAX_PAGE * MAX_PER_PAGE
 
 
 class PageRequest:
     """The page a caller asked for, or the reason it is not a page."""
 
-    def __init__(self, page=None, per_page=None, error=None):
+    def __init__(self, page=None, per_page=None, error=None, offset=None):
         self.page = page
         self.per_page = per_page
         self.error = error
+        self._offset = offset
 
     @property
     def offset(self):
+        if self._offset is not None:
+            return self._offset
         return (self.page - 1) * self.per_page
 
 
 def read_page_request(args=None):
     """
-    Read `page` and `per_page` off the query string.
+    Read `page` and `per_page`, or `offset` and `per_page`, off the query string.
 
-    A number that is not one, or is below one, is a mistake worth saying out
-    loud rather than quietly reading as the default. Asking for more than
-    MAX_PER_PAGE is answered with MAX_PER_PAGE instead of an error, and the
-    response repeats the per_page it used, so a caller can see what it got.
+    `offset` is how many items to skip, for a list that loses items while it
+    is open: unsave a restaurant on the Saved tab and everything after it
+    moves up one, so page 2 starts one later than it did and one is never
+    shown. Asking for "what comes after the N I still have" cannot miss it
+    (#113). A caller sends one or the other.
+
+    A number that is not one, or is below one (below zero for an offset), is
+    a mistake worth saying out loud rather than quietly reading as the
+    default. Asking for more than MAX_PER_PAGE is answered with MAX_PER_PAGE
+    instead of an error, and the response repeats the per_page it used, so a
+    caller can see what it got.
     """
     args = request.args if args is None else args
 
-    def whole_number(name, default):
+    def whole_number(name, default, minimum=1):
         raw = args.get(name)
         if raw is None or raw == "":
             return default, None
@@ -43,9 +54,25 @@ def read_page_request(args=None):
             value = int(raw)
         except ValueError:
             return None, f"{name} must be a whole number"
-        if value < 1:
-            return None, f"{name} must be 1 or more"
+        if value < minimum:
+            return None, f"{name} must be {minimum} or more"
         return value, None
+
+    per_page, error = whole_number("per_page", DEFAULT_PER_PAGE)
+    if error:
+        return PageRequest(error=error)
+    per_page = min(per_page, MAX_PER_PAGE)
+
+    offset, error = whole_number("offset", None, minimum=0)
+    if error:
+        return PageRequest(error=error)
+    if offset is not None:
+        if args.get("page"):
+            return PageRequest(error="Send page or offset, not both")
+        if offset > MAX_OFFSET:
+            return PageRequest(error=f"offset must be {MAX_OFFSET} or less")
+        # The page it falls in, for the envelope; the offset is what is used.
+        return PageRequest(page=offset // per_page + 1, per_page=per_page, offset=offset)
 
     page, error = whole_number("page", 1)
     if error:
@@ -54,11 +81,8 @@ def read_page_request(args=None):
         # Unbounded, (page - 1) * per_page overflowed the database's 64-bit
         # OFFSET: a 500 on every paginated endpoint (#111).
         return PageRequest(error=f"page must be {MAX_PAGE} or less")
-    per_page, error = whole_number("per_page", DEFAULT_PER_PAGE)
-    if error:
-        return PageRequest(error=error)
 
-    return PageRequest(page=page, per_page=min(per_page, MAX_PER_PAGE))
+    return PageRequest(page=page, per_page=per_page)
 
 
 def page_response(items, page_request, total):
@@ -67,6 +91,7 @@ def page_response(items, page_request, total):
         "items": items,
         "page": page_request.page,
         "per_page": page_request.per_page,
+        "offset": page_request.offset,
         "total": total,
     }
 

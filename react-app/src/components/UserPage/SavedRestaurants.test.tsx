@@ -46,7 +46,7 @@ test("it lists what the API returns, in its order", async () => {
 
   const names = await screen.findAllByText(/Saved$/, { selector: ".profile-business-name" });
   expect(names.map((node) => node.textContent)).toEqual(["Second Saved", "First Saved"]);
-  expect((global as any).fetch).toHaveBeenCalledWith("/api/users/3/favorites?page=1&per_page=20");
+  expect((global as any).fetch).toHaveBeenCalledWith("/api/users/3/favorites?offset=0&per_page=20");
   expect(screen.getByText("Only you can see the restaurants you've saved.")).toBeInTheDocument();
 });
 
@@ -96,4 +96,64 @@ test("focus moves to the next heart after an unsave, and to the heading after th
   fireEvent.click(screen.getByRole("button", { name: "Save Beta" }));
   await waitFor(() =>
     expect(screen.getByRole("heading", { name: "You haven't saved any restaurants yet" })).toHaveFocus());
+});
+
+// --- more than one page (#113) ---------------------------------------------------
+
+/**
+ * `count` saved restaurants, newest first, paged the way the API pages them:
+ * `offset` and `per_page` off the query string. Unsaving one takes it off.
+ */
+function serveSaved(count: number) {
+  let list = Array.from({ length: count }, (_, index) => card(count - index, `Saved ${count - index}`));
+  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+    if (options.method === "DELETE") {
+      const id = Number(url.split("/")[3]);
+      list = list.filter((item) => item.id !== id);
+      return Promise.resolve(okJson({ isFavorited: false }));
+    }
+    const query = new URLSearchParams(url.split("?")[1]);
+    const offset = Number(query.get("offset"));
+    const perPage = Number(query.get("per_page"));
+    return Promise.resolve(okJson({
+      items: list.slice(offset, offset + perPage), page: 1, per_page: perPage, offset, total: list.length,
+    }));
+  });
+  return { names: () => list.map((item) => item.name), add: (id: number) => list.unshift(card(id, `Saved ${id}`)) };
+}
+
+const shownNames = () =>
+  Array.from(document.querySelectorAll(".profile-business-name")).map((node) => node.textContent);
+
+test("unsaving two, then Show more, loses none, and the button goes at the end", async () => {
+  const server = serveSaved(25);
+  renderSaved();
+
+  fireEvent.click(await screen.findByRole("button", { name: "Save Saved 24" }));
+  fireEvent.click(screen.getByRole("button", { name: "Save Saved 23" }));
+  await waitFor(() => expect(shownNames()).toHaveLength(18));
+
+  fireEvent.click(screen.getByRole("button", { name: "Show more (18 of 23)" }));
+
+  await waitFor(() => expect(shownNames()).toHaveLength(23));
+  // Saved 5 and Saved 4 used to be the two page 2 started past.
+  expect(shownNames()).toEqual(server.names());
+  expect(screen.queryByRole("button", { name: /Show more|Loading/ })).not.toBeInTheDocument();
+});
+
+test("a save made elsewhere meanwhile shows no card twice, and the button still ends", async () => {
+  const server = serveSaved(25);
+  renderSaved();
+  await waitFor(() => expect(shownNames()).toHaveLength(20));
+
+  server.add(99); // saved on another page: the newest, so it goes on top
+  fireEvent.click(screen.getByRole("button", { name: "Show more (20 of 25)" }));
+  await waitFor(() => expect(shownNames()).toHaveLength(25));
+  expect(new Set(shownNames()).size).toBe(25);
+
+  // The total counts Saved 99, which sits above this list: the next click
+  // brings nothing new, and that is the end.
+  fireEvent.click(screen.getByRole("button", { name: "Show more (25 of 26)" }));
+  await waitFor(() => expect(screen.queryByRole("button", { name: /Show more|Loading/ })).not.toBeInTheDocument());
+  expect(shownNames()).toHaveLength(25);
 });
