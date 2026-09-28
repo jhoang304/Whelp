@@ -16,6 +16,7 @@ import DisplayPhotos from "../DisplayPhotos";
 import FavoriteButton from "../FavoriteButton";
 import Lightbox from "../Lightbox";
 import PhotoCarousel from "./PhotoCarousel";
+import PageMessage from "../PageMessage";
 import { useAppDispatch, useAppSelector } from "../../store";
 
 
@@ -99,11 +100,11 @@ function SingleRestaurant(): React.JSX.Element {
 
     if (status === "error" || (status === "ready" && !singleRestaurant)) {
         return (
-            <div className="restaurant-not-found">
-                <i className="fa-regular fa-face-frown"></i>
-                <h2>{loadErrors[0] || "We couldn't find that restaurant."}</h2>
-                <Link to="/restaurants" className="restaurant-not-found-button">Browse restaurants</Link>
-            </div>
+            <PageMessage
+                icon="fa-regular fa-face-frown"
+                title={loadErrors[0] || "We couldn't find that restaurant."}
+                action={{ to: "/restaurants", label: "Browse restaurants" }}
+            />
         );
     }
 

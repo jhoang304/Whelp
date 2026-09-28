@@ -5,6 +5,7 @@ import thunk from "redux-thunk";
 import { MemoryRouter, Route } from "react-router-dom";
 import reviewReducer from "../../../store/reviews";
 import restaurantsReducer from "../../../store/restaurants";
+import { UPDATE_REVIEW_PATH } from "../paths";
 import UpdateReview from "./index";
 
 /**
@@ -14,12 +15,16 @@ import UpdateReview from "./index";
  * Adding follows the create form -- upload, save, attach -- and when some
  * attach and some do not, only the failures stay staged, so trying again
  * cannot put the others on the review twice.
+ *
+ * The page loads the review it is about, and offers the form only to its
+ * author, at the restaurant it belongs to (#112).
  */
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock("react-router-dom", () => ({
   ...jest.requireActual("react-router-dom"),
-  useHistory: () => ({ push: mockPush }),
+  useHistory: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
 const mockUploadImage = jest.fn();
@@ -31,26 +36,46 @@ jest.mock("../../../utils/uploads", () => ({
 const RESTAURANT = 3;
 const REVIEW = 42;
 const EXISTING = 5;
+const AUTHOR = { id: 2, username: "author", first_name: "Au", last_name: "Thor" };
 
 const okJson = (body: any) => ({ ok: true, status: 200, json: () => Promise.resolve(body) });
-const refused = (errors: string[]) => ({ ok: false, status: 400, json: () => Promise.resolve({ errors }) });
+const refused = (errors: string[], status = 400) => ({ ok: false, status, json: () => Promise.resolve({ errors }) });
 
 const review = {
-  id: REVIEW, user_id: 2, restaurant_id: RESTAURANT, review: "Solid.", rating: 4,
+  id: REVIEW, user_id: AUTHOR.id, restaurant_id: RESTAURANT, review: "Solid.", rating: 4,
   createdAt: "", updatedAt: "",
   reviewImages: [{ id: EXISTING, review_id: REVIEW, url: "https://bucket/old.png", createdAt: "", updatedAt: "" }],
+  restaurant: { id: RESTAURANT, user_id: 1, name: "Uchi" },
+  user: { id: AUTHOR.id, username: AUTHOR.username },
+  response: null,
 };
 
-function renderForm(state?: any) {
+/**
+ * Answer GET /api/reviews/42 with `found`, and anything else with `others`.
+ * The review is what the page asks for first, and again after a partial save.
+ */
+function serve(others: (url: string, options: any) => any = () => okJson({}), found: any = okJson(review)) {
+  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+    if ((options.method ?? "GET") === "GET" && url === `/api/reviews/${REVIEW}`) return Promise.resolve(found);
+    return Promise.resolve(others(url, options));
+  });
+}
+
+function renderForm({ state, user = AUTHOR, stored = {}, path = `/${RESTAURANT}/reviews/${REVIEW}/update` }:
+  { state?: any; user?: any; stored?: any; path?: string } = {}) {
   const store = createStore(
-    combineReducers({ reviews: reviewReducer, Restaurants: restaurantsReducer }),
-    { reviews: { [REVIEW]: review } } as any,
+    combineReducers({
+      reviews: reviewReducer,
+      Restaurants: restaurantsReducer,
+      session: (sessionState = { user }) => sessionState,
+    }),
+    { reviews: stored } as any,
     applyMiddleware(thunk)
   );
   return render(
     <Provider store={store as any}>
-      <MemoryRouter initialEntries={[{ pathname: `/${RESTAURANT}/reviews/${REVIEW}/update`, state }]}>
-        <Route path="/:restaurantId/reviews/:reviewId/update">
+      <MemoryRouter initialEntries={[{ pathname: path, state }]}>
+        <Route path={UPDATE_REVIEW_PATH}>
           <UpdateReview />
         </Route>
       </MemoryRouter>
@@ -62,6 +87,9 @@ const attachCalls = () =>
   ((global as any).fetch as jest.Mock).mock.calls
     .filter(([url, options]) => options?.method === "POST" && url === `/api/reviews/${REVIEW}/images`)
     .map(([, options]) => JSON.parse(options.body).url);
+
+const reviewBox = () => screen.findByRole("textbox") as Promise<HTMLInputElement>;
+const ratingBox = () => screen.getByRole("combobox") as HTMLSelectElement;
 
 beforeEach(() => {
   let n = 0;
@@ -75,43 +103,57 @@ afterEach(() => {
   delete (global as any).fetch;
 });
 
+// --- photos -------------------------------------------------------------------
+
 test("a photo the review already has is removed at once", async () => {
-  (global as any).fetch = jest.fn((_url: string, options: any = {}) =>
-    Promise.resolve(options.method === "DELETE" ? okJson({ message: "Successfully deleted" }) : okJson({ items: [] })));
+  serve((_url, options) => options.method === "DELETE" ? okJson({ message: "Successfully deleted" }) : okJson({}));
   renderForm();
-  expect(screen.getByAltText("Already on this review, 1 of 1")).toBeInTheDocument();
+  expect(await screen.findByAltText("Already on this review, 1 of 1")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "Remove photo 1" }));
 
   await waitFor(() => expect(screen.queryByAltText("Already on this review, 1 of 1")).not.toBeInTheDocument());
   expect((global as any).fetch).toHaveBeenCalledWith(`/api/review-images/${EXISTING}`, { method: "DELETE" });
-  expect(mockPush).not.toHaveBeenCalled(); // no Submit needed
+  expect(mockReplace).not.toHaveBeenCalled(); // no Submit needed
+});
+
+test("removing a photo keeps what has been typed", async () => {
+  serve((_url, options) => options.method === "DELETE" ? okJson({ message: "Successfully deleted" }) : okJson({}));
+  renderForm();
+
+  fireEvent.change(await reviewBox(), { target: { value: "Better than I said." } });
+  fireEvent.change(ratingBox(), { target: { value: "5" } });
+  fireEvent.click(screen.getByRole("button", { name: "Remove photo 1" }));
+
+  await waitFor(() => expect(screen.queryByAltText("Already on this review, 1 of 1")).not.toBeInTheDocument());
+  expect(screen.getByRole("textbox")).toHaveValue("Better than I said.");
+  expect(ratingBox()).toHaveValue("5");
 });
 
 test("a removal the server refuses keeps the photo and says why", async () => {
-  (global as any).fetch = jest.fn((_url: string, options: any = {}) =>
-    Promise.resolve(options.method === "DELETE"
-      ? { ok: false, status: 403, json: () => Promise.resolve({ errors: ["You can only delete photos from your own review"] }) }
-      : okJson({ items: [] })));
+  serve((_url, options) => options.method === "DELETE"
+    ? refused(["You can only delete photos from your own review"], 403)
+    : okJson({}));
   renderForm();
 
-  fireEvent.click(screen.getByRole("button", { name: "Remove photo 1" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Remove photo 1" }));
 
   expect(await screen.findByText("You can only delete photos from your own review")).toBeInTheDocument();
   expect(screen.getByAltText("Already on this review, 1 of 1")).toBeInTheDocument();
 });
 
 test("when some photos attach and some do not, only the failures stay staged", async () => {
-  (global as any).fetch = jest.fn((_url: string, options: any = {}) => {
-    if (options.method === "PUT") return Promise.resolve(okJson({ ...review, review: "Better." }));
+  serve((_url, options) => {
+    if (options.method === "PUT") return okJson({ ...review, review: "Better." });
     if (options.method === "POST") {
       const body = JSON.parse(options.body);
-      return Promise.resolve(body.url.endsWith("b.png") ? refused(["Not today"]) : okJson({ id: 9 }));
+      return body.url.endsWith("b.png") ? refused(["Not today"]) : okJson({ id: 9 });
     }
-    return Promise.resolve(okJson({ items: [], id: RESTAURANT, restaurantImages: [], categories: [] }));
+    return okJson({});
   });
   renderForm();
 
+  await reviewBox();
   const input = document.querySelector('input[type="file"]') as HTMLInputElement;
   fireEvent.change(input, {
     target: { files: [new File(["x"], "a.png", { type: "image/png" }), new File(["x"], "b.png", { type: "image/png" })] },
@@ -122,7 +164,7 @@ test("when some photos attach and some do not, only the failures stay staged", a
   expect(screen.getByText("b.png: Not today")).toBeInTheDocument();
   expect(screen.queryByAltText("a.png, not yet uploaded")).not.toBeInTheDocument();
   expect(screen.getByAltText("b.png, not yet uploaded")).toBeInTheDocument();
-  expect(mockPush).not.toHaveBeenCalled();
+  expect(mockReplace).not.toHaveBeenCalled();
 
   // Trying again sends only the one that failed.
   fireEvent.click(screen.getByRole("button", { name: /submit/i }));
@@ -131,10 +173,77 @@ test("when some photos attach and some do not, only the failures stay staged", a
   ]));
 });
 
-test("arriving from the create form shows why photos are missing", () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ items: [] })));
-  renderForm({ notice: ["Your review was posted, but some photos could not be attached:", "c.png: Not today"] });
+test("arriving from the create form shows why photos are missing", async () => {
+  serve();
+  renderForm({ state: { notice: ["Your review was posted, but some photos could not be attached:", "c.png: Not today"] } });
 
-  expect(screen.getByText("Your review was posted, but some photos could not be attached:")).toBeInTheDocument();
+  expect(await screen.findByText("Your review was posted, but some photos could not be attached:")).toBeInTheDocument();
   expect(screen.getByText("c.png: Not today")).toBeInTheDocument();
+});
+
+// --- loading the review ---------------------------------------------------------
+
+test("a review that isn't in the store is loaded and filled in", async () => {
+  // Arriving from the profile page, or a review past the restaurant's first page.
+  serve();
+  renderForm();
+
+  expect(await reviewBox()).toHaveValue("Solid.");
+  expect(ratingBox()).toHaveValue("4");
+  expect(screen.getByRole("heading", { name: "Edit your review of Uchi" })).toBeInTheDocument();
+});
+
+test("the form is filled from the review as it is now, not as the store last saw it", async () => {
+  serve(undefined, okJson({ ...review, review: "Edited elsewhere.", rating: 2 }));
+  renderForm({ stored: { [REVIEW]: review } });
+
+  expect(await reviewBox()).toHaveValue("Edited elsewhere.");
+  expect(ratingBox()).toHaveValue("2");
+});
+
+test("saving goes back to the restaurant, replacing the form in the history", async () => {
+  serve((_url, options) => options.method === "PUT" ? okJson({ ...review, review: "Better." }) : okJson({}));
+  renderForm();
+
+  fireEvent.change(await reviewBox(), { target: { value: "Better." } });
+  fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+
+  await waitFor(() => expect(mockReplace).toHaveBeenCalledWith(`/single/${RESTAURANT}`));
+  expect(mockPush).not.toHaveBeenCalled();
+});
+
+// --- who gets a form ------------------------------------------------------------------
+
+async function expectNotFound() {
+  expect(await screen.findByRole("heading", { name: "We couldn't find that review." })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Browse restaurants" })).toHaveAttribute("href", "/restaurants");
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Remove photo 1" })).not.toBeInTheDocument();
+}
+
+test("someone else's review is not offered for editing", async () => {
+  serve();
+  renderForm({ user: { ...AUTHOR, id: 7 } });
+  await expectNotFound();
+});
+
+test("a review that isn't there gets the not-found page, not an empty form", async () => {
+  serve(undefined, refused(["Review couldn't be found"], 404));
+  renderForm();
+  await expectNotFound();
+});
+
+test("a review from another restaurant is not found at this one", async () => {
+  serve();
+  renderForm({ path: `/1/reviews/${REVIEW}/update` });
+  await expectNotFound();
+});
+
+test("a reader who is not logged in is asked to", async () => {
+  serve();
+  renderForm({ user: null });
+
+  expect(await screen.findByRole("heading", { name: "Log in to edit your review" })).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
+  expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
 });

@@ -169,6 +169,8 @@ export interface SingleRestaurantResponse {
   openStatus: OpenStatus;
   timezone: string | null;
   isFavorited?: boolean;
+  /** The reader's own review of this restaurant; null when they have none or are logged out. */
+  viewerReviewId?: number | null;
 }
 
 // Redux State Types

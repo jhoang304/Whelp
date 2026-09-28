@@ -33,7 +33,7 @@ def test_duplicate_review_is_403_with_a_list(client, ids):
     res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews",
                       json={"review": "Second try.", "rating": 5})
     assert res.status_code == 403
-    assert res.get_json()["errors"] == ["User already has a review for this restaurant"]
+    assert res.get_json()["errors"] == ["You've already reviewed this restaurant"]
 
 
 def test_owner_cannot_review_their_own_restaurant(client, ids):

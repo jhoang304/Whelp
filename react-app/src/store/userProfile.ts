@@ -26,7 +26,7 @@ export const clearProfile = () => ({ type: CLEAR_PROFILE });
 export const getProfileThunk = (userId: string | number) => async (dispatch: AppDispatch) => {
     const [profileRes, reviewsRes] = await Promise.all([
         apiFetch(`/api/users/get/${userId}`),
-        apiFetch(`/api/reviews/${userId}`),
+        apiFetch(`/api/users/${userId}/reviews`),
     ]);
 
     if (profileRes.ok && reviewsRes.ok) {

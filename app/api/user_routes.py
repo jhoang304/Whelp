@@ -1,13 +1,15 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user, logout_user
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
-from app.models import Favorite, Restaurant, User, db
+from app.models import Favorite, Restaurant, Review, User, db
 from app.forms import ChangePasswordForm, DeleteAccountForm, UserProfileForm
 from app.api.accounts import delete_account, deletion_summary
 from app.extensions import limiter
 from app.api.utils import (
-    error_messages, key_still_referenced, page_response, read_page_request, restaurant_cards)
+    error_messages, key_still_referenced, page_response, read_page_request, restaurant_cards,
+    reviews_with_details)
 from app.api.aws_helpers import key_uploaded_by, remove_key_from_s3
 
 user_routes = Blueprint('users', __name__)
@@ -58,6 +60,25 @@ def get_user_profile(id):
         # For the Saved tab's count. Nobody else is told how many there are.
         data["favorite_count"] = Favorite.query.filter_by(user_id=profile.id).count()
     return data
+
+
+@user_routes.route('/<int:id>/reviews', methods=['GET'])
+def get_user_reviews(id):
+    """
+    Every review a user has written, newest first, with the restaurant each
+    was left on and any business-owner response. Public, like the profile
+    that lists them. (This was GET /api/reviews/<id>, which is now one review.)
+    """
+    if not db.session.get(User, id):
+        return {'errors': ["User couldn't be found"]}, 404
+
+    reviews = Review.query.options(
+        selectinload(Review.user),
+        selectinload(Review.review_images),
+        selectinload(Review.response),
+        selectinload(Review.restaurant),
+    ).filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
+    return reviews_with_details(reviews)
 
 
 @user_routes.route('/<int:id>/favorites', methods=['GET'])

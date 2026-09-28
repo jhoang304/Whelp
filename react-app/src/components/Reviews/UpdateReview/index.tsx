@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { useHistory, useLocation, useParams } from "react-router-dom";
-import { deleteReviewImage, updateOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
-import { getSingleRestaurant } from '../../../store/restaurants';
+import { deleteReviewImage, fetchReview, updateOneReview } from '../../../store/reviews';
 import { useAppDispatch, useAppSelector } from "../../../store";
 import { ReviewImage } from "../../../types";
+import PageMessage from "../../PageMessage";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
 import './UpdateReview.css'
@@ -21,33 +21,56 @@ interface UpdateReviewState {
   notice?: string[];
 }
 
+type Status = "loading" | "ready" | "error";
+
 function UpdateReview(): React.JSX.Element {
   const { reviewId, restaurantId } = useParams<UpdateReviewParams>();
   const location = useLocation<UpdateReviewState | undefined>();
+  const sessionUser = useAppSelector((state) => state.session.user);
   const oldReview = useAppSelector((state) => state.reviews[+reviewId]);
 
   const dispatch = useAppDispatch();
   const history = useHistory();
 
-  // The review may not be in the store yet (e.g. arriving from the profile page).
-  const [review, setReview] = useState<string>(oldReview ? oldReview.review : "");
-  const [rating, setRating] = useState<string>(oldReview ? String(oldReview.rating) : "5");
+  const [status, setStatus] = useState<Status>("loading");
+  const [loadErrors, setLoadErrors] = useState<string[]>([]);
+  const [review, setReview] = useState<string>("");
+  const [rating, setRating] = useState<string>("");
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>(location.state?.notice ?? []);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  // Which review the inputs were filled from. They are filled once per
+  // review: the stored one changes under the form -- removing a photo
+  // replaces it -- and filling them again would throw away what is typed.
+  const [filledFrom, setFilledFrom] = useState<number | null>(null);
 
-  useEffect( () => {
-    dispatch(getSingleRestaurant(+restaurantId));
-    if (!oldReview) dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
-  }, [dispatch, restaurantId]); // eslint-disable-line react-hooks/exhaustive-deps
+  // The review itself, not the restaurant's first page of reviews, which it
+  // may not be on: arriving from the profile page, it usually is not.
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading");
+    dispatch(fetchReview(reviewId)).then((errors) => {
+      if (cancelled) return;
+      if (errors) {
+        setLoadErrors(errors);
+        setStatus("error");
+      } else {
+        setStatus("ready");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, reviewId]);
 
   useEffect(() => {
-    if (oldReview) {
+    if (status === "ready" && oldReview && filledFrom !== oldReview.id) {
+      setFilledFrom(oldReview.id);
       setReview(oldReview.review);
       setRating(String(oldReview.rating));
     }
-  }, [oldReview]);
+  }, [status, oldReview, filledFrom]);
 
   // Removing a photo the review already has takes effect at once, the way
   // "Remove Photo" does in the restaurant's photo modal, rather than waiting
@@ -121,32 +144,60 @@ function UpdateReview(): React.JSX.Element {
         .filter((photo) => !failed.includes(photo))
         .forEach((photo) => URL.revokeObjectURL(photo.preview));
       setPending(failed);
-      try {
-        await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
-      } catch (refreshError) {
-        // the messages below still say what happened
-      }
+      // Shows the photos that did attach as the review's own. If it fails,
+      // the messages below still say what happened.
+      await dispatch(fetchReview(reviewId));
       setErrors(["Your review was saved, but some photos could not be attached:", ...attachErrors]);
       setIsSubmitting(false);
       return;
     }
 
-    // The edit is saved. Refreshing is best effort: if the connection drops
-    // here, the restaurant page loads for itself and reports its own errors,
-    // which beats stranding the user on a disabled form.
-    try {
-      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
-      await dispatch(getSingleRestaurant(+restaurantId));
-    } catch (refreshError) {
-      // fall through to the restaurant page
-    }
+    // The edit is saved. The restaurant page loads the restaurant and its
+    // reviews for itself, so there is nothing to refresh first, and this
+    // form is replaced in the history rather than left for Back to find.
+    history.replace(`/single/${restaurantId}`);
+  }
 
-    history.push(`/single/${restaurantId}`);
+  const loading = <PageMessage icon="fa-solid fa-spinner fa-spin" title="Loading..." />;
+
+  if (status === "loading") {
+    return loading;
+  }
+
+  const notFound = (
+    <PageMessage
+      icon="fa-regular fa-face-frown"
+      title={loadErrors[0] || "We couldn't find that review."}
+      action={{ to: "/restaurants", label: "Browse restaurants" }}
+    />
+  );
+
+  // A review from another restaurant is not this page's to edit either:
+  // saving it would send the reader back to the wrong restaurant.
+  if (status === "error" || !oldReview || String(oldReview.restaurant_id) !== restaurantId) {
+    return notFound;
+  }
+
+  if (!sessionUser) {
+    return (
+      <PageMessage icon="fa-regular fa-user" title="Log in to edit your review" action={{ to: "/login", label: "Log in" }} />
+    );
+  }
+
+  // Someone else's review looks like any review that isn't there: the page
+  // would only offer changes the server refuses.
+  if (oldReview.user_id !== sessionUser.id) {
+    return notFound;
+  }
+
+  // Until the inputs hold this review, rather than paint an empty form.
+  if (filledFrom !== oldReview.id) {
+    return loading;
   }
 
     return (
       <div  className="update-review-container">
-        <h2>Update Review</h2>
+        <h2>{oldReview.restaurant ? `Edit your review of ${oldReview.restaurant.name}` : "Edit your review"}</h2>
         <form onSubmit={handleSubmit} className="update-new-review-form">
           <ul>
             {errors.map((error, idx) => <li key={idx}>{error}</li>)}
