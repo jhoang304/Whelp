@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { render, screen, fireEvent, act } from "@testing-library/react";
-import { ModalProvider, Modal, FADE_OUT_MS } from "./Modal";
+import { MemoryRouter, Link } from "react-router-dom";
+import { ModalProvider, Modal, FADE_OUT_MS, CloseModalOnNavigation } from "./Modal";
 import OpenModalButton from "../components/OpenModalButton";
 import Lightbox from "../components/Lightbox";
 
@@ -250,4 +251,40 @@ describe("fading out", () => {
     expect(document.getElementById("modal")).toBeNull();
     expect(opener).toHaveFocus();
   });
+});
+
+// --- a modal belongs to the page it was opened on (#115) ------------------------------
+
+function renderWithRouter() {
+  return render(
+    <ModalProvider>
+      <MemoryRouter initialEntries={["/single/1"]}>
+        <OpenModalButton buttonText="Open" modalComponent={<Form />} />
+        <Link to="/restaurants">Elsewhere</Link>
+        <Modal />
+        <CloseModalOnNavigation />
+      </MemoryRouter>
+    </ModalProvider>
+  );
+}
+
+test("going to another page closes the modal", () => {
+  renderWithRouter();
+  fireEvent.click(screen.getByRole("button", { name: "Open" }));
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+
+  // As Back or a link would: the location changes under the open modal.
+  // (jsdom has no matchMedia, so it closes at once rather than fading.)
+  fireEvent.click(screen.getByText("Elsewhere", { selector: "a" }));
+
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("staying on the page leaves it open", () => {
+  renderWithRouter();
+  fireEvent.click(screen.getByRole("button", { name: "Open" }));
+  fireEvent.change(screen.getByLabelText("First"), { target: { value: "typed" } });
+
+  expect(screen.getByRole("dialog", { name: "Add Something" })).toBeInTheDocument();
+  expect(screen.getByLabelText("First")).toHaveValue("typed");
 });

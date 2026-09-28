@@ -70,7 +70,10 @@ export default function UserProfilePage(): React.JSX.Element {
         dispatch(getProfileThunk(userId));
     };
 
-    if (status === "loading") {
+    // The store holds whichever profile answered last. Until it is this
+    // URL's, this page is still loading: going from one profile to another,
+    // the first render after the change still has the previous one (#115).
+    if (status === "loading" || (profile && profile.id !== Number(userId))) {
         return (
             <div className="profile-page">
                 <div className="profile-loading">

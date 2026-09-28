@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Link, Redirect, useParams, useHistory, useLocation } from "react-router-dom";
 import { inOrder, search_restaurants } from '../../store/restaurants';
 import RestaurantListEntry from '../RestaurantListEntry';
@@ -46,8 +46,18 @@ function RestaurantBySearch(): React.JSX.Element {
 
     // The filters live in the URL here too, so a filtered search is a link.
     const filters = useMemo(() => readFilters(location.search), [location.search]);
+    // Counts each new search, so a Show more still on its way for the last
+    // one cannot end this one's (#115).
+    const searchVersion = useRef(0);
+    const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
     useEffect(() => {
+        // Only this search's answer ends the loading or reports a failure: an
+        // earlier keyword or filter answering late is not this page's news.
+        let cancelled = false;
+        searchVersion.current += 1;
+        setIsLoadingMore(false);
+
         const performSearch = async () => {
             if (!keyword) {
                 // Replace, not push: Back from the listing would otherwise
@@ -62,14 +72,18 @@ function RestaurantBySearch(): React.JSX.Element {
             try {
                 await dispatch(search_restaurants(keyword, 1, filters));
             } catch (err) {
+                if (cancelled) return;
                 setError('Search failed. Please try again.');
                 console.error('Search error:', err);
             } finally {
-                setIsLoading(false);
+                if (!cancelled) setIsLoading(false);
             }
         };
 
         performSearch();
+        return () => {
+            cancelled = true;
+        };
     }, [dispatch, keyword, history, filters, attempt]);
 
     const byId = useAppSelector((state) => state.Restaurants.searchedRestaurants);
@@ -81,16 +95,16 @@ function RestaurantBySearch(): React.JSX.Element {
     const loadedPage = useAppSelector((state) => state.Restaurants.searchedPage ?? 1);
     // A filter the API refused reads as "no results" unless it is shown.
     const searchError = useAppSelector((state) => state.Restaurants.searchError);
-    const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
 
     const applyFilters = (next: RestaurantFilters) => {
         history.push(searchLocation(keyword, next));
     };
 
     const showMore = async () => {
+        const version = searchVersion.current;
         setIsLoadingMore(true);
         await dispatch(search_restaurants(keyword, loadedPage + 1, filters));
-        setIsLoadingMore(false);
+        if (version === searchVersion.current) setIsLoadingMore(false);
     };
 
     if (isLoading) {

@@ -3,7 +3,7 @@ import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
 import { BrowserRouter } from "react-router-dom";
 
-import { ModalProvider, Modal } from "./context/Modal";
+import { ModalProvider, Modal, CloseModalOnNavigation } from "./context/Modal";
 import configureStore from "./store";
 import * as sessionActions from "./store/session";
 import App from "./App";
@@ -27,6 +27,7 @@ function Root() {
 				<BrowserRouter>
 					<App />
 					<Modal />
+					<CloseModalOnNavigation />
 				</BrowserRouter>
 			</Provider>
 		</ModalProvider>

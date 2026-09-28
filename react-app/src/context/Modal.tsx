@@ -1,5 +1,6 @@
-import React, { useCallback, useContext, useLayoutEffect, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useLocation } from 'react-router-dom';
 import './Modal.css';
 import { useDialog } from '../hooks/useDialog';
 
@@ -149,6 +150,32 @@ export function Modal(): React.JSX.Element | null {
     </div>,
     modalRef.current as HTMLDivElement
   );
+}
+
+/**
+ * Closes the modal when the page changes. The provider sits above the
+ * router, so nothing used to: Back from a restaurant left its "See all
+ * photos" open over the listing, Remove Photo still live, and a "Delete
+ * restaurant" confirmed on the page you went back to still deleted it
+ * (#115). Rendered inside the router; the page it first renders on is not
+ * a change.
+ */
+export function CloseModalOnNavigation(): null {
+  const location = useLocation();
+  const { closeModal } = useModal();
+  // The latest closeModal, which changes whenever a close callback is set,
+  // without making every new one look like a navigation.
+  const close = useRef(closeModal);
+  close.current = closeModal;
+  const shownKey = useRef(location.key);
+
+  useEffect(() => {
+    if (shownKey.current === location.key) return;
+    shownKey.current = location.key;
+    close.current();
+  }, [location.key]);
+
+  return null;
 }
 
 export const useModal = (): ModalContextValue => {

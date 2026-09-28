@@ -84,6 +84,15 @@ export const loadRestaurants = (page: RestaurantsResponse, append: boolean) => (
 
 export const PER_PAGE = 20;
 
+// The latest request for each list. The listing and the search results each
+// have one place in the store, and changing a filter before the last answer
+// arrives leaves two requests in flight: whichever answered last used to
+// win, so the page could show "$" restaurants under a "$$" filter, or append
+// the old filter's page 2 to the new one's list (#115). Only the latest
+// request for a list may write to it.
+let latestListing = 0;
+let latestSearch = 0;
+
 export const LOAD_ERROR = "restaurants/loadError";
 
 const loadError = (error: string) => ({
@@ -108,15 +117,20 @@ export const getAllRestaurants = (
     params.set("page", String(page));
     params.set("per_page", String(PER_PAGE));
 
+    const request = ++latestListing;
+    const superseded = () => request !== latestListing;
+
     // With the trailing slash: without it every listing costs a 308 to the
     // rule that has one, and then the request again.
     const response = await apiFetch(`/api/restaurants/?${params.toString()}`);
     if (response.ok) {
         const body: RestaurantsResponse = await response.json();
+        if (superseded()) return null;
         dispatch(loadRestaurants(body, page > 1));
         return body;
     }
     const messages = await parseErrors(response, "Something went wrong loading restaurants.");
+    if (superseded()) return null;
     dispatch(loadError(messages[0]));
     return null;
 };
@@ -156,6 +170,8 @@ export const search_restaurants = (
         return null;
     }
 
+    const request = ++latestSearch;
+    const superseded = () => request !== latestSearch;
     dispatch(searchLoading());
 
     // The keyword as a query parameter: in the path, a "/" in it was a 404.
@@ -169,19 +185,23 @@ export const search_restaurants = (
 
         if (response.ok) {
             const data = await response.json();
+            if (superseded()) return null;
             dispatch(search(data, page > 1));
             return data;
         } else if (response.status === 400) {
             // The API says which filter it disliked; "Invalid search query"
             // sent someone hunting through their keyword for the problem.
             const messages = await parseErrors(response, "Invalid search query");
+            if (superseded()) return null;
             dispatch(searchError(messages[0]));
             return null;
         } else {
+            if (superseded()) return null;
             dispatch(searchError("Search failed. Please try again."));
             return null;
         }
     } catch (error) {
+        if (superseded()) return null;
         console.error('Search request failed:', error);
         dispatch(searchError("Network error. Please check your connection."));
         return null;
