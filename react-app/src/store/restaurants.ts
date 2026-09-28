@@ -259,8 +259,13 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: Ap
 }
 
 //Create a restaurant
-export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () => {
-    let createdRestaurantId;
+/**
+ * Create a restaurant with its cover photo (`url` in the draft), and resolve
+ * to its id. One request: the API writes both in one commit, so a refused
+ * cover creates nothing and trying again cannot make a second restaurant
+ * (#114). Throws the failed response for the caller to read errors off.
+ */
+export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async (): Promise<number> => {
     const response = await apiFetch("/api/restaurants/", {
         method: "POST",
         headers: {
@@ -268,33 +273,12 @@ export const addRestaurantThunk = (newRestaurant: RestaurantDraft) => async () =
         },
         body: JSON.stringify(newRestaurant)
     });
-    if (response.ok) {
-        const createdRestaurant = await response.json()
-        createdRestaurantId = createdRestaurant.id
-    }
-    else {
+    if (!response.ok) {
         // Callers (CreateRestaurantModal) read the JSON errors off the thrown response.
         throw response
     }
-
-    const previewImage={
-        url:newRestaurant.url,
-        preview:true
-    }
-
-    const responseObj = await apiFetch(`/api/restaurants/${createdRestaurantId}/images`, {
-        method: "POST",
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(previewImage)
-    })
-
-    if (!responseObj.ok) {
-        throw responseObj
-    }
-
-    return createdRestaurantId
+    const createdRestaurant = await response.json()
+    return createdRestaurant.id
 }
 
 //Edit a restaurant

@@ -37,6 +37,24 @@ def with_details(restaurant):
             "openStatus": open_status(rows, restaurant.timezone)}
 
 
+def read_cover():
+    """
+    The cover photo a new restaurant is created with, from `url` in the body:
+    (url, None), (None, None) when none was sent, or (None, messages).
+
+    Checked by the form every other photo is, so a cover is held to the same
+    length and scheme as one added later.
+    """
+    body = request.get_json(silent=True) or {}
+    if body.get("url") in (None, ""):
+        return None, None
+    cover_form = RestaurantImageForm()
+    cover_form["csrf_token"].data = request.cookies.get("csrf_token")
+    if not cover_form.validate():
+        return None, error_messages(cover_form.errors)
+    return cover_form.data["url"], None
+
+
 # Get all Restaurants
 @restaurant_routes.route('/')
 def restaurants():
@@ -180,7 +198,15 @@ def favorite_restaurant(id):
 @restaurant_routes.route('/', methods=["POST"])
 @login_required
 def create_restaurant():
+    """
+    Create a restaurant owned by the caller, with its cuisines, amenities,
+    hours and, from `url`, its cover photo.
 
+    One request and one commit. The cover used to be a second request after
+    this one had committed, so a cover that failed left a restaurant behind
+    and the form, still open, made another on every retry (#114). Now a
+    cover the form refuses is a 400 and nothing is created.
+    """
     form = RestaurantForm()
     form["csrf_token"].data = request.cookies.get("csrf_token")
 
@@ -203,6 +229,10 @@ def create_restaurant():
         timezone, timezone_error = read_timezone(request.get_json(), form.data["state"])
         if timezone_error:
             return {"errors": [timezone_error]}, 400
+
+        cover_url, cover_errors = read_cover()
+        if cover_errors:
+            return {"errors": cover_errors}, 400
 
         restaurant = Restaurant(
             user_id = int(current_user.id),
@@ -230,11 +260,20 @@ def create_restaurant():
         if hours is not None:
             restaurant.hours = [RestaurantHours(weekday=weekday, opens=opens, closes=closes)
                                 for weekday, opens, closes in hours]
+        if cover_url:
+            restaurant.restaurant_images = [RestaurantImage(
+                url=cover_url,
+                # As on any photo: only an object this caller uploaded gets a
+                # key, and only a key is ever deleted.
+                s3_key=key_uploaded_by(cover_url, current_user.id),
+                preview=True,
+                createdByUserId=current_user.id,
+            )]
 
         db.session.add(restaurant)
         db.session.commit()
 
-        return with_details(restaurant)
+        return {**with_details(restaurant), "previewImage": cover_url}
 
     else:
         return {"errors": error_messages(form.errors)}, 400

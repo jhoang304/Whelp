@@ -13,9 +13,11 @@ import CreateRestaurantModal from "./index";
  * this one did not, and a refactor is only as safe as the behaviour someone
  * wrote down first.
  *
- * The create flow is two requests, not one -- the restaurant, then its cover
- * photo -- and a third before either if the photo is being uploaded rather
- * than linked.
+ * The create flow is one request -- the restaurant and its cover photo
+ * together, which the API writes in one commit -- and an upload before it
+ * if the photo is being uploaded rather than linked. It used to be two, and
+ * a cover that failed after the restaurant was saved left the form open to
+ * make another restaurant on every retry (#114).
  */
 
 const mockCloseModal = jest.fn();
@@ -102,10 +104,8 @@ afterEach(() => {
   delete (global as any).fetch;
 });
 
-test("a valid submission creates the restaurant, attaches the cover photo, and opens its page", async () => {
-  (global as any).fetch = jest.fn((url: string) =>
-    Promise.resolve(url === "/api/restaurants/" ? okJson({ id: 7 }) : okJson({ id: 3, preview: true }))
-  );
+test("a valid submission creates the restaurant with its cover, in one request, and opens its page", async () => {
+  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ id: 7 })));
 
   renderModal();
   fillTheForm();
@@ -113,17 +113,16 @@ test("a valid submission creates the restaurant, attaches the cover photo, and o
 
   await waitFor(() => expect(mockCloseModal).toHaveBeenCalledTimes(1));
 
-  const [restaurant, image] = sentJson();
-  expect(restaurant.url).toBe("/api/restaurants/");
-  expect(restaurant.body).toMatchObject({
+  const sent = sentJson();
+  expect(sent.map((request) => request.url)).toEqual(["/api/restaurants/"]); // no second request for the photo
+  expect(sent[0].body).toMatchObject({
     name: "New Bistro",
     city: "Austin",
     zipcode: "78701",
     website: "http://new.com",
+    url: "https://example.com/cover.jpg",
   });
-  expect(restaurant.body.user_id).toBeUndefined(); // the API takes the owner from the session
-  expect(image.url).toBe("/api/restaurants/7/images");
-  expect(image.body).toEqual({ url: "https://example.com/cover.jpg", preview: true });
+  expect(sent[0].body.user_id).toBeUndefined(); // the API takes the owner from the session
   expect(mockPush).toHaveBeenCalledWith("/single/7");
 });
 
@@ -237,4 +236,96 @@ test("the cover photo is previewed once there is one to show", () => {
   expect(preview()).toBeNull();
   fireEvent.change(screen.getByLabelText(/Cover image URL/i), { target: { value: "https://example.com/c.jpg" } });
   expect(preview()).toHaveAttribute("src", "https://example.com/c.jpg");
+});
+
+// --- trying again after a refusal (#114) ------------------------------------------
+
+const refused = (errors: string[]) => ({ ok: false, status: 400, json: () => Promise.resolve({ errors }) });
+
+/** Answer each create with the next of `answers`; the form's own lists with nothing. */
+function answerCreates(...answers: any[]) {
+  (global as any).fetch = jest.fn((url: string, options: any = {}) =>
+    Promise.resolve(options.method === "POST" && url === "/api/restaurants/" ? answers.shift() : okJson({ items: [] })));
+}
+
+test("a refused create made nothing, so trying again is one restaurant, not two", async () => {
+  answerCreates(refused(["Image URL must be 255 characters or fewer."]), okJson({ id: 8 }));
+
+  renderModal();
+  fillTheForm();
+  fireEvent.click(submitButton());
+
+  expect(await screen.findByText("Image URL must be 255 characters or fewer.")).toBeInTheDocument();
+  expect(mockCloseModal).not.toHaveBeenCalled();
+
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/single/8"));
+  // One create per click, and never a separate photo request that could fail
+  // after the restaurant was saved.
+  expect(sentJson().map((request) => request.url)).toEqual(["/api/restaurants/", "/api/restaurants/"]);
+});
+
+test("a pasted link longer than the API takes is caught before anything is sent", async () => {
+  (global as any).fetch = jest.fn();
+
+  renderModal();
+  fillTheForm();
+  fireEvent.change(screen.getByLabelText(/Cover image URL/i), {
+    target: { value: "https://cdn.example.com/" + "a".repeat(300) + ".jpg" },
+  });
+  fireEvent.click(submitButton());
+
+  expect(await screen.findByText("Image URL must be 255 characters or fewer.")).toBeInTheDocument();
+  expect(sentJson()).toHaveLength(0);
+});
+
+test("a link may say HTTPS in capitals, as the API allows", async () => {
+  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ id: 7 })));
+
+  renderModal();
+  fillTheForm();
+  fireEvent.change(screen.getByLabelText(/Cover image URL/i), { target: { value: "HTTPS://Example.com/c.jpg" } });
+  fireEvent.click(submitButton());
+
+  await waitFor(() => expect(mockCloseModal).toHaveBeenCalled());
+  expect(sentJson()[0].body.url).toBe("HTTPS://Example.com/c.jpg");
+});
+
+test("an uploaded cover is not uploaded again when the create is retried", async () => {
+  answerCreates(refused(["Postal code must be between 3 and 10 characters."]), okJson({ id: 9 }));
+  mockUploadImage.mockResolvedValue({ url: "https://bucket/uploads/1/cover.png" });
+
+  renderModal();
+  fillTheForm();
+  fireEvent.click(screen.getByRole("button", { name: /upload cover photo/i }));
+  const chooser = () => screen.getByLabelText(/choose (a different )?photo/i, { selector: "input[type=file]" });
+  fireEvent.change(chooser(), { target: { files: [new File(["x"], "cover.png", { type: "image/png" })] } });
+  fireEvent.click(submitButton());
+  expect(await screen.findByText("Postal code must be between 3 and 10 characters.")).toBeInTheDocument();
+
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/single/9"));
+  expect(mockUploadImage).toHaveBeenCalledTimes(1);
+  expect(sentJson().map((request) => request.body.url)).toEqual([
+    "https://bucket/uploads/1/cover.png", "https://bucket/uploads/1/cover.png",
+  ]);
+});
+
+test("a different file chosen after a refusal is uploaded", async () => {
+  answerCreates(refused(["Postal code must be between 3 and 10 characters."]), okJson({ id: 9 }));
+  mockUploadImage.mockImplementation(async (file: File) => ({ url: `https://bucket/uploads/1/${file.name}` }));
+
+  renderModal();
+  fillTheForm();
+  fireEvent.click(screen.getByRole("button", { name: /upload cover photo/i }));
+  const chooser = () => screen.getByLabelText(/choose (a different )?photo/i, { selector: "input[type=file]" });
+  fireEvent.change(chooser(), { target: { files: [new File(["x"], "first.png", { type: "image/png" })] } });
+  fireEvent.click(submitButton());
+  expect(await screen.findByText("Postal code must be between 3 and 10 characters.")).toBeInTheDocument();
+
+  fireEvent.change(chooser(), { target: { files: [new File(["y"], "second.png", { type: "image/png" })] } });
+  fireEvent.click(submitButton());
+  await waitFor(() => expect(mockPush).toHaveBeenCalledWith("/single/9"));
+  expect(mockUploadImage.mock.calls.map(([file]) => file.name)).toEqual(["first.png", "second.png"]);
+  expect(sentJson()[1].body.url).toBe("https://bucket/uploads/1/second.png");
 });
