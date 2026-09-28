@@ -113,19 +113,32 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
     <div className="reviews-container">
       <div className="reviews-heading">
         <h2>Reviews</h2>
-        {reviews.length > 1 && (
-          <label className="reviews-sort">
-            Sort by
-            <select
-              value={sort}
-              onChange={(event) => setSort(event.target.value as ReviewSort)}
-            >
-              {REVIEW_SORTS.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
-              ))}
-            </select>
-          </label>
-        )}
+        <div className="reviews-heading-actions">
+          {reviews.length > 1 && (
+            <label className="reviews-sort">
+              Sort by
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as ReviewSort)}
+              >
+                {REVIEW_SORTS.map((option) => (
+                  <option key={option.value} value={option.value}>{option.label}</option>
+                ))}
+              </select>
+            </label>
+          )}
+          {sessionUser && !isOwner && !viewerReviewId && (
+            // Up here, not under the list: with many reviews the bottom is a
+            // long way down, and past every Show more. A link that looks like
+            // a button, not a button inside a link: the two nested are two
+            // stops for Tab and two things for a screen reader to announce,
+            // and HTML does not allow it.
+            <Link className="red-button" to={`/${restaurantId}/create-review`}>
+              {whiteStar}
+              <span className="write-a-review">Write a review</span>
+            </Link>
+          )}
+        </div>
       </div>
 
       {loaded && reviews.length === 0 && (
@@ -215,16 +228,6 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
             {loadingMore ? "Loading…" : `Show more reviews (${reviews.length} of ${total})`}
           </button>
         </div>
-      )}
-
-      {sessionUser && !isOwner && !viewerReviewId && (
-        // A link that looks like a button, not a button inside a link: the
-        // two nested are two stops for Tab and two things for a screen reader
-        // to announce, and HTML does not allow it.
-        <Link className="red-button" to={`/${restaurantId}/create-review`}>
-          {whiteStar}
-          <span className="write-a-review">Write a review</span>
-        </Link>
       )}
     </div>
   );

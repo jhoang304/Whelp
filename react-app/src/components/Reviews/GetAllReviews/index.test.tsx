@@ -238,6 +238,25 @@ test("someone who hasn't reviewed it may write one", async () => {
   expect(screen.queryByRole("link", { name: "Edit your review" })).not.toBeInTheDocument();
 });
 
+test("Write a review sits in the heading, ahead of the reviews rather than after them all", async () => {
+  serveReviews(25);
+  renderReviews(null);
+  await waitFor(() => expect(shownIds()).toHaveLength(20));
+
+  const write = screen.getByRole("link", { name: "Write a review" });
+  expect(write.closest(".reviews-heading")).not.toBeNull();
+  const firstReview = document.querySelector(".single-review-container")!;
+  expect(write.compareDocumentPosition(firstReview) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+});
+
+test("with no reviews yet, Write a review is still offered", async () => {
+  serveReviews(0);
+  renderReviews(null);
+
+  expect(await screen.findByText(/No reviews yet/)).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Write a review" })).toBeInTheDocument();
+});
+
 test("deleting your review, then Show more, skips nobody", async () => {
   const server = serveReviews(25, 3);
   const mine = server.ids()[3];
