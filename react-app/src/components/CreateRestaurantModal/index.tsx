@@ -1,10 +1,11 @@
 import "./CreateRestaurantModal.css"
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useModal } from "../../context/Modal";
 import { useHistory } from 'react-router-dom';
 import { addRestaurantThunk } from "../../store/restaurants";
 import { parseErrors } from "../../utils/parseErrors";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
+import { IMAGE_URL_PATTERN, imageUrlProblem } from "../../utils/images";
 import { RestaurantFields, validateRestaurant } from "../../utils/restaurantValidation";
 import { validateHours } from "../../utils/hours";
 import { OpeningHours } from "../../types";
@@ -44,6 +45,10 @@ function CreateRestaurantModal() {
     const [errors, setErrors] = useState<string[]>([]);
     const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
     const { closeModal } = useModal();
+    // The chosen file once it is in the bucket, and the url it got. When the
+    // server then refuses the restaurant, trying again reuses it rather than
+    // putting the same photo in the bucket a second time.
+    const uploadedCover = useRef<{ file: File; url: string } | null>(null);
 
     // A thumbnail of the chosen cover: the file's own blob url while one is
     // picked (revoked when it changes or the modal closes), or the pasted url
@@ -62,7 +67,7 @@ function CreateRestaurantModal() {
     }, [imageFile]);
     const candidate = imageMode === "upload"
         ? fileUrl
-        : (/^https?:\/\/.+/.test(url.trim()) ? url.trim() : null);
+        : (IMAGE_URL_PATTERN.test(url.trim()) ? url.trim() : null);
     const previewSrc = candidate && candidate !== brokenPreview ? candidate : null;
 
 
@@ -77,7 +82,8 @@ function CreateRestaurantModal() {
 
         if (imageMode === "upload" && !imageFile) validationErrors.push("Choose a cover photo for the restaurant");
         if (imageMode === "url" && !url.trim()) validationErrors.push("Cover photo URL is required");
-        if (imageMode === "url" && url.trim() && !/^https?:\/\/.+/.test(url.trim())) validationErrors.push("Image URL must start with http:// or https://");
+        const urlProblem = imageMode === "url" && url.trim() ? imageUrlProblem(url.trim(), "Image URL") : null;
+        if (urlProblem) validationErrors.push(urlProblem);
 
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
@@ -88,13 +94,16 @@ function CreateRestaurantModal() {
         // Upload the cover photo first so the restaurant can be created with its URL.
         let imageUrl = url.trim();
         if (imageMode === "upload" && imageFile) {
-            const upload = await uploadImage(imageFile);
-            if (!upload.url) {
-                setErrors(upload.errors || ["Could not upload the cover photo. Please try again."]);
-                setIsSubmitting(false);
-                return;
+            if (uploadedCover.current?.file !== imageFile) {
+                const upload = await uploadImage(imageFile);
+                if (!upload.url) {
+                    setErrors(upload.errors || ["Could not upload the cover photo. Please try again."]);
+                    setIsSubmitting(false);
+                    return;
+                }
+                uploadedCover.current = { file: imageFile, url: upload.url };
             }
-            imageUrl = upload.url;
+            imageUrl = uploadedCover.current.url;
         }
 
         // No user_id: the API takes the owner from the session, and trusting a
@@ -109,6 +118,8 @@ function CreateRestaurantModal() {
             timezone,
         };
 
+        // One request for the restaurant and its cover. Refused, it created
+        // nothing, so the form stays open and Create is safe to press again.
         try {
             const createdRestaurantId = await dispatch(addRestaurantThunk(newRestaurant));
             closeModal();

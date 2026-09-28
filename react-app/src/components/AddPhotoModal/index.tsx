@@ -4,14 +4,13 @@ import { useModal } from "../../context/Modal";
 import { addRestaurantImage } from "../../store/restaurantPhoto";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
+import { imageUrlProblem } from "../../utils/images";
 
 interface AddPhotoModalProps {
     restaurantId: string | number;
 }
 
 type ImageMode = "upload" | "url";
-
-const URL_PATTERN = /^https?:\/\/.+/i;
 
 function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element {
     const dispatch = useAppDispatch();
@@ -53,6 +52,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
         setErrors([]);
 
         let imageUrl = url.trim();
+        const urlProblem = mode === "url" && imageUrl ? imageUrlProblem(imageUrl, "Photo URL") : null;
 
         if (mode === "upload") {
             if (!file) {
@@ -62,8 +62,8 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
         } else if (!imageUrl) {
             setErrors(["Paste the URL of a photo."]);
             return;
-        } else if (!URL_PATTERN.test(imageUrl)) {
-            setErrors(["Photo URL must start with http:// or https://"]);
+        } else if (urlProblem) {
+            setErrors([urlProblem]);
             return;
         }
 

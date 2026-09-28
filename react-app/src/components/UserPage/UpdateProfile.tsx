@@ -4,7 +4,7 @@ import { UserProfile } from "../../types";
 import { editProfileThunk, ProfileUpdates } from "../../store/userProfile";
 import { useModal } from "../../context/Modal";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
-import { avatarUrl, DEFAULT_AVATAR, onAvatarError } from "../../utils/images";
+import { avatarUrl, DEFAULT_AVATAR, IMAGE_URL_PATTERN, imageUrlProblem, onAvatarError } from "../../utils/images";
 import "./UpdateProfile.css";
 
 interface UpdateProfileProps {
@@ -12,8 +12,6 @@ interface UpdateProfileProps {
 }
 
 type ImageMode = "upload" | "url";
-
-const URL_PATTERN = /^https?:\/\/.+/i;
 
 export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.Element {
     const dispatch = useAppDispatch();
@@ -50,7 +48,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
     const handleUrlChange = (value: string) => {
         setImageUrl(value);
         setRemoveImage(false);
-        if (URL_PATTERN.test(value.trim())) {
+        if (IMAGE_URL_PATTERN.test(value.trim())) {
             setPreviewSrc(value.trim());
         }
     };
@@ -75,9 +73,10 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
         if (trimmedUsername.length > 40) validation.push("Username must be 40 characters or fewer.");
         if (firstName.trim().length > 50) validation.push("First name must be 50 characters or fewer.");
         if (lastName.trim().length > 50) validation.push("Last name must be 50 characters or fewer.");
-        if (imageMode === "url" && imageUrl.trim() && !URL_PATTERN.test(imageUrl.trim())) {
-            validation.push("Profile picture URL must start with http:// or https://");
-        }
+        const urlProblem = imageMode === "url" && imageUrl.trim()
+            ? imageUrlProblem(imageUrl.trim(), "Profile picture URL")
+            : null;
+        if (urlProblem) validation.push(urlProblem);
         if (validation.length > 0) {
             setErrors(validation);
             return;
