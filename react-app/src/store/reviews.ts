@@ -51,22 +51,35 @@ export const fetchAllReviewsByRestaurantId = (
     return null;
 }
 
-
-const LoadUserReviews = 'reviews/LoadUserReviews'
-
-const loadUserIdRev = (reviews: Review[]) => ({
-  type: LoadUserReviews,
-  reviews
+// Load one review
+const LOAD_REVIEW = 'reviews/LOAD_REVIEW'
+const loadReview = (review: Review) => ({
+    type: LOAD_REVIEW,
+    review
 })
 
-export const getAllReviewsByUserId = (user_id: Id) => async (dispatch: AppDispatch) => {
-  const response = await apiFetch(`/api/reviews/${user_id}`)
-  if(response.ok){
-    const data = await response.json()
-    await dispatch(loadUserIdRev(data))
-    return data
-  }
-  return
+/**
+ * Load one review, whichever restaurant or page it is on: what the edit page
+ * is about, where the restaurant's list holds only one page of reviews.
+ * Returns null on success or a list of error messages.
+ */
+export const fetchReview = (reviewId: Id) => async (dispatch: AppDispatch): Promise<string[] | null> => {
+    let res: Response
+    try {
+        res = await apiFetch(`/api/reviews/${reviewId}`)
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
+    if (res.status === 404) return ["We couldn't find that review."]
+    if (!res.ok) return ["Something went wrong loading this review."]
+    let review: Review
+    try {
+        review = await res.json()
+    } catch (parseError) {
+        return ["Something went wrong loading this review."]
+    }
+    dispatch(loadReview(review))
+    return null
 }
 
 // Delete a review
@@ -261,7 +274,7 @@ export const deleteReviewResponse = (reviewId: number) => async (dispatch: AppDi
 
 type ReviewAction =
     | { type: typeof LOAD_ALL_REVIEWS_BY_RESTAURANTID; reviews: Review[] }
-    | { type: typeof LoadUserReviews; reviews: Review[] }
+    | { type: typeof LOAD_REVIEW; review: Review }
     | { type: typeof DELETE_REVIEW; reviewId: Id }
     | { type: typeof CREATE_REVIEW; review: Review }
     | { type: typeof UPDATE_REVIEW; review: Review }
@@ -284,12 +297,8 @@ const reviewReducer = (state: ReviewsState = initialState, incoming: AnyAction):
             })
             return newState
 
-        case LoadUserReviews:
-            newState = {};
-            action.reviews.forEach((review: Review) => {
-                newState[review.id] = review
-                })
-            return newState
+        case LOAD_REVIEW:
+            return { ...state, [action.review.id]: action.review }
 
         case DELETE_REVIEW:
             newState = {...state}

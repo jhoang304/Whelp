@@ -1,0 +1,49 @@
+/* A restaurant or review that isn't there, or a page you must log in for. */
+.page-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 80px 20px;
+    min-height: 400px;
+    color: var(--color-gray-600);
+}
+
+.page-message i {
+    font-size: 44px;
+    color: var(--color-gray-400);
+    margin-bottom: var(--space-4);
+}
+
+.page-message h2 {
+    margin: 0;
+    font-size: var(--text-2xl);
+    color: var(--color-gray-800);
+}
+
+.page-message p {
+    margin: var(--space-3) 0 0;
+    max-width: 32rem;
+}
+
+.page-message-action {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    margin: var(--space-6) 0 0;
+    padding: var(--space-3) var(--space-6);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    color: white;
+    background-color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+    border-radius: var(--radius-sm);
+    text-decoration: none;
+}
+
+.page-message-action:hover {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    color: white;
+}

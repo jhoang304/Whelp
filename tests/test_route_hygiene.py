@@ -47,7 +47,7 @@ def test_public_gets_do_not_depend_on_rule_ordering(client, ids):
     assert reviews.status_code == 200
     assert len(reviews.get_json()["items"]) == 1
 
-    own_reviews = client.get(f"/api/reviews/{ids['reviewer']}")
+    own_reviews = client.get(f"/api/users/{ids['reviewer']}/reviews")
     assert own_reviews.status_code == 200
     assert isinstance(own_reviews.get_json(), list)
 

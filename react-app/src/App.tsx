@@ -9,6 +9,7 @@ import RestaurantList from "./components/RestaurantList"
 import SingleRestaurant from "./components/SingleRestaurant"
 import CreateNewReview from "./components/Reviews/CreateNewReview";
 import UpdateReview from "./components/Reviews/UpdateReview";
+import { CREATE_REVIEW_PATH, UPDATE_REVIEW_PATH } from "./components/Reviews/paths";
 import UserProfilePage from "./components/UserPage";
 import Footer from "./components/Footer";
 import RestaurantBySearch, { LegacySearchRedirect } from "./components/SearchBar";
@@ -56,10 +57,10 @@ function App(): React.JSX.Element {
             <Route exact path="/single/:restaurantId">
               <SingleRestaurant />
             </Route>
-            <Route exact path="/:restaurantId/create-review">
+            <Route exact path={CREATE_REVIEW_PATH}>
               <CreateNewReview />
             </Route>
-            <Route exact path="/:restaurantId/reviews/:reviewId/update">
+            <Route exact path={UPDATE_REVIEW_PATH}>
               <UpdateReview />
             </Route>
           </Switch>

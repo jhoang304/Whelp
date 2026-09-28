@@ -130,6 +130,11 @@ def restaurants_by_id(id):
        "hours": hours_to_dicts(sorted(hour_rows)),
        "openStatus": open_status(hour_rows, SingleRestaurant.timezone),
        "isFavorited": id in favorited_ids([id]),
+       # The reader's own review of this restaurant, if they have written one:
+       # the page it is on is not something the first page of reviews can
+       # answer, and "Write a review" should send them to it instead.
+       "viewerReviewId": next((review.id for review in reviews
+                               if current_user.is_authenticated and review.user_id == current_user.id), None),
     }
 
     return data
@@ -508,12 +513,12 @@ def create_review_by_restaurant_id(id):
         return {"errors": ["restaurant couldn't be found"]}, 404
 
     if restaurant.user_id == current_user.id:
-        return {"errors": ["User can't add review on his own restaurant"]}, 403
+        return {"errors": ["You can't review your own restaurant"]}, 403
 
     review = Review.query.filter(Review.restaurant_id == id, Review.user_id == current_user.id).all()
 
     if len(review) > 0:
-        return {"errors": ["User already has a review for this restaurant"]}, 403
+        return {"errors": ["You've already reviewed this restaurant"]}, 403
 
     form = ReviewForm()
     form["csrf_token"].data = request.cookies.get("csrf_token")

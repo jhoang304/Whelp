@@ -1,30 +1,30 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
-from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
 from app.models import db, Review, ReviewImage, ReviewResponse
 from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
-from app.api.utils import error_messages, key_still_referenced, reviews_with_details
+from app.api.utils import error_messages, key_still_referenced, review_with_details
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 
 review_routes = Blueprint('reviews', __name__)
 
 
-# get all reviews by user id
+# Get one review
 @review_routes.route('/<int:id>')
-def get_reviews_by_userId(id):
+def get_review(id):
   """
-  Returns every review written by a user, newest first, including the
-  restaurant it was left on and any business-owner response.
+  One review, with its author, photos, the restaurant it was left on and any
+  business-owner response. The edit page loads it this way, so it works from
+  whichever page linked to it -- the restaurant's reviews come a page at a
+  time, and the review may not be on the first.
+
+  A user's reviews used to live at this URL; they are GET /api/users/<id>/reviews.
   """
-  reviews = Review.query.options(
-    selectinload(Review.user),
-    selectinload(Review.review_images),
-    selectinload(Review.response),
-    selectinload(Review.restaurant),
-  ).filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
-  return reviews_with_details(reviews)
+  review = db.session.get(Review, id)
+  if not review:
+    return {"errors": ["Review couldn't be found"]}, 404
+  return review_with_details(review)
 
 
 # Add an image for a review

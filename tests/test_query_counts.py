@@ -101,7 +101,7 @@ def test_a_restaurants_reviews_do_not_cost_a_query_each(client, ids):
 
 
 def test_a_users_review_feed_does_not_cost_a_query_each(client, ids):
-    url = f"/api/reviews/{ids['reviewer']}"
+    url = f"/api/users/{ids['reviewer']}/reviews"
     add_restaurants(ids["owner"], ids["reviewer"], 1)
     with counted() as before:
         assert client.get(url).status_code == 200

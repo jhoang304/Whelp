@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { useHistory, useParams } from "react-router-dom";
-import { CreateReviewResult, createOneReview, fetchAllReviewsByRestaurantId } from '../../../store/reviews';
+import React, { useEffect, useState } from "react";
+import { Redirect, useHistory, useParams } from "react-router-dom";
+import { CreateReviewResult, createOneReview } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
-import { useAppDispatch } from "../../../store";
+import { useAppDispatch, useAppSelector } from "../../../store";
+import PageMessage from "../../PageMessage";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
 import './CreateNewReview.css'
@@ -14,16 +15,46 @@ interface CreateNewReviewParams {
   restaurantId: string;
 }
 
+type Status = "loading" | "ready" | "error";
+
 function CreateNewReview(): React.JSX.Element {
   const { restaurantId } = useParams<CreateNewReviewParams>();
   const dispatch = useAppDispatch();
   const history = useHistory();
 
+  const sessionUser = useAppSelector((state) => state.session.user);
+  const loaded = useAppSelector((state) => state.Restaurants.singleRestaurant);
+  // The store keeps whichever restaurant was opened last; only this one will do.
+  const restaurant = loaded && String(loaded.id) === restaurantId ? loaded : undefined;
+
+  const [status, setStatus] = useState<Status>("loading");
+  const [loadErrors, setLoadErrors] = useState<string[]>([]);
   const [review, setReview] = useState<string>("");
   const [rating, setRating] = useState<string>("3");
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
+  // The restaurant first: whether it exists, whose it is and whether this
+  // reader has reviewed it already all decide what the page shows, and the
+  // server would otherwise say so only after the review, and its photos,
+  // were written.
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading");
+    dispatch(getSingleRestaurant(+restaurantId)).then((errors: string[] | null) => {
+      if (cancelled) return;
+      if (errors) {
+        setLoadErrors(errors);
+        setStatus("error");
+      } else {
+        setStatus("ready");
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch, restaurantId]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -73,32 +104,62 @@ function CreateNewReview(): React.JSX.Element {
 
     const { errors: attachErrors } = await attachUploaded(dispatch, result.review.id, uploaded);
 
-    // The review is saved. Refreshing is best effort: if the connection drops
-    // here, the restaurant page loads for itself and reports its own errors,
-    // which beats stranding the user on a disabled form.
-    try {
-      await dispatch(getSingleRestaurant(+restaurantId));
-      await dispatch(fetchAllReviewsByRestaurantId(+restaurantId));
-    } catch (refreshError) {
-      // fall through to the restaurant page
-    }
-
+    // The review exists now, so this form has done its job: replace it in
+    // the history rather than push past it, or Back returns to an empty form
+    // the server would refuse. Nothing is refreshed first -- the restaurant
+    // page loads the restaurant and its reviews for itself.
     if (attachErrors.length > 0) {
-      // The review exists now, so submitting this form again would only be
-      // told it is a second review. The edit page can add the rest, and it
-      // says why they are missing.
-      history.push(`/${restaurantId}/reviews/${result.review.id}/update`, {
+      // Submitting this form again would only be told it is a second review.
+      // The edit page can add the rest, and it says why they are missing.
+      history.replace(`/${restaurantId}/reviews/${result.review.id}/update`, {
         notice: ["Your review was posted, but some photos could not be attached:", ...attachErrors],
       });
       return;
     }
 
-    history.push(`/single/${restaurantId}`);
+    history.replace(`/single/${restaurantId}`);
+  }
+
+  if (status === "loading") {
+    return <PageMessage icon="fa-solid fa-spinner fa-spin" title="Loading..." />;
+  }
+
+  if (status === "error" || !restaurant) {
+    return (
+      <PageMessage
+        icon="fa-regular fa-face-frown"
+        title={loadErrors[0] || "We couldn't find that restaurant."}
+        action={{ to: "/restaurants", label: "Browse restaurants" }}
+      />
+    );
+  }
+
+  const backToRestaurant = { to: `/single/${restaurant.id}`, label: `Back to ${restaurant.name}` };
+
+  if (!sessionUser) {
+    return (
+      <PageMessage icon="fa-regular fa-user" title="Log in to write a review" action={{ to: "/login", label: "Log in" }}>
+        You need an account to review {restaurant.name}.
+      </PageMessage>
+    );
+  }
+
+  if (sessionUser.id === restaurant.user_id) {
+    return (
+      <PageMessage icon="fa-solid fa-store" title="You can't review your own restaurant" action={backToRestaurant}>
+        You can reply to the reviews {restaurant.name} gets from its page instead.
+      </PageMessage>
+    );
+  }
+
+  // One review per restaurant: take them to theirs.
+  if (restaurant.viewerReviewId) {
+    return <Redirect to={`/${restaurant.id}/reviews/${restaurant.viewerReviewId}/update`} />;
   }
 
     return (
       <div  className="create-review-container">
-        <h2>Write a Review</h2>
+        <h2>Write a review for {restaurant.name}</h2>
         <form onSubmit={handleSubmit} className="create-new-review-form">
           <ul>
             {errors.map((error, idx) => <li key={idx}>{error}</li>)}
