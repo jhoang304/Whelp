@@ -71,6 +71,28 @@ def https_redirect():
             return redirect(url, code=code)
 
 
+@app.before_request
+def json_bodies_are_objects():
+    """
+    Every JSON body the API takes is an object. A list, a string or a number
+    reached Flask-WTF's ImmutableMultiDict(...) and crashed it, or a route's
+    request.get_json()["name"] -- a 500 for what is a caller's mistake (#111).
+    A body that is not JSON at all is left to the route, whose get_json()
+    answers it with a 400 of its own.
+    """
+    if not request.path.startswith('/api/') or not request.is_json:
+        return None
+    raw = request.get_data(cache=True).strip()
+    if not raw:
+        return None
+    body = request.get_json(silent=True)
+    if body is None and raw != b'null':
+        return None
+    if not isinstance(body, dict):
+        return {'errors': ['The request body must be a JSON object.']}, 400
+    return None
+
+
 # Every POST, PUT, PATCH and DELETE must carry the CSRF token in an
 # X-CSRFToken header (or a csrf_token form field), checked before the route
 # runs. It used to be checked only inside routes that validate a FlaskForm,

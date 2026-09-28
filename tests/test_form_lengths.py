@@ -8,8 +8,10 @@ unhandled 500. These tests pin each validator to its column.
 import pytest
 from wtforms.validators import Length
 
-from app.forms import RestaurantForm, ReviewForm, SignUpForm
-from app.models import Restaurant, Review, User
+from app.api.filters import PRICES
+from app.forms import (
+    RestaurantForm, RestaurantImageForm, ReviewForm, ReviewImageForm, SignUpForm)
+from app.models import Restaurant, RestaurantImage, Review, ReviewImage, User
 from tests.conftest import login
 
 
@@ -40,6 +42,9 @@ def column_length(model, column_name):
     (SignUpForm, "first_name", User, "first_name"),
     (SignUpForm, "last_name", User, "last_name"),
     (ReviewForm, "review", Review, "review"),
+    # Missed by #19: a long pasted photo URL was a 500 on Postgres (#111).
+    (RestaurantImageForm, "url", RestaurantImage, "url"),
+    (ReviewImageForm, "url", ReviewImage, "url"),
 ])
 def test_validator_fits_in_its_column(form_class, field, model, column):
     limit = max_length(form_class, field)
@@ -47,6 +52,11 @@ def test_validator_fits_in_its_column(form_class, field, model, column):
     assert limit <= column_length(model, column), (
         f"{form_class.__name__}.{field} accepts {limit} characters but "
         f"{model.__name__}.{column} only holds {column_length(model, column)}")
+
+
+def test_every_price_the_form_takes_fits_its_column():
+    """Price is one of a fixed set rather than a length (#111); each still has to fit."""
+    assert max(len(price) for price in PRICES) <= column_length(Restaurant, "price")
 
 
 def restaurant_payload(**overrides):

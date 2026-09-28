@@ -7,6 +7,8 @@ from app.api.hours import hours_by_restaurant, open_status
 
 DEFAULT_PER_PAGE = 20
 MAX_PER_PAGE = 50
+# Half a million rows in at 50 a page: past any real list, well short of overflow.
+MAX_PAGE = 10_000
 
 
 class PageRequest:
@@ -48,6 +50,10 @@ def read_page_request(args=None):
     page, error = whole_number("page", 1)
     if error:
         return PageRequest(error=error)
+    if page > MAX_PAGE:
+        # Unbounded, (page - 1) * per_page overflowed the database's 64-bit
+        # OFFSET: a 500 on every paginated endpoint (#111).
+        return PageRequest(error=f"page must be {MAX_PAGE} or less")
     per_page, error = whole_number("per_page", DEFAULT_PER_PAGE)
     if error:
         return PageRequest(error=error)
