@@ -102,3 +102,44 @@ def test_a_deleted_review_does_not_hide_one_from_the_next_page(client, ids):
 
     rest = item_ids(client.get(f"{url}?offset={len(still_shown)}&per_page=3"))
     assert still_shown + rest == before[1:]
+
+
+# --- the reader's own review first ---------------------------------------------------
+
+def test_your_own_review_comes_first_in_every_order(client, ids):
+    """The restaurant page pins it to the top, so the API puts it there."""
+    extra_reviews(ids["restaurant"], [5, 1, 3, 2, 5])  # all newer than the seeded one
+    url = f"/api/restaurants/{ids['restaurant']}/reviews"
+    login(client, "reviewer@test.io")
+
+    for sort in ("newest", "highest", "lowest"):
+        plain = item_ids(client.get(f"{url}?sort={sort}&per_page=10"))
+        pinned = item_ids(client.get(f"{url}?sort={sort}&mine=first&per_page=10"))
+        assert pinned[0] == ids["review"], sort
+        # The rest keep the order asked for.
+        assert pinned[1:] == [rid for rid in plain if rid != ids["review"]], sort
+
+
+def test_paging_past_your_review_shows_it_once(client, ids):
+    extra_reviews(ids["restaurant"], [5, 1, 3, 2, 5])
+    url = f"/api/restaurants/{ids['restaurant']}/reviews?mine=first&per_page=2"
+    login(client, "reviewer@test.io")
+
+    pages = [item_ids(client.get(f"{url}&offset={offset}")) for offset in (0, 2, 4)]
+    everything = pages[0] + pages[1] + pages[2]
+    assert everything[0] == ids["review"]
+    assert len(set(everything)) == len(everything) == 6
+
+
+def test_mine_first_changes_nothing_for_someone_without_a_review(client, ids):
+    extra_reviews(ids["restaurant"], [5, 1, 3])
+    url = f"/api/restaurants/{ids['restaurant']}/reviews"
+    assert item_ids(client.get(f"{url}?mine=first")) == item_ids(client.get(url))  # signed out
+    login(client, "bystander@test.io")
+    assert item_ids(client.get(f"{url}?mine=first")) == item_ids(client.get(url))
+
+
+def test_mine_takes_only_first(client, ids):
+    res = client.get(f"/api/restaurants/{ids['restaurant']}/reviews?mine=last")
+    assert res.status_code == 400
+    assert res.get_json()["errors"] == ["mine can only be first"]

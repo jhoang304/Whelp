@@ -42,6 +42,9 @@ export const REVIEWS_PER_PAGE = 20;
  * delete your own review starts where the list now is rather than one late
  * (#113). The reviews are added to the store, not swapped in for it: the
  * page picks which to show by the ids each answer returns.
+ *
+ * The reader's own review comes first in every order (`mine=first`), which
+ * is where the restaurant page shows it.
  */
 export const fetchAllReviewsByRestaurantId = (
     restaurantId: Id,
@@ -49,7 +52,7 @@ export const fetchAllReviewsByRestaurantId = (
     offset = 0,
 ) => async (dispatch: AppDispatch) => {
     const res = await apiFetch(
-        `/api/restaurants/${restaurantId}/reviews?sort=${sort}&offset=${offset}&per_page=${REVIEWS_PER_PAGE}`)
+        `/api/restaurants/${restaurantId}/reviews?sort=${sort}&mine=first&offset=${offset}&per_page=${REVIEWS_PER_PAGE}`)
     if(res.ok){
         const body: Page<Review> = await res.json();
         dispatch(loadAllReviewsByRestaurantId(body.items));

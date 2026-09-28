@@ -478,6 +478,10 @@ def get_reviews_by_restaurant_id(id):
 
     `sort` is newest, highest or lowest; every order ends in createdAt and id
     so equal ratings still come back in one settled order across pages.
+
+    `mine=first` puts the signed-in reader's own review at the head of the
+    list in every order, which is where the restaurant page shows it (#113).
+    Its place is then fixed, so paging past it by offset stays consistent.
     """
     restaurant = db.session.get(Restaurant, id)
     if not restaurant:
@@ -487,6 +491,13 @@ def get_reviews_by_restaurant_id(id):
     if sort not in REVIEW_ORDERS:
         return {"errors": [f"sort must be one of: {', '.join(REVIEW_ORDERS)}"]}, 400
 
+    mine = request.args.get("mine", "")
+    if mine not in ("", "first"):
+        return {"errors": ["mine can only be first"]}, 400
+    order = REVIEW_ORDERS[sort]
+    if mine == "first" and current_user.is_authenticated:
+        order = (case((Review.user_id == current_user.id, 0), else_=1), *order)
+
     page_request = read_page_request()
     if page_request.error:
         return {"errors": [page_request.error]}, 400
@@ -495,7 +506,7 @@ def get_reviews_by_restaurant_id(id):
         selectinload(Review.user),
         selectinload(Review.review_images),
         selectinload(Review.response),
-    ).filter(Review.restaurant_id == id).order_by(*REVIEW_ORDERS[sort])
+    ).filter(Review.restaurant_id == id).order_by(*order)
 
     total = query.count()
     reviews = query.limit(page_request.per_page).offset(page_request.offset).all()

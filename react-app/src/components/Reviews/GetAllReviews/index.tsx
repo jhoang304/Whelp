@@ -70,9 +70,9 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
       !!review && String(review.restaurant_id) === String(restaurantId));
 
   const isOwner = !!sessionUser && !!currentRestaurant && sessionUser.id === currentRestaurant.user_id;
-  // Asked of the server rather than looked for among the reviews shown:
-  // yours may be on a page that hasn't been loaded, and "Write a review"
-  // would then offer a second one the server refuses.
+  // Asked of the server rather than looked for among the reviews shown: the
+  // restaurant's answer is there before the first page of reviews is, and
+  // "Write a review" would otherwise offer a second one the server refuses.
   const viewerReviewId = (sessionUser && currentRestaurant?.viewerReviewId) || null;
 
   const showMore = async () => {
@@ -96,8 +96,7 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   const handleDelete = (reviewId: number) => async () => {
     const deleted = await dispatch(deleteReviewById(reviewId));
     // The restaurant first, for its rating and for viewerReviewId: until it
-    // says you have no review, neither "Write a review" nor a link to the
-    // one just deleted is offered.
+    // says you have no review, "Write a review" is not offered.
     await dispatch(getSingleRestaurant(+restaurantId));
     if (deleted) {
       // The rest stay as they are; the next Show more starts after them.
@@ -136,8 +135,11 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
       {reviews.map((review) => {
         const isAuthor = !!sessionUser && review.user_id === sessionUser.id;
         return (
-          <div className="single-review-container" key={review.id}>
+          // Yours comes first in every order (the API puts it there), set
+          // apart so it is the first thing you find.
+          <div className={`single-review-container${isAuthor ? " your-review" : ""}`} key={review.id}>
             <div className="single-review">
+              {isAuthor && <div className="your-review-label">Your review</div>}
               <div className="review-user-data">
                 <img
                   className="review-photo"
@@ -222,15 +224,6 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
         <Link className="red-button" to={`/${restaurantId}/create-review`}>
           {whiteStar}
           <span className="write-a-review">Write a review</span>
-        </Link>
-      )}
-
-      {loaded && viewerReviewId && !order.includes(viewerReviewId) && (
-        // Your review is on a page not loaded yet, so its own Edit button
-        // isn't here to press.
-        <Link className="red-button" to={`/${restaurantId}/reviews/${viewerReviewId}/update`}>
-          <i className="fa-solid fa-pen" aria-hidden="true"></i>
-          <span className="write-a-review">Edit your review</span>
         </Link>
       )}
     </div>

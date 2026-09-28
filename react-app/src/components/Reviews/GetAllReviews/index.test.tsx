@@ -99,7 +99,8 @@ const VIEWER = { id: 50, username: "viewer", profile_image_url: null };
 
 /**
  * A restaurant with `count` reviews, newest first, served the way the API
- * pages them: `offset` and `per_page` off the query string. The viewer wrote
+ * pages them: `offset` and `per_page` off the query string, and with
+ * `mine=first` the viewer's own review ahead of the rest. The viewer wrote
  * the one at index `mine`, if any. Deleting one takes it off the list.
  */
 function serveReviews(count: number, mine: number | null = null) {
@@ -119,10 +120,14 @@ function serveReviews(count: number, mine: number | null = null) {
       const query = new URLSearchParams(url.split("?")[1]);
       const offset = Number(query.get("offset"));
       const perPage = Number(query.get("per_page"));
+      const isMine = (item: any) => item.user_id === VIEWER.id;
+      const ordered = query.get("mine") === "first"
+        ? [...list.filter(isMine), ...list.filter((item) => !isMine(item))]
+        : list;
       return Promise.resolve({
         ok: true, status: 200,
         json: () => Promise.resolve({
-          items: list.slice(offset, offset + perPage), page: 1, per_page: perPage, offset, total: list.length,
+          items: ordered.slice(offset, offset + perPage), page: 1, per_page: perPage, offset, total: list.length,
         }),
       });
     }
@@ -178,7 +183,7 @@ test("past twenty reviews, Show more brings the rest, once each, and then goes",
   await waitFor(() => expect(shownIds()).toHaveLength(25));
   expect(shownIds()).toEqual(server.ids());
   expect(screen.queryByRole("button", { name: /Show more|Loading/ })).not.toBeInTheDocument();
-  expect(server.requests).toContain("GET /api/restaurants/3/reviews?sort=newest&offset=20&per_page=20");
+  expect(server.requests).toContain("GET /api/restaurants/3/reviews?sort=newest&mine=first&offset=20&per_page=20");
 });
 
 test("twenty or fewer, there is nothing to show more of", async () => {
@@ -206,21 +211,23 @@ test("a review posted meanwhile shows no review twice, and the button still ends
   expect(shownIds()).toHaveLength(25);
 });
 
-test("someone whose review is on a later page is offered theirs, not a second one", async () => {
+test("your review comes first, set apart, even when it is the oldest", async () => {
   const server = serveReviews(25, 22);
   const mine = server.ids()[22];
   renderReviews(mine);
 
   await waitFor(() => expect(shownIds()).toHaveLength(20));
-  const edit = screen.getByRole("link", { name: "Edit your review" });
-  expect(edit).toHaveAttribute("href", `/3/reviews/${mine}/update`);
+  expect(shownIds()[0]).toBe(mine);
+  const yours = screen.getByText("Your review").closest(".single-review-container")!;
+  expect(yours).toHaveClass("your-review");
+  expect(within(yours as HTMLElement).getByRole("button", { name: "Edit your review" })).toBeInTheDocument();
+  expect(screen.getAllByText("Your review")).toHaveLength(1);
   expect(screen.queryByRole("link", { name: "Write a review" })).not.toBeInTheDocument();
 
-  // Once it is on the page, its own Edit button is there instead.
-  fireEvent.click(screen.getByRole("button", { name: /Show more/ }));
-  await waitFor(() => expect(shownIds()).toContain(mine));
-  expect(screen.queryByRole("link", { name: "Edit your review" })).not.toBeInTheDocument();
-  expect(screen.getByRole("button", { name: "Edit your review" })).toBeInTheDocument();
+  // And it isn't shown a second time further down.
+  fireEvent.click(screen.getByRole("button", { name: "Show more reviews (20 of 25)" }));
+  await waitFor(() => expect(shownIds()).toHaveLength(25));
+  expect(shownIds().filter((id) => id === mine)).toHaveLength(1);
 });
 
 test("someone who hasn't reviewed it may write one", async () => {
@@ -245,7 +252,7 @@ test("deleting your review, then Show more, skips nobody", async () => {
 
   await waitFor(() => expect(shownIds()).toHaveLength(24));
   expect(shownIds()).toEqual(server.ids());
-  expect(server.requests).toContain("GET /api/restaurants/3/reviews?sort=newest&offset=19&per_page=20");
+  expect(server.requests).toContain("GET /api/restaurants/3/reviews?sort=newest&mine=first&offset=19&per_page=20");
 });
 
 test("a Show more that answers after the sort changed is dropped", async () => {
@@ -271,18 +278,24 @@ test("a Show more that answers after the sort changed is dropped", async () => {
   expect(shownIds()).toHaveLength(20);
 });
 
-test("nothing is said about the list before it has arrived", async () => {
+test("the list doesn't say there are no reviews before they have arrived", async () => {
   let release: () => void = () => {};
-  const server = serveReviews(25, 22);
+  serveReviews(25);
   const realFetch = (global as any).fetch;
   (global as any).fetch = jest.fn((url: string, options: any) =>
     new Promise((resolve) => { release = () => resolve(realFetch(url, options)); }));
-  renderReviews(server.ids()[22]);
+  renderReviews(null);
 
-  // Not "No reviews yet", and not a link to a review that may be right here.
   expect(screen.queryByText(/No reviews yet/)).not.toBeInTheDocument();
-  expect(screen.queryByRole("link", { name: "Edit your review" })).not.toBeInTheDocument();
 
   release();
-  expect(await screen.findByRole("link", { name: "Edit your review" })).toBeInTheDocument();
+  await waitFor(() => expect(shownIds()).toHaveLength(20));
+  expect(screen.queryByText(/No reviews yet/)).not.toBeInTheDocument();
+});
+
+test("with no reviews at all, it says so", async () => {
+  serveReviews(0);
+  renderReviews(null);
+
+  expect(await screen.findByText(/No reviews yet/)).toBeInTheDocument();
 });
