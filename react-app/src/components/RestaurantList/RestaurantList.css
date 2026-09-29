@@ -99,7 +99,8 @@
 
 .restaurant-list-more {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     padding: 24px 16px 48px;
 }
 
@@ -122,4 +123,11 @@
 .restaurant-list-more-button:disabled {
     opacity: 0.6;
     cursor: default;
+}
+
+/* Why Show more didn't bring anything; the button is there to try again. */
+.restaurant-list-more-error {
+    margin: var(--space-3) 0 0;
+    font-size: var(--text-sm);
+    color: #b91c1c;
 }

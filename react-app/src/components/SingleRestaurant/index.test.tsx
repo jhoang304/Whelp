@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
@@ -113,4 +113,74 @@ test("the owner gets Edit and Delete as well", async () => {
   renderPage({ id: 9 });
   expect(await screen.findByRole("button", { name: "Edit restaurant" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Delete restaurant" })).toBeInTheDocument();
+});
+
+// --- deleting the restaurant (#116) --------------------------------------------------
+
+const OWNER = { id: 9, username: "demo" };
+
+function renderForDelete(deleteAnswer: () => Promise<any>) {
+  const requests: string[] = [];
+  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+    requests.push(`${options.method ?? "GET"} ${url}`);
+    if (options.method === "DELETE") return deleteAnswer();
+    return Promise.resolve({
+      ok: true, status: 200,
+      json: () => Promise.resolve(url.includes("/reviews") ? { items: [], page: 1, per_page: 10, total: 0 } : RESTAURANT),
+    });
+  });
+  const store = createStore(
+    combineReducers({ session: (state = { user: OWNER }) => state, Restaurants: restaurantsReducer, reviews: reviewReducer }),
+    applyMiddleware(thunk)
+  );
+  let history: any;
+  render(
+    <Provider store={store as any}>
+      <MemoryRouter initialEntries={["/single/1"]}>
+        <ModalProvider>
+          <Route path="/single/:restaurantId"><SingleRestaurant /></Route>
+          <Route path="*" render={(props) => { history = props.history; return null; }} />
+          <Modal />
+        </ModalProvider>
+      </MemoryRouter>
+    </Provider>
+  );
+  return { requests, history: () => history };
+}
+
+async function confirmDelete() {
+  fireEvent.click(await screen.findByRole("button", { name: "Delete restaurant" }));
+  fireEvent.click(screen.getByRole("dialog").querySelector(".delete-button") as HTMLElement);
+}
+
+test("a refused delete keeps the owner on the page and says why", async () => {
+  const { history } = renderForDelete(() => Promise.resolve({
+    ok: false, status: 403, json: () => Promise.resolve({ errors: ["You can only delete your own restaurants"] }),
+  }));
+
+  await confirmDelete();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("You can only delete your own restaurants");
+  expect(screen.getByRole("dialog", { name: "Delete Restaurant" })).toBeInTheDocument();
+  expect(history().location.pathname).toBe("/single/1");
+});
+
+test("a delete that can't reach the server says so, and stays", async () => {
+  const { history } = renderForDelete(() => Promise.reject(new TypeError("Failed to fetch")));
+
+  await confirmDelete();
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't reach the server");
+  expect(history().location.pathname).toBe("/single/1");
+});
+
+test("a delete that works goes home, without fetching the listing on the way", async () => {
+  const { requests, history } = renderForDelete(() => Promise.resolve({
+    ok: true, status: 200, json: () => Promise.resolve({ message: "Successfully deleted" }),
+  }));
+
+  await confirmDelete();
+
+  await waitFor(() => expect(history().location.pathname).toBe("/"));
+  expect(requests.filter((request) => request.startsWith("GET /api/restaurants/?"))).toEqual([]);
 });

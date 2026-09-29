@@ -1,4 +1,6 @@
-import restaurantsReducer, { inOrder, loadRestaurants } from "./restaurants";
+import { createStore, combineReducers, applyMiddleware } from "redux";
+import thunk from "redux-thunk";
+import restaurantsReducer, { getSingleRestaurant, inOrder, loadRestaurants } from "./restaurants";
 import { favoriteChanged } from "./favorites";
 
 /**
@@ -58,4 +60,41 @@ test("a saved heart still reaches a listed card", () => {
 
   const [, second] = inOrder(state.allRestaurants, state.allRestaurantIds);
   expect(second).toMatchObject({ id: 2, isFavorited: true });
+});
+
+// --- a refresh that fails (#116) -----------------------------------------------------
+
+function storeShowing(restaurant: any) {
+  return createStore(
+    combineReducers({ Restaurants: restaurantsReducer }),
+    { Restaurants: { singleRestaurant: restaurant } } as any,
+    applyMiddleware(thunk)
+  );
+}
+
+afterEach(() => {
+  delete (global as any).fetch;
+});
+
+test("refreshing the restaurant on show, and failing, leaves it on show", async () => {
+  // As after adding a photo or deleting a review: the page is up already.
+  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  const store = storeShowing({ id: 3, name: "Uchi" });
+
+  const errors = await (store.dispatch as any)(getSingleRestaurant(3));
+
+  expect(errors).toEqual(["Couldn't reach the server. Check your connection and try again."]);
+  expect(store.getState().Restaurants.singleRestaurant).toMatchObject({ id: 3, name: "Uchi" });
+});
+
+test("opening another restaurant that fails doesn't leave the last one showing", async () => {
+  (global as any).fetch = jest.fn(() => Promise.resolve({
+    ok: false, status: 404, json: () => Promise.resolve({ errors: ["Restaurant couldn't be found"] }),
+  }));
+  const store = storeShowing({ id: 3, name: "Uchi" });
+
+  const errors = await (store.dispatch as any)(getSingleRestaurant(5));
+
+  expect(errors).toEqual(["We couldn't find that restaurant."]);
+  expect(store.getState().Restaurants.singleRestaurant).toBeUndefined();
 });

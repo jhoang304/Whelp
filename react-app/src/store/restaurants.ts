@@ -5,13 +5,14 @@ import {
     RestaurantActionTypes,
     Restaurant,
     RestaurantsResponse,
+    RootState,
     SingleRestaurantResponse
 } from '../types';
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { NO_FILTERS, RestaurantFilters, filterParams } from '../utils/filters';
 import { FAVORITE_CHANGED } from './favorites';
-import { apiFetch } from '../utils/api';
+import { apiFetch, NETWORK_ERROR } from '../utils/api';
 
 /**
  * A list's ids, in the order the API sent them: page 1 replaces them, "Show
@@ -95,7 +96,7 @@ let latestSearch = 0;
 
 export const LOAD_ERROR = "restaurants/loadError";
 
-const loadError = (error: string) => ({
+const loadError = (error: string | null) => ({
     type: LOAD_ERROR,
     error
 });
@@ -108,11 +109,15 @@ const loadError = (error: string) => ({
  * A refused filter is kept as a message rather than swallowed: an empty
  * listing and a rejected one look identical otherwise, and only one of them
  * is worth clearing the filters over.
+ *
+ * Returns null on success, or the messages when the page couldn't be loaded
+ * at all -- a dropped connection used to leave the listing's spinner up for
+ * good (#116).
  */
 export const getAllRestaurants = (
     page = 1,
     filters: RestaurantFilters = NO_FILTERS,
-) => async (dispatch: AppDispatch) => {
+) => async (dispatch: AppDispatch): Promise<string[] | null> => {
     const params = filterParams(filters);
     params.set("page", String(page));
     params.set("per_page", String(PER_PAGE));
@@ -122,17 +127,26 @@ export const getAllRestaurants = (
 
     // With the trailing slash: without it every listing costs a 308 to the
     // rule that has one, and then the request again.
-    const response = await apiFetch(`/api/restaurants/?${params.toString()}`);
+    let response: Response;
+    try {
+        response = await apiFetch(`/api/restaurants/?${params.toString()}`);
+    } catch (networkError) {
+        if (superseded()) return null;
+        dispatch(loadError(null));
+        return [NETWORK_ERROR];
+    }
     if (response.ok) {
         const body: RestaurantsResponse = await response.json();
         if (superseded()) return null;
         dispatch(loadRestaurants(body, page > 1));
-        return body;
+        return null;
     }
     const messages = await parseErrors(response, "Something went wrong loading restaurants.");
     if (superseded()) return null;
-    dispatch(loadError(messages[0]));
-    return null;
+    // Only a 400 is about the filters; anything else is the page not loading,
+    // and an earlier filter's message must not stand in for it.
+    dispatch(loadError(response.status === 400 ? messages[0] : null));
+    return messages;
 };
 
 //Search Restaurants
@@ -237,7 +251,7 @@ let latestRequestedId: number | null = null
  * error messages on failure, so the page can tell "not found" apart from
  * "still loading" instead of spinning forever.
  */
-export const getSingleRestaurant = (restaurantId: number) => async (dispatch: AppDispatch) => {
+export const getSingleRestaurant = (restaurantId: number) => async (dispatch: AppDispatch, getState: () => RootState) => {
     latestRequestedId = restaurantId
 
     const superseded = () => latestRequestedId !== restaurantId
@@ -245,8 +259,14 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: Ap
     const fail = (messages: string[]) => {
         if (superseded()) return null
         // Drop whatever restaurant was showing before; LOADSINGLE merges, so a
-        // stale one would otherwise bleed into the not-found page.
-        dispatch(clearSingleRestaurant())
+        // stale one would otherwise bleed into the not-found page. But not
+        // this one: a refresh after adding a photo or deleting a review
+        // that failed used to turn a working page into "We couldn't find
+        // that restaurant" (#116). The page that asked still gets the
+        // messages.
+        if (getState().Restaurants.singleRestaurant?.id !== restaurantId) {
+            dispatch(clearSingleRestaurant())
+        }
         return messages
     }
 
@@ -257,7 +277,7 @@ export const getSingleRestaurant = (restaurantId: number) => async (dispatch: Ap
         // fetch rejects, rather than resolving with a status, when the browser
         // is offline or the connection drops. Without this the promise the page
         // is awaiting would reject and it would spin forever.
-        return fail(["Couldn't reach the server. Check your connection and try again."])
+        return fail([NETWORK_ERROR])
     }
 
     if (!response.ok) {
@@ -341,14 +361,24 @@ export const updateRestaurantThunk = (restaurant: RestaurantDraft & { id: number
 
 
 //Delete a restaurant
-export const deleteRestaurantThunk = (id: number) => async (dispatch: AppDispatch) => {
-
-    const res = await apiFetch(`/api/restaurants/${id}`, {
-        method: "DELETE"
-    })
-    if (res.ok) {
-        dispatch(getAllRestaurants())
+/**
+ * Delete a restaurant. Returns null on success or a list of error messages:
+ * a refused delete used to send the owner home as though it had worked
+ * (#116). Nothing is refetched: the listing loads for itself when opened.
+ */
+export const deleteRestaurantThunk = (id: number) => async (): Promise<string[] | null> => {
+    let res: Response
+    try {
+        res = await apiFetch(`/api/restaurants/${id}`, {
+            method: "DELETE"
+        })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
     }
+    if (!res.ok) {
+        return parseErrors(res, "Could not delete the restaurant. Please try again.")
+    }
+    return null
 }
 
 

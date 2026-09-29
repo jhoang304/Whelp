@@ -1,4 +1,4 @@
-import { act, render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor, fireEvent, within } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
@@ -7,7 +7,7 @@ import { MemoryRouter, Route, useLocation } from "react-router-dom";
 import userProfileReducer from "../../store/userProfile";
 import reviewReducer from "../../store/reviews";
 import restaurantsReducer from "../../store/restaurants";
-import { ModalProvider } from "../../context/Modal";
+import { ModalProvider, Modal } from "../../context/Modal";
 import { deferredFetch, ok, refused } from "../../testUtils/deferredFetch";
 import UserProfilePage from "./index";
 
@@ -36,12 +36,12 @@ function Probe() {
   return null;
 }
 
-function renderProfiles() {
+function renderProfiles(signedIn: any = null) {
   painted = [];
   const server = deferredFetch();
   const store = createStore(
     combineReducers({
-      session: (state = { user: null }) => state,
+      session: (state = { user: signedIn }) => state,
       user: userProfileReducer,
       reviews: reviewReducer,
       Restaurants: restaurantsReducer,
@@ -55,6 +55,7 @@ function renderProfiles() {
         <MemoryRouter initialEntries={["/users/get/1"]}>
           <Route path="/users/get/:userId"><UserProfilePage /></Route>
           <Probe />
+          <Modal />
           <Route path="*" render={(props) => { history = props.history; return null; }} />
         </MemoryRouter>
       </ModalProvider>
@@ -108,4 +109,40 @@ test("the previous profile is never shown under the next one's URL, even for a m
 
   expect(painted.filter((frame) => frame.startsWith("/users/get/2"))).not.toContain("/users/get/2: Al");
   expect(screen.getByText("Loading profile...")).toBeInTheDocument();
+});
+
+// --- requests that fail (#116) -------------------------------------------------------
+
+test("a profile that can't reach the server says so, instead of loading for good", async () => {
+  const { server } = renderProfiles();
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+
+  await act(async () => {
+    server.drop((url) => url === "/api/users/get/1");
+    server.answer((url) => url === "/api/users/1/reviews", ok([]));
+  });
+
+  expect(screen.queryByText("Loading profile...")).not.toBeInTheDocument();
+  expect(screen.getByRole("heading", { name: "Couldn't reach the server. Check your connection and try again." })).toBeInTheDocument();
+});
+
+test("a refused delete of a review on your profile keeps it, and the dialog says why", async () => {
+  const { server } = renderProfiles({ id: 1, username: "al" });
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+  const yours = {
+    id: 40, user_id: 1, restaurant_id: 3, review: "Worth the wait.", rating: 5,
+    createdAt: "2026-01-01T00:00:00", updatedAt: "2026-01-01T00:00:00",
+    restaurant: { id: 3, name: "Uchi" }, reviewImages: [], response: null,
+  };
+  await act(async () => {
+    server.answer((url) => url === "/api/users/get/1", ok(profile(1, "Al")));
+    server.answer((url) => url === "/api/users/1/reviews", ok([yours]));
+  });
+
+  fireEvent.click(screen.getByRole("button", { name: "Delete your review of Uchi" }));
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete Review" }));
+  await act(async () => server.answer((url) => url === "/api/reviews/40", refused(403, ["You can only delete your own reviews"])));
+
+  expect(within(screen.getByRole("dialog")).getByRole("alert")).toHaveTextContent("You can only delete your own reviews");
+  expect(screen.getByText("Worth the wait.")).toBeInTheDocument();
 });

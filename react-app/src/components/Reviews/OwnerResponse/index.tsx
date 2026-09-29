@@ -72,8 +72,16 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
     const action = response
       ? updateReviewResponse(review.id, trimmed)
       : createReviewResponse(review.id, trimmed);
-    const result: string[] | null = await dispatch(action);
-    setIsSaving(false);
+    // However it ends, the form comes back: a failure used to leave it on
+    // "Saving..." with Cancel disabled (#116).
+    let result: string[] | null;
+    try {
+      result = await dispatch(action);
+    } catch (unexpected) {
+      result = ["Something went wrong saving your response. Please try again."];
+    } finally {
+      setIsSaving(false);
+    }
 
     if (result) {
       setErrors(result);
@@ -83,10 +91,8 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
     }
   };
 
-  const handleDelete = async () => {
-    const result: string[] | null = await dispatch(deleteReviewResponse(review.id));
-    if (result) setErrors(result);
-  };
+  // The dialog shows a refusal itself, and stays open to do it.
+  const handleDelete = () => dispatch(deleteReviewResponse(review.id));
 
   const errorList = errors.length > 0 && (
     <ul className="owner-response-errors">

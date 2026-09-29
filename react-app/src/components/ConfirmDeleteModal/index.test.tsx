@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { ModalProvider, Modal } from "../../context/Modal";
 import OpenModalButton from "../OpenModalButton";
 import ConfirmDeleteModal from "./index";
@@ -9,7 +9,7 @@ import ConfirmDeleteModal from "./index";
  * until its red button is pressed.
  */
 
-function renderDelete(onConfirm: () => void) {
+function renderDelete(onConfirm: () => any) {
   return render(
     <ModalProvider>
       <OpenModalButton
@@ -49,7 +49,7 @@ test("Cancel closes it without deleting", () => {
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
 
-test("the red button deletes, once, and closes it", () => {
+test("the red button deletes, once, and closes it", async () => {
   const onConfirm = jest.fn();
   renderDelete(onConfirm);
   fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
@@ -58,5 +58,50 @@ test("the red button deletes, once, and closes it", () => {
   fireEvent.click(dialog.querySelector(".delete-button") as HTMLElement);
 
   expect(onConfirm).toHaveBeenCalledTimes(1);
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+
+// --- a delete that fails (#116) ----------------------------------------------------
+
+const redButton = () => screen.getByRole("dialog").querySelector(".delete-button") as HTMLElement;
+
+test("a refused delete keeps the dialog open and says why", async () => {
+  renderDelete(() => Promise.resolve(["You can only delete your own reviews"]));
+  fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
+
+  fireEvent.click(redButton());
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("You can only delete your own reviews");
+  expect(screen.getByRole("dialog", { name: "Delete Review" })).toBeInTheDocument();
+  // And it can be tried again, or cancelled.
+  expect(redButton()).not.toBeDisabled();
+  expect(screen.getByRole("button", { name: "Cancel" })).not.toBeDisabled();
+});
+
+test("while it deletes, neither button can be pressed again", async () => {
+  let finish: (value: null) => void = () => {};
+  const onConfirm = jest.fn(() => new Promise<null>((resolve) => { finish = resolve; }));
+  renderDelete(onConfirm);
+  fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
+
+  fireEvent.click(redButton());
+
+  expect(redButton()).toBeDisabled();
+  expect(redButton()).toHaveTextContent("Deleting...");
+  expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  fireEvent.click(redButton());
+  expect(onConfirm).toHaveBeenCalledTimes(1);
+
+  await act(async () => finish(null));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("a delete that throws is reported, not swallowed", async () => {
+  renderDelete(() => Promise.reject(new TypeError("Failed to fetch")));
+  fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
+
+  fireEvent.click(redButton());
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Something went wrong. Please try again.");
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
 });

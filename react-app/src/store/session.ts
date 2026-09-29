@@ -20,14 +20,25 @@ export const removeUser = () => ({
 
 const initialState = { user: null };
 
+/**
+ * Who is signed in, if anyone. Never rejects: the app waits on this before
+ * drawing any page, and a dropped connection here used to leave the nav bar
+ * over an empty page for good (#116). Unreachable, or unreadable, reads as
+ * signed out.
+ */
 export const authenticate = () => async (dispatch: AppDispatch) => {
-	const response = await apiFetch("/api/auth/", {
-		headers: {
-			"Content-Type": "application/json",
-		},
-	});
-	if (response.ok) {
-		dispatch(setUser(await response.json()));
+	try {
+		const response = await apiFetch("/api/auth/", {
+			headers: {
+				"Content-Type": "application/json",
+			},
+		});
+		if (response.ok) {
+			dispatch(setUser(await response.json()));
+		}
+	} catch (unreachable) {
+		// Offline, or an answer that won't parse: signed out, as far as the
+		// app can tell.
 	}
 };
 

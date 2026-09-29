@@ -7,14 +7,17 @@ interface PageMessageProps {
   icon: string;
   title: string;
   children?: React.ReactNode;
-  /** The one thing to do next, as a link that looks like a button. */
-  action?: { to: string; label: string };
+  /**
+   * The one thing to do next, as a link that looks like a button: `to` for
+   * a page in the app, `href` for a full page load, such as a reload.
+   */
+  action?: { to: string; label: string } | { href: string; label: string };
 }
 
 /**
  * A page with nothing to show but a message: a restaurant or review that
- * isn't there, or something you have to log in for. One component, so each
- * of them says it the same way.
+ * isn't there, something you have to log in for, or a page that broke. One
+ * component, so each of them says it the same way.
  */
 function PageMessage({ icon, title, children, action }: PageMessageProps): React.JSX.Element {
   return (
@@ -22,8 +25,9 @@ function PageMessage({ icon, title, children, action }: PageMessageProps): React
       <i className={icon} aria-hidden="true"></i>
       <h2>{title}</h2>
       {children && <p>{children}</p>}
-      {action && (
-        <Link to={action.to} className="page-message-action">{action.label}</Link>
+      {action && ("to" in action
+        ? <Link to={action.to} className="page-message-action">{action.label}</Link>
+        : <a href={action.href} className="page-message-action">{action.label}</a>
       )}
     </div>
   );

@@ -104,8 +104,16 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
             updates.profile_image_url = imageUrl.trim();
         }
 
-        const result: string[] | null = await dispatch(editProfileThunk(updates, user.id));
-        setIsSaving(false);
+        // However it ends, the form comes back: a failure used to leave it on
+        // "Saving..." with Cancel disabled (#116).
+        let result: string[] | null;
+        try {
+            result = await dispatch(editProfileThunk(updates, user.id));
+        } catch (unexpected) {
+            result = ["Something went wrong saving your profile. Please try again."];
+        } finally {
+            setIsSaving(false);
+        }
 
         if (result) {
             setErrors(result);

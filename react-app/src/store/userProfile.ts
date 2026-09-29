@@ -5,7 +5,7 @@ import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
 import { setUser } from './session';
 import { FAVORITE_CHANGED } from './favorites';
-import { apiFetch } from '../utils/api';
+import { apiFetch, NETWORK_ERROR } from '../utils/api';
 
 const LOAD_PROFILE = 'userProfile/LOAD_PROFILE';
 const CLEAR_PROFILE = 'userProfile/CLEAR_PROFILE';
@@ -36,10 +36,17 @@ export const getProfileThunk = (userId: string | number) => async (dispatch: App
     latestProfileId = requested;
     const superseded = () => latestProfileId !== requested;
 
-    const [profileRes, reviewsRes] = await Promise.all([
-        apiFetch(`/api/users/get/${userId}`),
-        apiFetch(`/api/users/${userId}/reviews`),
-    ]);
+    let profileRes: Response;
+    let reviewsRes: Response;
+    try {
+        [profileRes, reviewsRes] = await Promise.all([
+            apiFetch(`/api/users/get/${userId}`),
+            apiFetch(`/api/users/${userId}/reviews`),
+        ]);
+    } catch (networkError) {
+        // "Loading profile..." stayed up for good on a dropped connection (#116).
+        return superseded() ? null : [NETWORK_ERROR];
+    }
 
     if (profileRes.ok && reviewsRes.ok) {
         const profile: UserProfile = await profileRes.json();
@@ -70,11 +77,16 @@ export interface ProfileUpdates {
  * Returns null on success or a list of error messages.
  */
 export const editProfileThunk = (updates: ProfileUpdates, userId: string | number) => async (dispatch: AppDispatch) => {
-    const response = await apiFetch(`/api/users/${userId}/edit`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-    });
+    let response: Response;
+    try {
+        response = await apiFetch(`/api/users/${userId}/edit`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updates),
+        });
+    } catch (networkError) {
+        return [NETWORK_ERROR];
+    }
     if (response.ok) {
         const data = await response.json().catch(() => ({}));
         dispatch(setUser(data));
