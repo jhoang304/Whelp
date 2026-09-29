@@ -171,3 +171,34 @@
         width: 100%;
     }
 }
+
+/* The reviews couldn't be loaded: said so, with a way to try again, rather
+   than "No reviews yet". */
+.reviews-error {
+    margin: var(--space-3);
+    padding: var(--space-4);
+    text-align: center;
+    color: var(--color-gray-700);
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-base);
+}
+
+.reviews-error p {
+    margin: 0 0 var(--space-3);
+}
+
+.reviews-error button {
+    padding: var(--space-2) var(--space-5);
+    font-family: inherit;
+    font-weight: var(--font-semibold);
+    color: #fff;
+    background: var(--color-primary);
+    border: none;
+    border-radius: var(--radius-base);
+    cursor: pointer;
+}
+
+.reviews-error button:hover {
+    background: var(--color-primary-dark);
+}

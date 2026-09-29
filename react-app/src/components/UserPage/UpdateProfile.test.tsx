@@ -37,3 +37,19 @@ test("a link longer than the API takes is refused without a request", async () =
   expect(await screen.findByText("Profile picture URL must be 255 characters or fewer.")).toBeInTheDocument();
   expect((global as any).fetch).not.toHaveBeenCalled();
 });
+
+test("a save that can't reach the server gives the form back, saying so", async () => {
+  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  const store = createStore(combineReducers({ session: (state = { user }) => state }), applyMiddleware(thunk));
+  render(
+    <Provider store={store as any}>
+      <UpdateProfile user={user as any} />
+    </Provider>
+  );
+
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+  expect(await screen.findByText("Couldn't reach the server. Check your connection and try again.")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Save changes" })).not.toBeDisabled();
+  expect(screen.getByRole("button", { name: "Cancel" })).not.toBeDisabled();
+});

@@ -7,7 +7,7 @@ import restaurantsReducer from "../../store/restaurants";
 import categoriesReducer from "../../store/categories";
 import RestaurantList from "./index";
 import RestaurantBySearch from "../SearchBar";
-import { deferredFetch, ok as okHeld, query } from "../../testUtils/deferredFetch";
+import { deferredFetch, ok as okHeld, query, refused } from "../../testUtils/deferredFetch";
 
 /**
  * Sort by, and search's relevance, reach the page: the cards come out in the
@@ -198,4 +198,56 @@ test("the old list's Show more finishing doesn't end the new list's own", async 
   // The old page 2 answers while the new page 2 is still on its way.
   await act(async () => server.answer((url) => isPage(2)(url) && prices(url) === "", listPage([card(5, "Any 2")], 2, 2)));
   expect(screen.getByRole("button", { name: "Loading…" })).toBeDisabled();
+});
+
+// --- a list that couldn't be loaded (#116) -------------------------------------------
+
+test("a dropped connection says the list couldn't load, and Try again loads it", async () => {
+  const { server } = renderHeld("/restaurants", "/restaurants", <RestaurantList />);
+  await waitFor(() => expect(server.waiting()).toHaveLength(1));
+
+  await act(async () => server.drop(isPage(1)));
+
+  expect(loading()).toBeNull();
+  expect(screen.getByRole("alert")).toHaveTextContent("We couldn't load restaurants");
+  expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach the server");
+
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(server.waiting()).toHaveLength(1));
+  await act(async () => server.answer(isPage(1), listPage([card(1, "Back Again")])));
+  expect(shown()).toEqual(["Back Again"]);
+});
+
+test("a server error is the list not loading, not a filter it refused", async () => {
+  const { server } = renderHeld("/restaurants?price=$$", "/restaurants", <RestaurantList />);
+  await waitFor(() => expect(server.waiting()).toHaveLength(1));
+
+  await act(async () => server.answer(isPage(1), refused(500, ["An unexpected error occurred."])));
+
+  expect(screen.getByRole("alert")).toHaveTextContent("We couldn't load restaurants");
+  expect(screen.queryByText("We could not use those filters")).not.toBeInTheDocument();
+});
+
+test("a filter the API refuses is still said to be the filter's fault", async () => {
+  const { server } = renderHeld("/restaurants?rating=9", "/restaurants", <RestaurantList />);
+  await waitFor(() => expect(server.waiting()).toHaveLength(1));
+
+  await act(async () => server.answer(isPage(1), refused(400, ["rating must be between 1 and 5"])));
+
+  expect(screen.getByText("We could not use those filters")).toBeInTheDocument();
+  expect(screen.getByText("rating must be between 1 and 5")).toBeInTheDocument();
+});
+
+test("a Show more that fails says so, and can be pressed again", async () => {
+  const { server } = renderHeld("/restaurants", "/restaurants", <RestaurantList />);
+  await waitFor(() => expect(server.waiting()).toHaveLength(1));
+  await act(async () => server.answer(isPage(1), listPage([card(1, "Any 1")], 2)));
+  fireEvent.click(screen.getByRole("button", { name: "Show more (1 of 2)" }));
+  await waitFor(() => expect(server.waiting()).toHaveLength(1));
+
+  await act(async () => server.drop(isPage(2)));
+
+  expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach the server");
+  expect(screen.getByRole("button", { name: "Show more (1 of 2)" })).not.toBeDisabled();
+  expect(shown()).toEqual(["Any 1"]);
 });

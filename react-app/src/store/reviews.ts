@@ -3,7 +3,7 @@ import { AnyAction } from 'redux';
 
 import { AppDispatch } from './index';
 import { parseErrors } from '../utils/parseErrors';
-import { apiFetch } from '../utils/api';
+import { apiFetch, NETWORK_ERROR } from '../utils/api';
 
 /** What a review form sends: the API fills in the author and the restaurant. */
 export interface ReviewDraft {
@@ -14,7 +14,7 @@ export interface ReviewDraft {
 
 type Id = number | string;
 
-export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
+export { NETWORK_ERROR };
 
 // Load all reviews by restaurantId
 const LOAD_ALL_REVIEWS_BY_RESTAURANTID = 'reviews/LOAD_ALL_REVIEWS'
@@ -50,9 +50,15 @@ export const fetchAllReviewsByRestaurantId = (
     restaurantId: Id,
     sort: ReviewSort = "newest",
     offset = 0,
-) => async (dispatch: AppDispatch) => {
-    const res = await apiFetch(
-        `/api/restaurants/${restaurantId}/reviews?sort=${sort}&mine=first&offset=${offset}&per_page=${REVIEWS_PER_PAGE}`)
+) => async (dispatch: AppDispatch): Promise<Page<Review> | null> => {
+    let res: Response
+    try {
+        res = await apiFetch(
+            `/api/restaurants/${restaurantId}/reviews?sort=${sort}&mine=first&offset=${offset}&per_page=${REVIEWS_PER_PAGE}`)
+    } catch (networkError) {
+        // null, as for a refusal: the page says it couldn't load them (#116).
+        return null
+    }
     if(res.ok){
         const body: Page<Review> = await res.json();
         dispatch(loadAllReviewsByRestaurantId(body.items));
@@ -101,15 +107,24 @@ const deleteReview = (reviewId: Id) => {
     }
 }
 
-/** Delete a review. Resolves to whether it was deleted. */
-export const deleteReviewById = (reviewId: Id) => async (dispatch: AppDispatch): Promise<boolean> => {
-    const res = await apiFetch(`/api/reviews/${reviewId}`, {
-        method:"DELETE"
-    })
-    if(res.ok){
-        dispatch(deleteReview(reviewId))
+/**
+ * Delete a review. Returns null on success or a list of error messages: a
+ * refused delete used to close the dialog as though it had worked (#116).
+ */
+export const deleteReviewById = (reviewId: Id) => async (dispatch: AppDispatch): Promise<string[] | null> => {
+    let res: Response
+    try {
+        res = await apiFetch(`/api/reviews/${reviewId}`, {
+            method:"DELETE"
+        })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
     }
-    return res.ok
+    if(!res.ok){
+        return parseErrors(res, "Could not delete your review. Please try again.")
+    }
+    dispatch(deleteReview(reviewId))
+    return null
 }
 
 // Create a review
@@ -248,11 +263,16 @@ const removeReviewResponse = (reviewId: number) => ({
 
 /** Post the owner's reply. Returns null on success or a list of error messages. */
 export const createReviewResponse = (reviewId: number, response: string) => async (dispatch: AppDispatch) => {
-    const res = await apiFetch(`/api/reviews/${reviewId}/response`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response }),
-    })
+    let res: Response
+    try {
+        res = await apiFetch(`/api/reviews/${reviewId}/response`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ response }),
+        })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
     if (res.ok) {
         dispatch(setReviewResponse(reviewId, await res.json()))
         return null
@@ -262,11 +282,16 @@ export const createReviewResponse = (reviewId: number, response: string) => asyn
 
 /** Edit the owner's reply. Returns null on success or a list of error messages. */
 export const updateReviewResponse = (reviewId: number, response: string) => async (dispatch: AppDispatch) => {
-    const res = await apiFetch(`/api/reviews/${reviewId}/response`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response }),
-    })
+    let res: Response
+    try {
+        res = await apiFetch(`/api/reviews/${reviewId}/response`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ response }),
+        })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
     if (res.ok) {
         dispatch(setReviewResponse(reviewId, await res.json()))
         return null
@@ -276,7 +301,12 @@ export const updateReviewResponse = (reviewId: number, response: string) => asyn
 
 /** Remove the owner's reply. Returns null on success or a list of error messages. */
 export const deleteReviewResponse = (reviewId: number) => async (dispatch: AppDispatch) => {
-    const res = await apiFetch(`/api/reviews/${reviewId}/response`, { method: "DELETE" })
+    let res: Response
+    try {
+        res = await apiFetch(`/api/reviews/${reviewId}/response`, { method: "DELETE" })
+    } catch (networkError) {
+        return [NETWORK_ERROR]
+    }
     if (res.ok) {
         dispatch(removeReviewResponse(reviewId))
         return null

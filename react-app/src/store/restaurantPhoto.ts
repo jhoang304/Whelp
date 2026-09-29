@@ -4,9 +4,9 @@ import { AnyAction } from "redux";
 import { PhotosState, RestaurantImage } from "../types";
 import { AppDispatch } from "./index";
 import { parseErrors } from "../utils/parseErrors";
-import { apiFetch } from "../utils/api";
+import { apiFetch, NETWORK_ERROR } from "../utils/api";
 
-export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
+export { NETWORK_ERROR };
 
 //load photos
 const LOADPHOTO = "photos/loadRestaurantImages"
@@ -15,12 +15,24 @@ export const loadRestaurantImages = (list: RestaurantImage[]) => ({
     allRestaurantImages: list
 })
 
-export const getRestaurantRestaurantImages = (restaurantId: string | number) => async (dispatch: AppDispatch) => {
-    const response = await apiFetch(`/api/restaurant-images/${restaurantId}/images`)
-    if (response.ok) {
-        const listObj = await response.json()
-        dispatch(loadRestaurantImages(listObj))
+/**
+ * Load a restaurant's photos. Returns null on success or a list of error
+ * messages: a failure used to leave "Loading..." up for good, or show the
+ * last restaurant's photos (#116).
+ */
+export const getRestaurantRestaurantImages = (restaurantId: string | number) => async (dispatch: AppDispatch): Promise<string[] | null> => {
+    let response: Response
+    try {
+        response = await apiFetch(`/api/restaurant-images/${restaurantId}/images`)
+    } catch (networkError) {
+        return [NETWORK_ERROR]
     }
+    if (!response.ok) {
+        return parseErrors(response, "Couldn't load the photos. Please try again.")
+    }
+    const listObj = await response.json()
+    dispatch(loadRestaurantImages(listObj))
+    return null
 }
 
 

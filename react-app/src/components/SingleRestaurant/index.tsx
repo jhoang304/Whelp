@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import { useState } from "react";
 import { useHistory } from "react-router-dom";
 import { Link, useParams } from 'react-router-dom';
-import { getSingleRestaurant, deleteRestaurantThunk, getAllRestaurants } from "../../store/restaurants"
+import { getSingleRestaurant, deleteRestaurantThunk } from "../../store/restaurants"
 import AddPhotoModal from "../AddPhotoModal";
 import OpenModalButton from "../OpenModalButton";
 import EditRestaurant from "../EditRestaurantModal";
@@ -90,12 +90,13 @@ function SingleRestaurant(): React.JSX.Element {
 
     const sessionUser = useAppSelector((state) => state.session.user);
 
-    const handleDelete = () => {
-        if (restaurantId) {
-            dispatch(deleteRestaurantThunk(+restaurantId))
-                .then(() => dispatch(getAllRestaurants()))
-                .then(() => history.push("/"));
-        }
+    // Home only once it is gone: a refused delete stays in the dialog, which
+    // shows why (#116).
+    const handleDelete = async () => {
+        const failures = await dispatch(deleteRestaurantThunk(+restaurantId));
+        if (failures) return failures;
+        history.push("/");
+        return null;
     };
 
     if (status === "error" || (status === "ready" && !singleRestaurant)) {

@@ -19,6 +19,13 @@ function RestaurantList(): React.JSX.Element {
 
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
     const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
+    // Why the list couldn't be loaded at all (not a refused filter, which is
+    // listError), or why Show more couldn't. A dropped connection used to
+    // leave the spinner up for good (#116).
+    const [loadErrors, setLoadErrors] = useState<string[] | null>(null);
+    const [moreError, setMoreError] = useState<string | null>(null);
+    // Bumped by Try again, to load the same filters again.
+    const [attempt, setAttempt] = useState<number>(0);
     const dispatch = useAppDispatch();
     const history = useHistory();
     const location = useLocation();
@@ -41,15 +48,18 @@ function RestaurantList(): React.JSX.Element {
         listVersion.current += 1;
         setIsLoaded(false);
         setIsLoadingMore(false);
+        setMoreError(null);
         // Only this filter's answer ends the loading: an earlier one arriving
         // late used to show the new filter's count over the old results.
-        dispatch(getAllRestaurants(1, filters)).then(() => {
-            if (!cancelled) setIsLoaded(true);
+        dispatch(getAllRestaurants(1, filters)).then((errors) => {
+            if (cancelled) return;
+            setLoadErrors(errors);
+            setIsLoaded(true);
         });
         return () => {
             cancelled = true;
         };
-    }, [dispatch, filters]);
+    }, [dispatch, filters, attempt]);
 
     const applyFilters = (next: RestaurantFilters) => {
         history.push({ pathname: "/restaurants", search: filterSearch(next) });
@@ -58,8 +68,11 @@ function RestaurantList(): React.JSX.Element {
     const showMore = async () => {
         const version = listVersion.current;
         setIsLoadingMore(true);
-        await dispatch(getAllRestaurants(loadedPage + 1, filters));
-        if (version === listVersion.current) setIsLoadingMore(false);
+        setMoreError(null);
+        const errors = await dispatch(getAllRestaurants(loadedPage + 1, filters));
+        if (version !== listVersion.current) return;
+        setIsLoadingMore(false);
+        if (errors) setMoreError(errors[0]);
     };
 
     const hasMore = allRestaurants.length < total;
@@ -69,7 +82,7 @@ function RestaurantList(): React.JSX.Element {
             <FilterBar
                 filters={filters}
                 onChange={applyFilters}
-                total={isLoaded && !listError ? total : undefined}
+                total={isLoaded && !listError && !loadErrors ? total : undefined}
             />
 
             {!isLoaded ? (
@@ -93,6 +106,14 @@ function RestaurantList(): React.JSX.Element {
                     <p>{listError}</p>
                     <button type="button" onClick={() => applyFilters(NO_FILTERS)}>
                         Clear filters
+                    </button>
+                </div>
+            ) : loadErrors ? (
+                <div className="filter-empty" role="alert">
+                    <h3>We couldn't load restaurants</h3>
+                    <p>{loadErrors[0]}</p>
+                    <button type="button" onClick={() => setAttempt((n) => n + 1)}>
+                        Try again
                     </button>
                 </div>
             ) : allRestaurants.length === 0 ? (
@@ -134,6 +155,7 @@ function RestaurantList(): React.JSX.Element {
                             >
                                 {isLoadingMore ? "Loading…" : `Show more (${allRestaurants.length} of ${total})`}
                             </button>
+                            {moreError && <p className="restaurant-list-more-error" role="alert">{moreError}</p>}
                         </div>
                     )}
                 </>

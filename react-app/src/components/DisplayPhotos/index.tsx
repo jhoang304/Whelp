@@ -12,6 +12,11 @@ interface DisplayPhotosProps {
 
 function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Element {
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
+    // Why the photos couldn't be loaded. A dropped connection used to leave
+    // "Loading..." up for good (#116).
+    const [loadErrors, setLoadErrors] = useState<string[] | null>(null);
+    // Bumped by Try again.
+    const [attempt, setAttempt] = useState<number>(0);
     // Which photo is enlarged, or null for none.
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [errors, setErrors] = useState<string[]>([]);
@@ -26,18 +31,26 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
         !!sessionUser && (isOwner || photo.createdByUserId === sessionUser.id);
 
     useEffect(() => {
-        async function fetchData() {
-            await dispatch(getRestaurantRestaurantImages(singleRestaurant.id));
+        let cancelled = false;
+        setIsLoaded(false);
+        dispatch(getRestaurantRestaurantImages(singleRestaurant.id)).then((errors) => {
+            if (cancelled) return;
+            setLoadErrors(errors);
             setIsLoaded(true);
-        }
-        fetchData();
-    }, [dispatch, singleRestaurant.id]);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [dispatch, singleRestaurant.id, attempt]);
 
     const allResPhotoState = useAppSelector((state) => {
         return state.photos
     })
+    // This restaurant's only: the store keeps whichever restaurant's photos
+    // were loaded last, and a failed load used to show those (#116).
     const allResPhotoArray: RestaurantImage[] =
         Object.values(allResPhotoState?.allRestaurantImages ?? {})
+            .filter((photo) => photo.restaurant_id === singleRestaurant.id)
 
 
     // Both handlers clear busyPhotoId in a finally: this modal stays mounted
@@ -75,6 +88,18 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
 
     if (!isLoaded) {
         return <div>Loading...</div>;
+    }
+
+    if (loadErrors) {
+        return (
+            <div className="display-photos-modal">
+                <h2 className="display-h2">Photos for {singleRestaurant.name}</h2>
+                <div className="photo-errors" role="alert">
+                    <p>{loadErrors[0]}</p>
+                    <button type="button" onClick={() => setAttempt((n) => n + 1)}>Try again</button>
+                </div>
+            </div>
+        );
     }
 
     return (

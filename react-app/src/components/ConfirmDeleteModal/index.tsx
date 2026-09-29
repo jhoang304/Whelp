@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { useModal } from "../../context/Modal";
 import "./ConfirmDeleteModal.css";
 
@@ -11,7 +11,11 @@ interface ConfirmDeleteModalProps {
     detail?: string;
     /** What the red button says; it should name the thing going. */
     confirmLabel: string;
-    onConfirm: () => void;
+    /**
+     * Does the deleting. Resolving to a list of messages means it failed:
+     * the dialog stays open and shows them. Anything else closes it.
+     */
+    onConfirm: () => void | string[] | null | Promise<void | string[] | null>;
 }
 
 /**
@@ -27,9 +31,26 @@ interface ConfirmDeleteModalProps {
  */
 function ConfirmDeleteModal({ title, message, detail, confirmLabel, onConfirm }: ConfirmDeleteModalProps): React.JSX.Element {
     const { closeModal } = useModal();
+    const [errors, setErrors] = useState<string[]>([]);
+    const [pending, setPending] = useState<boolean>(false);
 
-    const handleConfirm = () => {
-        onConfirm();
+    // It waits for the delete before closing. It used to close first, so a
+    // delete the server refused looked done, with nowhere to say otherwise
+    // (#116).
+    const handleConfirm = async () => {
+        setErrors([]);
+        setPending(true);
+        let failures: void | string[] | null;
+        try {
+            failures = await onConfirm();
+        } catch (unexpected) {
+            failures = ["Something went wrong. Please try again."];
+        }
+        if (failures && failures.length > 0) {
+            setErrors(failures);
+            setPending(false);
+            return;
+        }
         closeModal();
     };
 
@@ -43,13 +64,18 @@ function ConfirmDeleteModal({ title, message, detail, confirmLabel, onConfirm }:
                 <p>{message}</p>
                 {detail && <p className="warning-text">{detail}</p>}
             </div>
+            {errors.length > 0 && (
+                <ul className="confirm-delete-errors" role="alert">
+                    {errors.map((error, idx) => <li key={idx}>{error}</li>)}
+                </ul>
+            )}
             <div className="confirm-delete-buttons">
-                <button type="button" className="cancel-button" onClick={closeModal}>
+                <button type="button" className="cancel-button" onClick={closeModal} disabled={pending}>
                     Cancel
                 </button>
-                <button type="button" className="delete-button" onClick={handleConfirm}>
-                    <i className="fa-solid fa-trash" aria-hidden="true"></i>
-                    {confirmLabel}
+                <button type="button" className="delete-button" onClick={handleConfirm} disabled={pending}>
+                    <i className={pending ? "fa-solid fa-spinner fa-spin" : "fa-solid fa-trash"} aria-hidden="true"></i>
+                    {pending ? "Deleting..." : confirmLabel}
                 </button>
             </div>
         </div>

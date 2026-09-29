@@ -45,6 +45,12 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   // because it hasn't arrived, not because there are no reviews.
   const [loaded, setLoaded] = useState<boolean>(false);
   const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  // A page that couldn't be loaded. The first one failing used to read as
+  // "No reviews yet. Be the first", under a header counting them (#116).
+  const [loadFailed, setLoadFailed] = useState<boolean>(false);
+  const [moreFailed, setMoreFailed] = useState<boolean>(false);
+  // Bumped by Try again, to ask for the same page again.
+  const [attempt, setAttempt] = useState<number>(0);
   // Counts each time the list starts over, for a new restaurant or sort. An
   // answer to a request made before -- a slower first page, or a Show more
   // still on its way -- is then dropped rather than mixed into this list.
@@ -53,16 +59,22 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   useEffect(() => {
     const version = ++listVersion.current;
     setLoadingMore(false);
+    setLoadFailed(false);
+    setMoreFailed(false);
     // The API decides the order now, and the store is keyed by id, so keep
     // the ids it returned: re-sorting a page of "highest rated" by date here
     // would quietly undo the sort the reader asked for.
     dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort)).then((page) => {
-      if (!page || version !== listVersion.current) return;
+      if (version !== listVersion.current) return;
+      if (!page) {
+        setLoadFailed(true);
+        return;
+      }
       setOrder(page.items.map((review) => review.id));
       setTotal(page.total);
       setLoaded(true);
     });
-  }, [dispatch, restaurantId, sort]);
+  }, [dispatch, restaurantId, sort, attempt]);
 
   const reviews: Review[] = order
     .map((id) => allReviews[id])
@@ -78,12 +90,16 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
   const showMore = async () => {
     const version = listVersion.current;
     setLoadingMore(true);
+    setMoreFailed(false);
     // What comes after the reviews still here. Deleting yours takes it off
     // the server's list too, so this count is where the rest start.
     const page = await dispatch(fetchAllReviewsByRestaurantId(restaurantId, sort, reviews.length));
     if (version !== listVersion.current) return;
     setLoadingMore(false);
-    if (!page) return;
+    if (!page) {
+      setMoreFailed(true);
+      return;
+    }
     // A review posted since moves the rest down one, so one can arrive
     // twice; keep the first copy.
     const fresh = page.items.map((review) => review.id).filter((id) => !order.includes(id));
@@ -93,16 +109,18 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
     setTotal(fresh.length ? page.total : reviews.length);
   };
 
+  // Resolves to the messages when the delete was refused, which the dialog
+  // shows instead of closing (#116).
   const handleDelete = (reviewId: number) => async () => {
-    const deleted = await dispatch(deleteReviewById(reviewId));
+    const failures = await dispatch(deleteReviewById(reviewId));
+    if (failures) return failures;
     // The restaurant first, for its rating and for viewerReviewId: until it
     // says you have no review, "Write a review" is not offered.
     await dispatch(getSingleRestaurant(+restaurantId));
-    if (deleted) {
-      // The rest stay as they are; the next Show more starts after them.
-      setOrder((current) => current.filter((id) => id !== reviewId));
-      setTotal((count) => Math.max(count - 1, 0));
-    }
+    // The rest stay as they are; the next Show more starts after them.
+    setOrder((current) => current.filter((id) => id !== reviewId));
+    setTotal((count) => Math.max(count - 1, 0));
+    return null;
   };
 
   const handleUpdate = (reviewId: number) => () => {
@@ -141,7 +159,14 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
         </div>
       </div>
 
-      {loaded && reviews.length === 0 && (
+      {loadFailed && (
+        <div className="reviews-error" role="alert">
+          <p>We couldn't load the reviews.</p>
+          <button type="button" onClick={() => setAttempt((n) => n + 1)}>Try again</button>
+        </div>
+      )}
+
+      {loaded && !loadFailed && reviews.length === 0 && (
         <p className="reviews-empty">No reviews yet. Be the first to share your experience.</p>
       )}
 
@@ -227,6 +252,9 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
           >
             {loadingMore ? "Loading…" : `Show more reviews (${reviews.length} of ${total})`}
           </button>
+          {moreFailed && (
+            <p className="restaurant-list-more-error" role="alert">We couldn't load more reviews. Please try again.</p>
+          )}
         </div>
       )}
     </div>

@@ -65,9 +65,13 @@ export default function UserProfilePage(): React.JSX.Element {
 
     const isOwnProfile = !!sessionUser && !!profile && sessionUser.id === profile.id;
 
+    // Resolves to the messages when the delete was refused, which the dialog
+    // shows instead of closing (#116).
     const handleDeleteReview = async (review: Review) => {
-        await dispatch(deleteReviewById(review.id));
+        const failures = await dispatch(deleteReviewById(review.id));
+        if (failures) return failures;
         dispatch(getProfileThunk(userId));
+        return null;
     };
 
     // The store holds whichever profile answered last. Until it is this

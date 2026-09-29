@@ -10,6 +10,12 @@
 
 const READS = new Set(["GET", "HEAD", "OPTIONS", "TRACE"]);
 
+/**
+ * What a thunk says when fetch itself rejects: the browser is offline or the
+ * connection dropped, and there is no response to read a message off.
+ */
+export const NETWORK_ERROR = "Couldn't reach the server. Check your connection and try again.";
+
 /** The token the server set last, or null before any response has come back. */
 export function csrfToken(): string | null {
     const pair = document.cookie

@@ -318,3 +318,56 @@ test("with no reviews at all, it says so", async () => {
 
   expect(await screen.findByText(/No reviews yet/)).toBeInTheDocument();
 });
+
+// --- requests that fail (#116) -------------------------------------------------------
+
+test("reviews that couldn't be loaded say so, not 'No reviews yet', and Try again loads them", async () => {
+  serveReviews(3);
+  const working = (global as any).fetch;
+  let failNext = true;
+  (global as any).fetch = jest.fn((url: string, options: any) => {
+    if (failNext && url.startsWith("/api/restaurants/3/reviews")) {
+      failNext = false;
+      return Promise.reject(new TypeError("Failed to fetch"));
+    }
+    return working(url, options);
+  });
+  renderReviews(null);
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load the reviews.");
+  expect(screen.queryByText(/No reviews yet/)).not.toBeInTheDocument();
+
+  fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+  await waitFor(() => expect(shownIds()).toHaveLength(3));
+  expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+});
+
+test("a Show more that fails says so, and can be pressed again", async () => {
+  serveReviews(25);
+  const working = (global as any).fetch;
+  (global as any).fetch = jest.fn((url: string, options: any) =>
+    url.includes("offset=20") ? Promise.reject(new TypeError("Failed to fetch")) : working(url, options));
+  renderReviews(null);
+
+  fireEvent.click(await screen.findByRole("button", { name: "Show more reviews (20 of 25)" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("We couldn't load more reviews.");
+  expect(screen.getByRole("button", { name: "Show more reviews (20 of 25)" })).not.toBeDisabled();
+});
+
+test("a refused delete of your review keeps it, and the dialog says why", async () => {
+  const server = serveReviews(3, 0);
+  const mine = server.ids()[0];
+  const working = (global as any).fetch;
+  (global as any).fetch = jest.fn((url: string, options: any = {}) =>
+    options.method === "DELETE"
+      ? Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({ errors: ["Unauthorized"] }) })
+      : working(url, options));
+  renderReviews(mine);
+
+  fireEvent.click(await screen.findByRole("button", { name: "Delete your review" }));
+  fireEvent.click(within(screen.getByRole("dialog")).getByRole("button", { name: "Delete Review" }));
+
+  expect(await within(screen.getByRole("dialog")).findByRole("alert")).toHaveTextContent("Unauthorized");
+  expect(shownIds()).toContain(mine);
+});
