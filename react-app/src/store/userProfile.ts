@@ -18,12 +18,24 @@ const loadProfile = (profile: UserProfile, reviews: Review[]) => ({
 
 export const clearProfile = () => ({ type: CLEAR_PROFILE });
 
+// The profile most recently asked for. There is one profile in the store, so
+// going from one profile to another before the first has loaded leaves both
+// requests in flight, and the first answering last used to leave user 1's
+// profile under /users/get/2 -- or, if it failed, "We couldn't find that
+// user" (#115). Only the latest request may write.
+let latestProfileId: string | null = null;
+
 /**
  * Load a user's public profile (name, avatar, businesses, counts) together
  * with every review they have written. Returns null on success or a list of
- * error messages on failure.
+ * error messages on failure, and null without touching the store when
+ * another profile has been asked for since.
  */
 export const getProfileThunk = (userId: string | number) => async (dispatch: AppDispatch) => {
+    const requested = String(userId);
+    latestProfileId = requested;
+    const superseded = () => latestProfileId !== requested;
+
     const [profileRes, reviewsRes] = await Promise.all([
         apiFetch(`/api/users/get/${userId}`),
         apiFetch(`/api/users/${userId}/reviews`),
@@ -32,10 +44,12 @@ export const getProfileThunk = (userId: string | number) => async (dispatch: App
     if (profileRes.ok && reviewsRes.ok) {
         const profile: UserProfile = await profileRes.json();
         const reviews: Review[] = await reviewsRes.json();
+        if (superseded()) return null;
         dispatch(loadProfile(profile, reviews));
         return null;
     }
 
+    if (superseded()) return null;
     dispatch(clearProfile());
     if (profileRes.status === 404) {
         return ["We couldn't find that user."];

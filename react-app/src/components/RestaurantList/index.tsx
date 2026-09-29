@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useHistory, useLocation } from "react-router-dom"
 import "./RestaurantList.css"
 import RestaurantListEntry from "../RestaurantListEntry";
@@ -27,14 +27,28 @@ function RestaurantList(): React.JSX.Element {
     // and stepped back out of. Memoised on the query string: a fresh object
     // every render would restart the effect below forever.
     const filters = useMemo(() => readFilters(location.search), [location.search]);
+    // Counts each change of filters. A Show more still on its way when they
+    // change belongs to the old list: its answer is dropped by the store, and
+    // here it must not end the new list's own Show more (#115).
+    const listVersion = useRef(0);
 
     useEffect(() => {
         // Page 1 replaces whatever a previous visit left behind, so coming
         // back to the listing does not start halfway down someone else's
         // scroll -- and a change of filter starts at the top of its own
         // results rather than appending them to the last set.
+        let cancelled = false;
+        listVersion.current += 1;
         setIsLoaded(false);
-        dispatch(getAllRestaurants(1, filters)).then(() => setIsLoaded(true));
+        setIsLoadingMore(false);
+        // Only this filter's answer ends the loading: an earlier one arriving
+        // late used to show the new filter's count over the old results.
+        dispatch(getAllRestaurants(1, filters)).then(() => {
+            if (!cancelled) setIsLoaded(true);
+        });
+        return () => {
+            cancelled = true;
+        };
     }, [dispatch, filters]);
 
     const applyFilters = (next: RestaurantFilters) => {
@@ -42,9 +56,10 @@ function RestaurantList(): React.JSX.Element {
     };
 
     const showMore = async () => {
+        const version = listVersion.current;
         setIsLoadingMore(true);
         await dispatch(getAllRestaurants(loadedPage + 1, filters));
-        setIsLoadingMore(false);
+        if (version === listVersion.current) setIsLoadingMore(false);
     };
 
     const hasMore = allRestaurants.length < total;
