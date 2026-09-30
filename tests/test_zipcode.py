@@ -74,7 +74,6 @@ def test_rejects_postcodes_outside_3_to_10_characters(client, zipcode):
     "A- B",         # mixed separators in a row
     "-2134",        # leading separator
     "02134-",       # trailing separator
-    " 02134",       # untrimmed
 ])
 def test_rejects_malformed_postcodes(client, zipcode):
     """Length alone is not a postcode; the shape is enforced server-side too."""
@@ -83,6 +82,14 @@ def test_rejects_malformed_postcodes(client, zipcode):
     assert res.status_code == 400
     assert any("Postal code" in message for message in res.get_json()["errors"])
     assert Restaurant.query.filter_by(name="Zip Test").first() is None
+
+
+def test_the_spaces_around_a_postcode_are_trimmed_not_refused(client):
+    """Like every field of a restaurant, since #128: " 02134" used to be refused."""
+    login(client, "owner@test.io")
+    res = client.post("/api/restaurants/", json=payload(" 02134 "))
+    assert res.status_code == 200, res.get_json()
+    assert Restaurant.query.filter_by(name="Zip Test").one().zipcode == "02134"
 
 
 def test_accepts_a_numeric_postcode_from_older_callers(client):

@@ -115,7 +115,9 @@ def filtered_restaurants(filters, base=None, relevance=None):
         query = query.filter(Restaurant.price.in_(filters.prices))
 
     if filters.city:
-        query = query.filter(func.lower(Restaurant.city) == filters.city.lower())
+        # Trimmed and in any case, as the list of cities groups them: a city
+        # saved as "Houston " was never found by ?city=Houston (#128).
+        query = query.filter(func.lower(func.trim(Restaurant.city)) == filters.city.lower())
 
     order = []
 
