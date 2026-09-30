@@ -136,17 +136,27 @@ def edit_profile(id):
     username = data['username'].strip()
     if not username:
         return {'errors': ['Username is required.']}, 400
-    taken = User.query.filter(User.username == username, User.id != profile.id).first()
+    # Case aside, as at signup: "Owner" is somebody else's "owner" (#117).
+    taken = User.query.filter(func.lower(User.username) == username.lower(),
+                              User.id != profile.id).first()
     if taken:
         return {'errors': ['Username is already in use.']}, 400
-    profile.username = username
 
-    first_name = (data.get('first_name') or '').strip()
-    if first_name:
-        profile.first_name = first_name
-    last_name = (data.get('last_name') or '').strip()
-    if last_name:
-        profile.last_name = last_name
+    # A name that is sent must be there. A blank one used to be skipped with
+    # a 200, so clearing it looked saved and the old name came back (#117).
+    # One that isn't sent is left as it is.
+    missing = []
+    for field, label in (("first_name", "First name"), ("last_name", "Last name")):
+        if field in body and not (data.get(field) or '').strip():
+            missing.append(f"{label} is required.")
+    if missing:
+        return {'errors': missing}, 400
+
+    profile.username = username
+    if 'first_name' in body:
+        profile.first_name = data['first_name'].strip()
+    if 'last_name' in body:
+        profile.last_name = data['last_name'].strip()
 
     replaced_key = None
     if 'profile_image_url' in body:

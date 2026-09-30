@@ -57,15 +57,30 @@ def test_edit_own_profile_updates_fields(client, ids):
     assert client.get("/api/auth/").get_json()["username"] == "olive_o"
 
 
-def test_edit_profile_can_clear_picture_and_keeps_name_when_blank(client, ids):
+def test_edit_profile_can_clear_picture(client, ids):
     login(client, "owner@test.io")
     client.put(f"/api/users/{ids['owner']}/edit",
                json={"username": "owner", "profile_image_url": "https://example.com/me.png"})
     res = client.put(f"/api/users/{ids['owner']}/edit",
-                     json={"username": "owner", "first_name": "", "profile_image_url": ""})
+                     json={"username": "owner", "profile_image_url": ""})
     assert res.status_code == 200
     assert res.get_json()["profile_image_url"] is None
     assert res.get_json()["first_name"] == "Olive"
+
+
+def test_a_blank_name_is_refused_rather_than_skipped(client, ids):
+    """It used to answer 200 and keep the old name, so clearing it looked saved (#117)."""
+    login(client, "owner@test.io")
+    client.put(f"/api/users/{ids['owner']}/edit",
+               json={"username": "owner", "profile_image_url": "https://example.com/me.png"})
+    res = client.put(f"/api/users/{ids['owner']}/edit",
+                     json={"username": "owner", "first_name": "", "last_name": "   ", "profile_image_url": ""})
+    assert res.status_code == 400
+    assert res.get_json()["errors"] == ["First name is required.", "Last name is required."]
+    # Nothing in the refused request is saved, the picture included.
+    me = client.get(f"/api/users/get/{ids['owner']}").get_json()
+    assert (me["first_name"], me["last_name"]) == ("Olive", "Owner")
+    assert me["profile_image_url"] == "https://example.com/me.png"
 
 
 def test_edit_profile_rejects_taken_username(client, ids):

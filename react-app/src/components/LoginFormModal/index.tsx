@@ -33,7 +33,10 @@ function LoginFormModal(): React.JSX.Element {
         <label>
           Email
           <input
-            type="text"
+            type="email"
+            autoCapitalize="none"
+            autoComplete="email"
+            spellCheck={false}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -43,6 +46,7 @@ function LoginFormModal(): React.JSX.Element {
           Password
           <input
             type="password"
+            autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required

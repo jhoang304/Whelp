@@ -1,32 +1,16 @@
 from flask_wtf import FlaskForm
-from wtforms.validators import DataRequired, Email, ValidationError
-from app.models import User
+from wtforms.validators import DataRequired
 from .fields import TextField
 
 
-def user_exists(form, field):
-    # Checking if user exists
-    email = field.data
-    user = User.query.filter(User.email == email).first()
-    if not user:
-        raise ValidationError('Email provided not found.')
-
-
-def password_matches(form, field):
-    # Checking if password matches
-    password = field.data
-    email = form.data['email']
-    if not isinstance(email, str):
-        # The email field has already said what is wrong with it; querying
-        # with a number is a type error on Postgres (#111).
-        raise ValidationError('No such user exists.')
-    user = User.query.filter(User.email == email).first()
-    if not user:
-        raise ValidationError('No such user exists.')
-    if not user.check_password(password):
-        raise ValidationError('Password was incorrect.')
-
-
 class LoginForm(FlaskForm):
-    email = TextField('email', validators=[DataRequired(), user_exists])
-    password = TextField('password', validators=[DataRequired(), password_matches])
+    """
+    Only that both are there, and text. Whether they match an account is the
+    route's to answer, once: these validators used to look the user up and
+    check the password, and then the route did both again -- two password
+    checks for every login, and none at all for an unknown email, so how
+    long a refusal took said whether the address had an account (#117).
+    The address is matched whatever its case by User.with_email.
+    """
+    email = TextField('email', validators=[DataRequired()])
+    password = TextField('password', validators=[DataRequired()])

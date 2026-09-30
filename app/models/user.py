@@ -12,12 +12,16 @@ DEMO_EMAIL = "demo@aa.io"
 class User(db.Model, UserMixin):
     __tablename__ = 'users'
 
-    if environment == "production":
-        __table_args__ = {'schema': SCHEMA}
-
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(40), nullable=False, unique=True)
     email = db.Column(db.String(255), nullable=False, unique=True)
+
+    # One account per address, whatever case it was typed in. The column's
+    # own constraint tells "Owner@x.io" from "owner@x.io", and signup let the
+    # second become another account (#117).
+    __table_args__ = (
+        db.Index("uq_users_email_lower", func.lower(email), unique=True),
+    ) + (({'schema': SCHEMA},) if environment == "production" else ())
     hashed_password = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
@@ -37,6 +41,11 @@ class User(db.Model, UserMixin):
     restaurant_images = db.relationship("RestaurantImage", back_populates="user", cascade="all, delete-orphan")
     review_responses = db.relationship("ReviewResponse", back_populates="user", cascade="all, delete-orphan")
     favorites = db.relationship("Favorite", back_populates="user", cascade="all, delete-orphan")
+
+    @classmethod
+    def with_email(cls, email):
+        """The account with this address, whatever case either is written in."""
+        return cls.query.filter(func.lower(cls.email) == email.strip().lower()).first()
 
     @property
     def is_demo(self):

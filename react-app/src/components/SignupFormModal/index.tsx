@@ -46,7 +46,10 @@ function SignupFormModal(): React.JSX.Element {
 				<label>
 					Email
 					<input
-						type="text"
+						type="email"
+						autoCapitalize="none"
+						autoComplete="email"
+						spellCheck={false}
 						value={email}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
 						required
@@ -56,6 +59,8 @@ function SignupFormModal(): React.JSX.Element {
 					Username
 					<input
 						type="text"
+						autoCapitalize="none"
+						spellCheck={false}
 						value={username}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUsername(e.target.value)}
 						required
@@ -83,6 +88,7 @@ function SignupFormModal(): React.JSX.Element {
 					Password
 					<input
 						type="password"
+						autoComplete="new-password"
 						value={password}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
 						required
@@ -92,6 +98,7 @@ function SignupFormModal(): React.JSX.Element {
 					Confirm Password
 					<input
 						type="password"
+						autoComplete="new-password"
 						value={confirmPassword}
 						onChange={(e: React.ChangeEvent<HTMLInputElement>) => setConfirmPassword(e.target.value)}
 						required

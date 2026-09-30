@@ -79,7 +79,10 @@ function SignupFormPage(): React.JSX.Element {
               <input
                 id="email"
                 className="signup-input"
-                type="email" // Changed to type email
+                type="email"
+                autoCapitalize="none"
+                autoComplete="email"
+                spellCheck={false}
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -91,6 +94,8 @@ function SignupFormPage(): React.JSX.Element {
                 id="username"
                 className="signup-input"
                 type="text"
+                autoCapitalize="none"
+                spellCheck={false}
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
@@ -102,6 +107,7 @@ function SignupFormPage(): React.JSX.Element {
                 id="password"
                 className="signup-input"
                 type="password"
+                autoComplete="new-password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -113,6 +119,7 @@ function SignupFormPage(): React.JSX.Element {
                 id="confirmPassword"
                 className="signup-input"
                 type="password"
+                autoComplete="new-password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 required
