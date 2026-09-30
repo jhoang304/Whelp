@@ -32,6 +32,17 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
                 </span>
                 <div className="stars-home">
                     <RatingStar size="20" rating={restaurant.avgRating} />
+                    {/* The number beside the stars it stands for: a half star
+                        and an empty one are hard to tell apart at this size
+                        (#121). Hidden from screen readers, which hear it in
+                        the stars' own label. */}
+                    {restaurant.numReviews ? (
+                        <span className="stars-home-number" aria-hidden="true">
+                            {restaurant.avgRating.toFixed(1)}
+                        </span>
+                    ) : (
+                        <span className="stars-home-number">No reviews yet</span>
+                    )}
                 </div>
                 <div className="small-words">
                     <div>

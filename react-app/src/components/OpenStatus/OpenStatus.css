@@ -8,7 +8,7 @@
 }
 
 .closed-now {
-    color: var(--color-error);
+    color: var(--color-error-text);
     font-weight: var(--font-bold);
 }
 

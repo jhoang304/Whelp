@@ -87,7 +87,9 @@
     border-radius: var(--radius-sm);
 }
 
+/* The dark red on the tint: the brand red on it is 4.48:1. */
 .owner-response-cta:hover {
+    color: var(--color-primary-dark);
     background-color: rgba(240, 12, 19, 0.06);
     border-color: var(--color-primary-dark);
 }
@@ -114,7 +116,7 @@
     font-size: var(--text-sm);
     line-height: var(--leading-normal);
     color: var(--color-gray-800);
-    border: 1px solid var(--color-gray-300);
+    border: 1px solid var(--color-border-input);
     border-radius: var(--radius-sm);
     resize: vertical;
 }
