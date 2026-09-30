@@ -42,9 +42,43 @@ export function describeOpenStatus(status: OpenStatus): { isOpen: boolean; text:
     }
 
     if (status.opensAt && status.opensDay) {
-        return { isOpen: false, text: `Opens ${formatTime(status.opensAt)} ${status.opensDay}` };
+        return { isOpen: false, text: `Opens ${formatTime(status.opensAt)}${whenItOpens(status.opensDay, status.opensInDays)}` };
     }
     return { isOpen: false, text: "" };
+}
+
+/**
+ * "", " tomorrow", " Tuesday" or " next Saturday", from how many days away
+ * the opening is in the restaurant's own week (#123). "Opens 5:00 PM
+ * Saturday", said on a Saturday, read as a week away. Without the count --
+ * from a server that doesn't send it -- the weekday is all there is to say.
+ */
+function whenItOpens(day: string, inDays: number | undefined): string {
+    if (inDays === 0) return "";
+    if (inDays === 1) return " tomorrow";
+    if (inDays === 7) return ` next ${day}`;
+    return ` ${day}`;
+}
+
+/**
+ * Which day it is, Monday 0, where the restaurant is (#123). The reader's own
+ * today was highlighted in its hours: at 00:30 on Monday in Chicago, an LA
+ * restaurant's Monday row lit up while its badge, worked out in LA, spoke of
+ * Sunday night. The reader's day stands in when there is no zone, or one this
+ * browser doesn't know.
+ */
+export function weekdayIn(timezone: string | null | undefined, now: Date = new Date()): number {
+    if (timezone) {
+        try {
+            const name = new Intl.DateTimeFormat("en-US", { timeZone: timezone, weekday: "long" }).format(now);
+            const index = WEEKDAYS.indexOf(name);
+            if (index >= 0) return index;
+        } catch (unknownZone) {
+            // A RangeError for a zone this browser lacks: the reader's day, then.
+        }
+    }
+    // JavaScript counts from Sunday, the API from Monday.
+    return (now.getDay() + 6) % 7;
 }
 
 /** The hours sorted for display, Monday first. */

@@ -2,7 +2,7 @@ import React from "react";
 
 import "./OpeningHoursTable.css";
 import { OpeningHours } from "../../types";
-import { WEEKDAYS, byWeekday, formatTime, runsPastMidnight } from "../../utils/hours";
+import { WEEKDAYS, byWeekday, formatTime, runsPastMidnight, weekdayIn } from "../../utils/hours";
 
 interface OpeningHoursTableProps {
     hours?: OpeningHours[];
@@ -20,9 +20,8 @@ function OpeningHoursTable({ hours, timezone }: OpeningHoursTableProps): React.J
     if (!hours || hours.length === 0) return null;
 
     const byDay = new Map(byWeekday(hours).map((day) => [day.weekday, day]));
-    const today = new Date().getDay();
-    // JavaScript counts from Sunday, the API from Monday.
-    const todayIndex = (today + 6) % 7;
+    // The restaurant's today, which the open/closed badge beside it is about.
+    const todayIndex = weekdayIn(timezone);
 
     return (
         <>

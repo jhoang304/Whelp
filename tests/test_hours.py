@@ -60,7 +60,8 @@ def test_the_minute_it_closes_does_not():
 
 def test_before_opening_it_says_when():
     assert open_status(WEEKDAY_LUNCH, CHICAGO, at("mon", 10, 59)) == {
-        "isOpen": False, "opensAt": "11:00", "opensWeekday": MONDAY, "opensDay": "Monday"}
+        "isOpen": False, "opensAt": "11:00", "opensWeekday": MONDAY, "opensDay": "Monday",
+        "opensInDays": 0}
 
 
 def test_a_day_with_no_row_is_closed():
@@ -153,3 +154,34 @@ def test_a_state_suggests_a_timezone(state, expected):
 ])
 def test_reading_a_time_off_a_request(value, expected):
     assert parse_time(value) == expected
+
+
+# --- how far away the next opening is (#123) ---------------------------------
+# "Opens 5:00 PM Saturday", said on a Saturday, read as a week away.
+
+def test_later_today_is_zero_days_away():
+    assert open_status(WEEKDAY_LUNCH, CHICAGO, at("mon", 9))["opensInDays"] == 0
+
+
+def test_tomorrow_is_one_day_away():
+    week = hours((TUESDAY, "11:00", "22:00"))
+    assert open_status(week, CHICAGO, at("mon", 23))["opensInDays"] == 1
+
+
+def test_later_this_week_counts_the_days():
+    week = hours((WEDNESDAY, "11:00", "22:00"))
+    assert open_status(week, CHICAGO, at("mon", 12))["opensInDays"] == 2
+
+
+def test_today_once_it_has_closed_is_a_week_away():
+    """Its only day, and it is over: next Monday, seven days on."""
+    status = open_status(WEEKDAY_LUNCH, CHICAGO, at("mon", 23))
+    assert (status["opensDay"], status["opensInDays"]) == ("Monday", 7)
+
+
+def test_the_days_are_counted_in_the_restaurants_week():
+    """Monday 00:30 in Chicago is still Sunday in Los Angeles."""
+    week = hours((MONDAY, "11:00", "22:00"))
+    status = open_status(week, "America/Los_Angeles", at("mon", 0, 30))
+    assert status["opensInDays"] == 1, "tomorrow, in LA"
+

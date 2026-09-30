@@ -229,6 +229,71 @@ def test_an_owner_can_correct_the_timezone_their_state_suggested(client, ids):
     assert res.get_json()["timezone"] == "America/Denver"
 
 
+# An edit that doesn't mention the timezone leaves it be (#123). It used to
+# take the state's zone whenever the field was missing or null.
+
+def edit(client, ids, **overrides):
+    login(client, "owner@test.io")
+    res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload(**overrides))
+    assert res.status_code == 200, res.get_json()
+    return res.get_json()["timezone"]
+
+
+def test_a_corrected_timezone_survives_an_edit_that_leaves_it_out(client, ids):
+    set_timezone(ids["restaurant"], "America/Denver")
+
+    assert edit(client, ids, name="Renamed") == "America/Denver"
+    assert db.session.get(Restaurant, ids["restaurant"]).timezone == "America/Denver"
+
+
+def test_null_clears_the_timezone(client, ids):
+    """The edit form's "Not set": a restaurant may choose it."""
+    set_timezone(ids["restaurant"], "America/Denver")
+
+    assert edit(client, ids, timezone=None) is None
+
+
+def test_a_restaurant_with_none_gets_its_states_on_an_edit(client, ids):
+    set_timezone(ids["restaurant"], None)
+
+    assert edit(client, ids, state="CA") == "America/Los_Angeles"
+
+
+def test_moving_state_guesses_the_zone_again(client, ids):
+    set_timezone(ids["restaurant"], "America/Chicago")
+
+    assert edit(client, ids, state="CA") == "America/Los_Angeles"
+
+
+def test_the_same_state_in_other_letters_is_not_a_move(client, ids):
+    set_timezone(ids["restaurant"], "America/Denver")
+
+    assert edit(client, ids, state="tx") == "America/Denver"
+
+
+def test_a_move_to_a_state_nobody_knows_keeps_the_zone_it_had(client, ids):
+    set_timezone(ids["restaurant"], "America/Chicago")
+
+    assert edit(client, ids, state="ZZ") == "America/Chicago"
+
+
+def test_a_move_that_names_a_timezone_takes_that_one(client, ids):
+    set_timezone(ids["restaurant"], "America/Chicago")
+
+    assert edit(client, ids, state="CA", timezone="America/Denver") == "America/Denver"
+
+
+def test_a_refused_timezone_changes_nothing(client, ids):
+    set_timezone(ids["restaurant"], "America/Denver")
+    login(client, "owner@test.io")
+
+    res = client.put(f"/api/restaurants/{ids['restaurant']}", json=payload(name="Renamed", timezone=7))
+
+    assert res.status_code == 400
+    restaurant = db.session.get(Restaurant, ids["restaurant"])
+    assert (restaurant.name, restaurant.timezone) == ("Test Bistro", "America/Denver")
+
+
 def test_amenities_are_set_and_cleared_like_cuisines(client, ids):
     made = add_amenities(("Offers Takeout", "takeout"), ("Free Wi-Fi", "wifi"))
     login(client, "owner@test.io")
