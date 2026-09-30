@@ -47,3 +47,20 @@
     border-color: var(--color-primary-dark);
     color: white;
 }
+
+/* The second way on: a plain link under the button. */
+.page-message-secondary {
+    display: inline-flex;
+    align-items: center;
+    min-height: 32px;
+    margin-top: var(--space-3);
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.page-message-secondary:hover {
+    color: var(--color-primary-dark);
+}
