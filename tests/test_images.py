@@ -69,7 +69,7 @@ def upload(client, filename="photo.png", content=CONTENT, mimetype=None, **kwarg
 
 def test_upload_requires_login(client):
     visit(client)
-    assert upload(client).status_code in (302, 401)  # Flask-Login redirects to /api/auth/unauthorized
+    assert upload(client).status_code == 401
 
 
 def test_upload_returns_503_when_s3_not_configured(client):

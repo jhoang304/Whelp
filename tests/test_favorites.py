@@ -52,9 +52,8 @@ def test_unsaving_takes_it_off_and_is_safe_to_repeat(client, ids):
 
 def test_saving_needs_someone_logged_in(client, ids):
     visit(client)
-    # login_required answers by redirecting to /api/auth/unauthorized (a 401).
-    assert save(client, ids["restaurant"]).status_code in (302, 401)
-    assert unsave(client, ids["restaurant"]).status_code in (302, 401)
+    assert save(client, ids["restaurant"]).status_code == 401
+    assert unsave(client, ids["restaurant"]).status_code == 401
     assert Favorite.query.count() == 0
 
 
@@ -168,7 +167,7 @@ def test_nobody_else_can_read_it(client, ids):
 
 
 def test_nor_can_someone_logged_out(client, ids):
-    assert saved_list(client, ids["bystander"]).status_code in (302, 401)
+    assert saved_list(client, ids["bystander"]).status_code == 401
 
 
 def test_only_the_owner_is_told_how_many_there_are(client, ids):

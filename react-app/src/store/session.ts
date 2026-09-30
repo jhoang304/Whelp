@@ -34,7 +34,11 @@ export const authenticate = () => async (dispatch: AppDispatch) => {
 			},
 		});
 		if (response.ok) {
-			dispatch(setUser(await response.json()));
+			// The user, or {"user": null} when nobody is signed in: being
+			// signed out is an answer, not a 401 (#126). Taken as a user, that
+			// body would have looked like somebody signed in.
+			const body = await response.json();
+			if (body && body.user !== null) dispatch(setUser(body));
 		}
 	} catch (unreachable) {
 		// Offline, or an answer that won't parse: signed out, as far as the

@@ -26,7 +26,19 @@ app = Flask(__name__, static_folder='../react-app/build', static_url_path='/')
 
 # Setup login manager
 login = LoginManager(app)
-login.login_view = 'auth.unauthorized'
+
+
+@login.unauthorized_handler
+def unauthorized():
+    """
+    A signed-out request to a route that needs a user: 401, in the API's own
+    errors shape (#126). With a login_view, Flask-Login answered with a 302 to
+    an HTML "Redirecting..." page instead -- which a browser follows with the
+    same method, so a stale tab's PUT or DELETE ended in a 405 from the GET-only
+    page it was sent to -- and flashed "Please log in" into the session cookie
+    on every refusal, for an API that never shows one.
+    """
+    return {'errors': ['Unauthorized']}, 401
 
 
 @login.user_loader
@@ -69,6 +81,19 @@ def https_redirect():
             url = request.url.replace('http://', 'https://', 1)
             code = 301
             return redirect(url, code=code)
+
+
+@app.before_request
+def drop_stale_flashes():
+    """
+    The "Please log in" messages Flask-Login used to flash on every refusal,
+    still in the cookies of anyone refused before #126. Nothing reads them;
+    they were parsed on every request and never went away, even after logging
+    in. Touching the session only when they are there leaves every other
+    response's cookie alone.
+    """
+    if '_flashes' in session:
+        session.pop('_flashes')
 
 
 @app.before_request

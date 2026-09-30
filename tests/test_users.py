@@ -2,11 +2,11 @@ from tests.conftest import login
 
 
 def test_user_list_requires_login(client):
-    assert client.get("/api/users/").status_code in (302, 401)
+    assert client.get("/api/users/").status_code == 401
 
 
 def test_user_detail_requires_login(client, ids):
-    assert client.get(f"/api/users/{ids['owner']}").status_code in (302, 401)
+    assert client.get(f"/api/users/{ids['owner']}").status_code == 401
 
 
 def test_user_list_does_not_leak_emails(client):

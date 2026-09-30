@@ -55,7 +55,7 @@ def test_an_unknown_email_is_refused_the_same_way(client):
 def test_a_refused_login_leaves_you_signed_out(client):
     client.get("/api/auth/")
     client.post("/api/auth/login", json={"email": "owner@test.io", "password": "wrong"})
-    assert client.get("/api/auth/").status_code == 401
+    assert client.get("/api/auth/").get_json() == {"user": None}
 
 
 def test_logging_out_ends_the_session(client, ids):
@@ -70,8 +70,8 @@ def test_logging_out_ends_the_session(client, ids):
     assert res.status_code == 200
     assert res.get_json() == {"message": "User logged out"}
 
-    assert client.get("/api/auth/").status_code == 401
-    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code in (302, 401)
+    assert client.get("/api/auth/").get_json() == {"user": None}
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 401
 
 
 def test_signup_creates_and_signs_in(client):
@@ -112,5 +112,5 @@ def test_creating_a_restaurant_requires_login(client):
         "phone_number": "(555) 555-5555", "website": "http://uninvited.com",
         "description": "Should never be written.",
     })
-    assert res.status_code in (302, 401)
+    assert res.status_code == 401
     assert db.session.query(Restaurant).filter_by(name="Uninvited").first() is None

@@ -148,7 +148,7 @@ def test_signed_out_cannot(client, ids, monkeypatch):
     configure_s3(monkeypatch)
     image_id = attached(client, ids)
 
-    assert client.delete(f"/api/review-images/{image_id}").status_code in (302, 401)
+    assert client.delete(f"/api/review-images/{image_id}").status_code == 401
     assert db.session.get(ReviewImage, image_id) is not None
 
 

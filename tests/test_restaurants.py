@@ -23,8 +23,8 @@ def payload(**overrides):
 def test_edit_and_delete_require_login(client, ids):
     visit(client)
     assert client.put(f"/api/restaurants/{ids['restaurant']}",
-                      json=payload()).status_code in (302, 401)
-    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code in (302, 401)
+                      json=payload()).status_code == 401
+    assert client.delete(f"/api/restaurants/{ids['restaurant']}").status_code == 401
 
 
 def test_non_owner_cannot_edit_restaurant(client, ids):
