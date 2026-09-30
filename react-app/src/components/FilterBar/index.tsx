@@ -30,10 +30,13 @@ function FilterBar({ filters, onChange, total }: FilterBarProps): React.JSX.Elem
     const cities = useAppSelector((state) => state.categories.cities);
 
     useEffect(() => {
+        // The cuisines are a closed list, fetched once and kept. The cities
+        // are not: a restaurant added in a new city, moved, or the last one in
+        // a city deleted changes them, and the filter didn't know until a
+        // reload (#128). So they are asked for each time a list page opens --
+        // one small request -- while the ones already known stay on show.
         if (categories.length === 0) dispatch(getCategories());
-        if (cities.length === 0) dispatch(getCities());
-        // Both lists are small, closed and shared by every page that filters,
-        // so they are fetched once and kept.
+        dispatch(getCities());
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [dispatch]);
 

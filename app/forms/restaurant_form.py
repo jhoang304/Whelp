@@ -4,7 +4,7 @@ from wtforms.validators import AnyOf, DataRequired, Length, Regexp
 
 from app.api.filters import PRICES
 
-from .fields import TextField
+from .fields import TextField, trimmed
 from .phone import phone_format
 from .postcode import (
     coerce_to_text, postcode_type,
@@ -17,40 +17,44 @@ class RestaurantForm(FlaskForm):
     Messages name their own field: the API answers with a flat list of them,
     so WTForms' "Field must be between 1 and 50 characters long" would leave
     the reader of a ten-field form guessing which box to fix.
+
+    Every field is trimmed before it is checked or saved (#128). "Houston "
+    was saved as typed, listed in the city filter beside "Houston", and could
+    never be filtered to. A name of spaces alone is then no name at all.
     """
-    name = TextField("name", validators=[
+    name = TextField("name", filters=[trimmed], validators=[
         DataRequired(message="Restaurant name is required."),
         Length(min=1, max=100, message="Restaurant name must be 100 characters or fewer.")])
-    price = TextField("price", validators=[
+    price = TextField("price", filters=[trimmed], validators=[
         DataRequired(message="Price is required."),
         # The column is five characters, and the price filter knows only
         # these: "cheap" saved fine and could never be filtered to (#111).
         AnyOf(PRICES, message=f"Price must be one of {', '.join(PRICES)}.")])
-    address = TextField("address", validators=[
+    address = TextField("address", filters=[trimmed], validators=[
         DataRequired(message="Address is required."),
         Length(min=1, max=100, message="Address must be 100 characters or fewer.")])
-    city = TextField("city", validators=[
+    city = TextField("city", filters=[trimmed], validators=[
         DataRequired(message="City is required."),
         Length(min=1, max=50, message="City must be 50 characters or fewer.")])
-    state = TextField("state", validators=[
+    state = TextField("state", filters=[trimmed], validators=[
         DataRequired(message="State is required."),
         Length(min=2, max=2, message="State must be a 2-letter abbreviation.")])
-    zipcode = StringField("zipcode", filters=[coerce_to_text], validators=[
+    zipcode = StringField("zipcode", filters=[coerce_to_text, trimmed], validators=[
         DataRequired(message="Postal code is required."),
         postcode_type,
         Length(min=POSTCODE_MIN, max=POSTCODE_MAX,
                message=f"Postal code must be between {POSTCODE_MIN} and {POSTCODE_MAX} characters."),
         Regexp(POSTCODE_REGEX, message=POSTCODE_MESSAGE)])
-    country = TextField("country", validators=[
+    country = TextField("country", filters=[trimmed], validators=[
         DataRequired(message="Country is required."),
         Length(min=1, max=56, message="Country must be 56 characters or fewer.")])
-    phone_number = TextField("phone_number", validators=[
+    phone_number = TextField("phone_number", filters=[trimmed], validators=[
         DataRequired(message="Phone number is required."),
         Length(min=1, max=20, message="Phone number must be 20 characters or fewer."),
         phone_format])
-    website = TextField("website", validators=[
+    website = TextField("website", filters=[trimmed], validators=[
         DataRequired(message="Website is required."),
         Length(min=1, max=70, message="Website must be 70 characters or fewer.")])
-    description = TextField("description", validators=[
+    description = TextField("description", filters=[trimmed], validators=[
         DataRequired(message="Description is required."),
         Length(min=1, max=500, message="Description must be 500 characters or fewer.")])

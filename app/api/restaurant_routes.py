@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
-from sqlalchemy import case
+from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from app.models import (
@@ -80,18 +80,45 @@ def restaurants():
     return page_response(restaurant_cards(rows), page_request, total)
 
 
+def one_spelling_per_city(rows):
+    """
+    [(city, restaurants)] as a sorted list with one spelling per city.
+
+    Cities are the same when they match trimmed and in any case. The spelling
+    shown is the one the most restaurants use, and a tie goes to the one in
+    title case, then to the first alphabetically -- so the answer is the same
+    every time.
+    """
+    spellings = {}
+    for city, count in rows:
+        if not city or not city.strip():
+            continue
+        spelling = city.strip()
+        counts = spellings.setdefault(spelling.lower(), {})
+        counts[spelling] = counts.get(spelling, 0) + count
+
+    def best(counts):
+        return min(counts, key=lambda spelling: (-counts[spelling], spelling != spelling.title(), spelling))
+
+    return sorted((best(counts) for counts in spellings.values()), key=str.lower)
+
+
 # The cities restaurants are actually in
 @restaurant_routes.route('/cities')
 def cities():
     """
-    Every city with a restaurant in it, in one column.
+    Every city with a restaurant in it, once each.
 
     The city filter matches a whole name, so the filter bar offers this list
     rather than a text box: "Hous" and "Houston, TX" are both reasonable
     things to type and neither of them is a city this database knows.
+
+    Spellings that differ only in case or the spaces around them are one
+    city, as the filter treats them (#128): "HOUSTON", "Houston", "Houston "
+    and "houston" were four entries. Each is shown as its commonest spelling.
     """
-    rows = db.session.query(Restaurant.city).distinct().order_by(Restaurant.city).all()
-    return {"items": [city for (city,) in rows]}
+    rows = db.session.query(Restaurant.city, func.count(Restaurant.id)).group_by(Restaurant.city).all()
+    return {"items": one_spelling_per_city(rows)}
 
 
 # Get Single Restaurant by Id
