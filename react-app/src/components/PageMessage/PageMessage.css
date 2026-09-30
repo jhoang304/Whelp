@@ -16,7 +16,7 @@
     margin-bottom: var(--space-4);
 }
 
-.page-message h2 {
+.page-message h1 {
     margin: 0;
     font-size: var(--text-2xl);
     color: var(--color-gray-800);

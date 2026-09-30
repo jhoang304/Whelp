@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import "./Restaurant.css"
 import RatingStar from "../RatingStar"
 import CategoryChips from "../CategoryChips"
@@ -6,6 +7,17 @@ import OpenStatus from "../OpenStatus"
 import { RestaurantProps } from "../../types";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 
+/**
+ * A restaurant's card in a list.
+ *
+ * The name is the link, stretched over the whole card, so the card still
+ * opens the restaurant wherever it is clicked (#122). The whole card used to
+ * be the link: its name was everything on the card read out at once, name,
+ * price, cuisines and a review, and the cuisine chips were buttons inside it,
+ * which HTML does not allow. Now the chips are links of their own, laid over
+ * the stretched one, and the name is a heading, so the list can be walked by
+ * its headings.
+ */
 function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
     const tick = (
         <svg width="16" height="16" className="tick">
@@ -21,15 +33,16 @@ function Restaurant({ restaurant }: RestaurantProps): React.JSX.Element {
 
     return (
         <div className="restaurant-card">
-            {/* alt="": the name is right beside it, inside the same link, and a
-                screen reader would otherwise read it twice. */}
+            {/* alt="": the name is right beside it, and is the link. */}
             <img className="square" src={restaurant.previewImage || DEFAULT_RESTAURANT_IMAGE} alt="" onError={onRestaurantImageError}/>
             <div className="summary">
                 {/* No id prefix: it was standing in for a list number and
                     read 1, 2, 5, 9 as soon as anything was deleted. */}
-                <span className="bold-name">
-                    {restaurant.name}
-                </span>
+                <h2 className="bold-name">
+                    <Link className="restaurant-card-link" to={`/single/${restaurant.id}`}>
+                        {restaurant.name}
+                    </Link>
+                </h2>
                 <div className="stars-home">
                     <RatingStar size="20" rating={restaurant.avgRating} />
                     {/* The number beside the stars it stands for: a half star

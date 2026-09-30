@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Link, NavLink, useHistory } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import {
   fetchAllReviewsByRestaurantId,
   deleteReviewById,
@@ -33,7 +33,6 @@ const whiteStar = (
 
 function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element {
   const dispatch = useAppDispatch();
-  const history = useHistory();
 
   const sessionUser = useAppSelector((state) => state.session.user);
   const currentRestaurant = useAppSelector((state) => state.Restaurants.singleRestaurant);
@@ -124,10 +123,6 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
     return null;
   };
 
-  const handleUpdate = (reviewId: number) => () => {
-    history.push(`/${restaurantId}/reviews/${reviewId}/update`);
-  };
-
   return (
     <div className="reviews-container">
       <div className="reviews-heading">
@@ -188,7 +183,7 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                 />
                 <div className="review-right-section">
                   {review.user ? (
-                    <NavLink id="review-user-name" to={`/users/get/${review.user_id}`}>
+                    <NavLink className="review-user-name" to={`/users/get/${review.user_id}`}>
                       {review.user.username}
                     </NavLink>
                   ) : (
@@ -207,10 +202,10 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
                     and in the same style as the owner's reply below. */}
                 {isAuthor && (
                   <div className="review-actions row-actions">
-                    <button type="button" onClick={handleUpdate(review.id)} aria-label="Edit your review">
+                    <Link to={`/${restaurantId}/reviews/${review.id}/update`} aria-label="Edit your review">
                       <i className="fa-solid fa-pen" aria-hidden="true"></i>
                       Edit
-                    </button>
+                    </Link>
                     <OpenModalButton
                       className="danger"
                       ariaLabel="Delete your review"

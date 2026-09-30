@@ -139,7 +139,7 @@ function ReviewPhotoPicker({
                         disabled={disabled}
                     />
                     <span className="review-photo-picker-button">
-                        <i className="fa-regular fa-image"></i> Add photos
+                        <i className="fa-regular fa-image" aria-hidden="true"></i> Add photos
                     </span>
                     <span className="review-photo-picker-hint">
                         PNG, JPG, GIF or WEBP, up to {MAX_UPLOAD_MB} MB each

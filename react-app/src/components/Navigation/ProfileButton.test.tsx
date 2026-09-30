@@ -122,3 +122,19 @@ test("the menu is a list of list items", () => {
   expect(children.length).toBeGreaterThan(0);
   children.forEach((child) => expect(child.tagName).toBe("LI"));
 });
+
+test("My Profile and Account settings are links, so they open in a new tab", () => {
+  renderButton();
+  fireEvent.click(button());
+  expect(screen.getByRole("link", { name: "My Profile" })).toHaveAttribute("href", "/users/get/1");
+  expect(screen.getByRole("link", { name: "Account settings" })).toHaveAttribute("href", "/settings");
+  // Logging out does something rather than go somewhere: still a button.
+  expect(screen.getByRole("button", { name: "Log Out" })).toBeInTheDocument();
+});
+
+test("following one closes the menu", () => {
+  renderButton();
+  fireEvent.click(button());
+  fireEvent.click(screen.getByRole("link", { name: "Account settings" }));
+  expect(menu()).toHaveClass("hidden");
+});

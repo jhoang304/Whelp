@@ -10,6 +10,7 @@ import restaurantsReducer from "../../store/restaurants";
 import { ModalProvider, Modal } from "../../context/Modal";
 import { deferredFetch, ok, refused } from "../../testUtils/deferredFetch";
 import UserProfilePage from "./index";
+import { axe } from "../../testUtils/axe";
 
 /**
  * Going from one profile to another before the first has loaded leaves two
@@ -145,4 +146,34 @@ test("a refused delete of a review on your profile keeps it, and the dialog says
 
   expect(within(screen.getByRole("dialog")).getByRole("alert")).toHaveTextContent("You can only delete your own reviews");
   expect(screen.getByText("Worth the wait.")).toBeInTheDocument();
+});
+
+// --- what a screen reader and a keyboard get (#122) ---------------------------------
+
+test("your own profile has nothing axe objects to, and Edit is a link to the edit page", async () => {
+  const { server } = renderProfiles({ id: 1, username: "al" });
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+  const yours = {
+    id: 40, user_id: 1, restaurant_id: 3, review: "Worth the wait.", rating: 5,
+    createdAt: "2026-01-01T00:00:00", updatedAt: "2026-01-01T00:00:00",
+    restaurant: { id: 3, name: "Uchi", city: "Houston", state: "TX" }, reviewImages: [], response: null,
+  };
+  await act(async () => {
+    server.answer((url) => url === "/api/users/get/1", ok(profile(1, "Al")));
+    server.answer((url) => url === "/api/users/1/reviews", ok([yours]));
+  });
+
+  // It goes to a page, so it opens in a new tab like a link.
+  expect(screen.getByRole("link", { name: "Edit your review of Uchi" })).toHaveAttribute("href", "/3/reviews/40/update");
+  expect(await axe(document.body)).toHaveNoViolations();
+});
+
+test("a profile that isn't there says so as the page's heading", async () => {
+  const { server } = renderProfiles();
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+  await act(async () => {
+    server.answer((url) => url === "/api/users/get/1", refused(404, ["User not found"]));
+    server.answer((url) => url === "/api/users/1/reviews", refused(404, ["User not found"]));
+  });
+  expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
 });

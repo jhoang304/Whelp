@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
@@ -7,6 +7,7 @@ import restaurantsReducer from "../../store/restaurants";
 import reviewReducer from "../../store/reviews";
 import { ModalProvider, Modal } from "../../context/Modal";
 import SingleRestaurant from "./index";
+import { axe } from "../../testUtils/axe";
 
 /**
  * The restaurant page's gallery, header and contact card: the parts it
@@ -183,4 +184,32 @@ test("a delete that works goes home, without fetching the listing on the way", a
 
   await waitFor(() => expect(history().location.pathname).toBe("/"));
   expect(requests.filter((request) => request.startsWith("GET /api/restaurants/?"))).toEqual([]);
+});
+
+// --- what a screen reader and a keyboard get (#122) ---------------------------------
+
+test("the page has nothing axe objects to, the owner's controls included", async () => {
+  const { container } = renderPage({ id: 9 });
+  await screen.findByRole("button", { name: "Edit restaurant" });
+  expect(await axe(container)).toHaveNoViolations();
+});
+
+test("Add photo has a close button, which a touch screen reader can reach", async () => {
+  const { container } = renderPage({ id: 9 });
+  fireEvent.click(await screen.findByRole("button", { name: /Add photo/ }));
+  const dialog = screen.getByRole("dialog", { name: "Add Photo" });
+  expect(await axe(container)).toHaveNoViolations();
+
+  fireEvent.click(within(dialog).getByRole("button", { name: "Close Add Photo" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+});
+
+test("the all-photos grid has a close button too", async () => {
+  renderPage({ id: 9 });
+  fireEvent.click(await screen.findByRole("button", { name: "See all 3 photos" }));
+  // Named by its heading once the photos have loaded.
+  const dialog = await screen.findByRole("dialog", { name: "Photos for Nancy's Hustle" });
+
+  fireEvent.click(within(dialog).getByRole("button", { name: "Close photos" }));
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });

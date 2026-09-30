@@ -1,0 +1,25 @@
+/* The same X as the restaurant form's, in the corner of the modal it closes. */
+.modal-close-button {
+    position: absolute;
+    top: var(--space-3);
+    right: var(--space-3);
+    z-index: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: transparent;
+    color: var(--color-gray-600);
+    font-size: var(--text-lg);
+    cursor: pointer;
+}
+
+.modal-close-button:hover {
+    background-color: var(--color-gray-100);
+    color: var(--color-gray-800);
+}

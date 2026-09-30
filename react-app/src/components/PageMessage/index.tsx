@@ -23,7 +23,8 @@ function PageMessage({ icon, title, children, action }: PageMessageProps): React
   return (
     <div className="page-message">
       <i className={icon} aria-hidden="true"></i>
-      <h2>{title}</h2>
+      {/* The page's heading: it is all the page has (#122). */}
+      <h1>{title}</h1>
       {children && <p>{children}</p>}
       {action && ("to" in action
         ? <Link to={action.to} className="page-message-action">{action.label}</Link>

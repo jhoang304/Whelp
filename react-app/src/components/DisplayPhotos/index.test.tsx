@@ -4,6 +4,7 @@ import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
 import photoReducer from "../../store/restaurantPhoto";
 import restaurantsReducer from "../../store/restaurants";
+import { ModalProvider } from "../../context/Modal";
 import DisplayPhotos from "./index";
 
 /**
@@ -25,7 +26,10 @@ function renderPhotos(storedPhotos: any[] = []) {
   );
   return render(
     <Provider store={store as any}>
-      <DisplayPhotos singleRestaurant={restaurant} />
+      {/* It is always in a modal, and its close button closes that. */}
+      <ModalProvider>
+        <DisplayPhotos singleRestaurant={restaurant} />
+      </ModalProvider>
     </Provider>
   );
 }

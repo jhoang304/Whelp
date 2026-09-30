@@ -261,7 +261,7 @@ function SingleRestaurant(): React.JSX.Element {
                                 {singleRestaurant.amenities.map((amenity) => (
                                     <li key={amenity.id}>
                                         <span className="restaurant-amenity-icon" aria-hidden="true">
-                                            <i className={`fa-solid ${AMENITY_ICONS[amenity.slug] || "fa-check"}`}></i>
+                                            <i className={`fa-solid ${AMENITY_ICONS[amenity.slug] || "fa-check"}`} aria-hidden="true"></i>
                                         </span>
                                         {amenity.name}
                                     </li>

@@ -33,45 +33,50 @@ function App(): React.JSX.Element {
       <Navigation />
       {isLoaded && (
         <>
-          {/* Around the pages, not the nav bar: a page that breaks shows a
-              message there, and the nav is still there to leave by. */}
-          <ErrorBoundary resetKey={location.pathname + location.search}>
-            <Switch>
-              <Route exact path='/users/get/:userId'>
-                <UserProfilePage />
-              </Route>
-              <Route exact path="/settings">
-                <AccountSettings />
-              </Route>
-              <Route exact path="/login">
-                <LoginFormPage />
-              </Route>
-              <Route exact path="/signup">
-                <SignupFormPage />
-              </Route>
-              <Route exact path="/search">
-                <RestaurantBySearch />
-              </Route>
-              <Route path="/search/:keyword">
-                <LegacySearchRedirect />
-              </Route>
-              <Route exact path="/">
-                <HomePage />
-              </Route>
-              <Route exact path="/restaurants">
-                <RestaurantList />
-              </Route>
-              <Route exact path="/single/:restaurantId">
-                <SingleRestaurant />
-              </Route>
-              <Route exact path={CREATE_REVIEW_PATH}>
-                <CreateNewReview />
-              </Route>
-              <Route exact path={UPDATE_REVIEW_PATH}>
-                <UpdateReview />
-              </Route>
-            </Switch>
-          </ErrorBoundary>
+          {/* Every page is the main content (#122): only /settings had a
+              <main>, and a screen reader's jump to it went nowhere on the
+              rest. */}
+          <main>
+            {/* Around the pages, not the nav bar: a page that breaks shows a
+                message there, and the nav is still there to leave by. */}
+            <ErrorBoundary resetKey={location.pathname + location.search}>
+              <Switch>
+                <Route exact path='/users/get/:userId'>
+                  <UserProfilePage />
+                </Route>
+                <Route exact path="/settings">
+                  <AccountSettings />
+                </Route>
+                <Route exact path="/login">
+                  <LoginFormPage />
+                </Route>
+                <Route exact path="/signup">
+                  <SignupFormPage />
+                </Route>
+                <Route exact path="/search">
+                  <RestaurantBySearch />
+                </Route>
+                <Route path="/search/:keyword">
+                  <LegacySearchRedirect />
+                </Route>
+                <Route exact path="/">
+                  <HomePage />
+                </Route>
+                <Route exact path="/restaurants">
+                  <RestaurantList />
+                </Route>
+                <Route exact path="/single/:restaurantId">
+                  <SingleRestaurant />
+                </Route>
+                <Route exact path={CREATE_REVIEW_PATH}>
+                  <CreateNewReview />
+                </Route>
+                <Route exact path={UPDATE_REVIEW_PATH}>
+                  <UpdateReview />
+                </Route>
+              </Switch>
+            </ErrorBoundary>
+          </main>
           <Footer />
         </>
       )}

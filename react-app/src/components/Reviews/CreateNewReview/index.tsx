@@ -4,6 +4,7 @@ import { CreateReviewResult, createOneReview } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
 import { useAppDispatch, useAppSelector } from "../../../store";
 import PageMessage from "../../PageMessage";
+import FormErrors from "../../FormErrors";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
 import './CreateNewReview.css'
@@ -159,11 +160,9 @@ function CreateNewReview(): React.JSX.Element {
 
     return (
       <div  className="create-review-container">
-        <h2>Write a review for {restaurant.name}</h2>
+        <h1>Write a review for {restaurant.name}</h1>
         <form onSubmit={handleSubmit} className="create-new-review-form">
-          <ul>
-            {errors.map((error, idx) => <li key={idx}>{error}</li>)}
-          </ul>
+          <FormErrors errors={errors} className="review-form-errors" />
           <label>
             <span>review:</span>
             <input

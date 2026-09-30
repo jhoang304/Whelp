@@ -141,7 +141,10 @@ function RestaurantForm({
 
     return (
         <form className={`restaurant-form ${className}`} onSubmit={onSubmit}>
-            <header className="restaurant-form-header">
+            {/* Divs, not <header> and <footer>: in a modal, outside the page's
+                <main>, those are landmarks of the whole page, and the footer
+                a second one beside the site's own (#122). */}
+            <div className="restaurant-form-header">
                 <div>
                     <h2 className="restaurant-form-title">{title}</h2>
                     {subtitle && <p className="restaurant-form-subtitle">{subtitle}</p>}
@@ -149,7 +152,7 @@ function RestaurantForm({
                 <button type="button" className="restaurant-form-close" onClick={onCancel} aria-label="Close">
                     <i className="fa-solid fa-xmark" aria-hidden="true"></i>
                 </button>
-            </header>
+            </div>
 
             <div className="restaurant-form-body">
                 {errors.length > 0 && (
@@ -269,14 +272,14 @@ function RestaurantForm({
                 {children}
             </div>
 
-            <footer className="restaurant-form-footer">
+            <div className="restaurant-form-footer">
                 <button type="button" className="restaurant-form-cancel" onClick={onCancel}>
                     Cancel
                 </button>
                 <button className="restaurant-form-submit" type="submit" disabled={busy}>
                     {busy ? busyLabel : submitLabel}
                 </button>
-            </footer>
+            </div>
         </form>
     );
 }

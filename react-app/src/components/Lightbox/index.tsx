@@ -73,7 +73,7 @@ function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProps): Rea
                     }}
                     aria-label="Close image viewer"
                 >
-                    <i className="fa-solid fa-times"></i>
+                    <i className="fa-solid fa-times" aria-hidden="true"></i>
                 </button>
 
                 {count > 1 && (
@@ -86,7 +86,7 @@ function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProps): Rea
                         }}
                         aria-label="Previous photo"
                     >
-                        <i className="fa-solid fa-chevron-left"></i>
+                        <i className="fa-solid fa-chevron-left" aria-hidden="true"></i>
                     </button>
                 )}
 
@@ -107,7 +107,7 @@ function Lightbox({ photos, index, onIndexChange, onClose }: LightboxProps): Rea
                         }}
                         aria-label="Next photo"
                     >
-                        <i className="fa-solid fa-chevron-right"></i>
+                        <i className="fa-solid fa-chevron-right" aria-hidden="true"></i>
                     </button>
                 )}
 

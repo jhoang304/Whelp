@@ -12,7 +12,8 @@
 }
 
 /* Style the heading */
-.update-review-container h2 {
+.update-review-container h1 {
+    font-size: 1.5em;
     color: #333;
     margin-bottom: 1em;
 }
@@ -88,7 +89,7 @@
 }
 
 /* Error message styling */
-.update-review-container ul {
+.update-review-container .review-form-errors {
     list-style: none;
     padding: 0;
     margin: 0 0 1em 0; /* Space below errors */
@@ -96,7 +97,7 @@
     font-size: 0.9em;
 }
 
-.update-review-container li {
+.update-review-container .review-form-errors li {
     margin-bottom: 0.5em;
     padding: 0.5em;
     background-color: #fef2f2; /* Light red background */

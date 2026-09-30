@@ -6,6 +6,7 @@ import thunk from "redux-thunk";
 import categoriesReducer from "../../store/categories";
 import RestaurantForm from "./index";
 import { RestaurantFields } from "../../utils/restaurantValidation";
+import { axe } from "../../testUtils/axe";
 
 /**
  * The layout the two restaurant modals share: a heading, sections, a price
@@ -102,4 +103,15 @@ test("errors are listed where the form starts, and take focus so they are seen",
 test("the state field takes two letters, as the rule wants", () => {
   renderForm();
   expect(screen.getByLabelText("State")).toHaveAttribute("maxLength", "2");
+});
+
+// --- what a screen reader gets (#122) ------------------------------------------------
+
+test("it adds no landmarks to the page it opens over, and axe finds nothing", async () => {
+  const { container } = renderForm();
+  // In a modal, outside the page's <main>, a <header> or <footer> is the whole
+  // page's banner or footer: two footers, with the site's own.
+  expect(screen.queryByRole("banner")).not.toBeInTheDocument();
+  expect(screen.queryByRole("contentinfo")).not.toBeInTheDocument();
+  expect(await axe(container)).toHaveNoViolations();
 });

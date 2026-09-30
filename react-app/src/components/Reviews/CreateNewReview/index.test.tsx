@@ -7,6 +7,7 @@ import reviewReducer from "../../../store/reviews";
 import restaurantsReducer from "../../../store/restaurants";
 import { CREATE_REVIEW_PATH, UPDATE_REVIEW_PATH } from "../paths";
 import CreateNewReview from "./index";
+import { axe } from "../../../testUtils/axe";
 
 /**
  * Posting a review with photos is three steps, and their order is the point:
@@ -257,4 +258,17 @@ test("the route takes restaurant ids only", () => {
   expect(matchPath("/3/reviews/6/update", { path: UPDATE_REVIEW_PATH, exact: true })).not.toBeNull();
   expect(matchPath("/3/reviews/abc/update", { path: UPDATE_REVIEW_PATH, exact: true })).toBeNull();
   expect(matchPath("/foo/reviews/6/update", { path: UPDATE_REVIEW_PATH, exact: true })).toBeNull();
+});
+
+// --- what a screen reader gets (#122) ------------------------------------------------
+
+test("the form is headed as the page, and a refusal is announced", async () => {
+  serve({ post: refused(["You've already reviewed this restaurant"], 403) });
+  const { container } = renderForm();
+  expect(await screen.findByRole("heading", { level: 1, name: "Write a review for Uchi" })).toBeInTheDocument();
+  expect(await axe(container)).toHaveNoViolations();
+
+  await writeReview();
+  expect(await screen.findByRole("alert")).toHaveTextContent("You've already reviewed this restaurant");
+  expect(await axe(container)).toHaveNoViolations();
 });

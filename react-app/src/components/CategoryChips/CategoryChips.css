@@ -6,6 +6,9 @@
 }
 
 .category-chip {
+    /* Over the card's stretched link, so a chip is its own link. */
+    position: relative;
+    z-index: 2;
     background-color: var(--color-gray-100);
     color: var(--color-gray-700);
     border: 1px solid var(--color-gray-200);

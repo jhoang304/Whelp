@@ -76,7 +76,9 @@
     color: var(--color-gray-500);
   }
 
-  #review-user-name {
+  /* A class: as an id it was on every review's author, the same id many
+     times on one page (#122). */
+  .review-user-name {
     margin: 0px;
     padding: 0px;
     font-size: var(--text-base);
@@ -106,7 +108,8 @@
     margin: var(--space-2) var(--space-3) var(--space-4);
   }
 
-  .review-actions button {
+  .review-actions button,
+  .review-actions a {
     white-space: nowrap;
   }
 

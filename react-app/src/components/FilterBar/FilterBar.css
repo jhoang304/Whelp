@@ -96,14 +96,16 @@
     color: var(--color-gray-600);
 }
 
+/* 32px tall: the text alone was about 21px to tap (#122). */
 .filter-clear {
+    min-height: 32px;
     font-family: inherit;
     font-size: var(--text-sm);
     font-weight: var(--font-semibold);
     color: var(--color-primary);
     background: none;
     border: none;
-    padding: 0;
+    padding: 0 var(--space-2);
     cursor: pointer;
     text-decoration: underline;
 }
@@ -121,8 +123,10 @@
     border-radius: var(--radius-lg);
 }
 
-.filter-empty h3 {
+.filter-empty h1,
+.filter-empty h2 {
     margin: 0 0 var(--space-2);
+    font-size: var(--text-lg);
     color: var(--color-gray-700);
 }
 

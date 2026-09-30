@@ -1,4 +1,7 @@
 .display-photos-modal {
+    /* For the close button in its corner, which stays put while the photos
+       scroll under the heading. */
+    position: relative;
     /* The window less the modal's own 16px gutter on either side. */
     max-width: calc(100vw - 2 * var(--space-4));
     max-height: 85vh;
@@ -12,7 +15,8 @@
 
 .display-h2 {
     text-align: center;
-    padding: 25px 30px 15px;
+    /* Clear of the close button on the right, and as much on the left. */
+    padding: 25px 56px 15px;
     margin: 0;
     font-size: 24px;
     font-weight: 700;
@@ -122,6 +126,16 @@
     justify-content: center;
     gap: 8px;
     margin: 0;
+}
+
+/* Inside the button: the tile clips what is outside its edge, and the ring
+   was cut off there (#122). White on the red one, where red would not show. */
+.photo-actions button:focus-visible {
+    outline-offset: -4px;
+}
+
+.photo-actions .delete-photo:focus-visible {
+    outline-color: white;
 }
 
 .photo-actions button:disabled {

@@ -5,6 +5,8 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
 import { RestaurantImage, SingleRestaurantResponse } from "../../types";
 import Lightbox from "../Lightbox";
+import FormErrors from "../FormErrors";
+import ModalCloseButton from "../ModalCloseButton";
 
 interface DisplayPhotosProps {
     singleRestaurant: SingleRestaurantResponse;
@@ -93,6 +95,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     if (loadErrors) {
         return (
             <div className="display-photos-modal">
+                <ModalCloseButton label="Close photos" />
                 <h2 className="display-h2">Photos for {singleRestaurant.name}</h2>
                 <div className="photo-errors" role="alert">
                     <p>{loadErrors[0]}</p>
@@ -104,12 +107,9 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
 
     return (
         <div className="display-photos-modal">
+            <ModalCloseButton label="Close photos" />
             <h2 className="display-h2">Photos for {singleRestaurant.name}</h2>
-            {errors.length > 0 && (
-                <ul className="photo-errors">
-                    {errors.map((error, idx) => <li key={idx}>{error}</li>)}
-                </ul>
-            )}
+            <FormErrors errors={errors} className="photo-errors" />
             <ul className="photo-container">
                 {allResPhotoArray.map((photo: RestaurantImage, index: number) => {
                     const isDefaultPhoto = photo.url === DEFAULT_RESTAURANT_IMAGE;
@@ -136,7 +136,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                                 </button>
                                 {photo.preview && (
                                     <span className="cover-badge">
-                                        <i className="fa-solid fa-star"></i>
+                                        <i className="fa-solid fa-star" aria-hidden="true"></i>
                                         Cover photo
                                     </span>
                                 )}
@@ -149,7 +149,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                                             disabled={isBusy}
                                             onClick={() => handleSetCover(photo)}
                                         >
-                                            <i className="fa-regular fa-star"></i>
+                                            <i className="fa-regular fa-star" aria-hidden="true"></i>
                                             Set as cover
                                         </button>
                                     )}
@@ -159,7 +159,7 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                                             disabled={isBusy}
                                             onClick={() => handleRemove(photo)}
                                         >
-                                            <i className="fa-regular fa-trash-can"></i>
+                                            <i className="fa-regular fa-trash-can" aria-hidden="true"></i>
                                             Remove Photo
                                         </button>
                                     )}

@@ -112,7 +112,7 @@ function RestaurantBySearch(): React.JSX.Element {
         return (
             <div className='search-restaurants-container'>
                 <div className='search-loading'>
-                    <i className="fa-solid fa-spinner fa-spin"></i>
+                    <i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
                     <p>Searching restaurants...</p>
                 </div>
             </div>
@@ -136,7 +136,8 @@ function RestaurantBySearch(): React.JSX.Element {
 
             {searchError ? (
                 <div className="filter-empty">
-                    <h3>We could not run that search</h3>
+                    {/* The page's heading here: there is no count to head it. */}
+                    <h1>We could not run that search</h1>
                     <p>{searchError}</p>
                     {isFiltered(filters) && (
                         <button type="button" onClick={() => applyFilters(NO_FILTERS)}>
@@ -148,17 +149,18 @@ function RestaurantBySearch(): React.JSX.Element {
             <>
             <div className='search-captions-container'>
                 <div className='search-captions'>
+                    {/* The page's heading (#122). */}
                     {total > 0 ? (
-                        <div className='search-cap'>
+                        <h1 className='search-cap'>
                             {/* the total, not how many are on screen: "20 search
                                 results" under a Show more button is a lie */}
                             {total} search result{total !== 1 ? 's' : ''} for "{keyword}"
                             {isFiltered(filters) ? ", filtered" : ""}
-                        </div>
+                        </h1>
                     ) : (
-                        <div className='search-cap'>
+                        <h1 className='search-cap'>
                             We couldn't find any results for "{keyword}"
-                        </div>
+                        </h1>
                     )}
                 </div>
             </div>
@@ -192,7 +194,7 @@ function RestaurantBySearch(): React.JSX.Element {
 
                 {restaurantArr?.length === 0 && (
                     <div className='no-results-suggestions'>
-                        <h3>Try searching for:</h3>
+                        <h2>Try searching for:</h2>
                         <ul>
                             <li>Restaurant names (e.g., "Pizza Palace")</li>
                             <li>Cuisine types (e.g., "Italian", "Mexican")</li>

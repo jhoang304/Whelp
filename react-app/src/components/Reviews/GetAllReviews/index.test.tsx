@@ -7,6 +7,7 @@ import reviewReducer from "../../../store/reviews";
 import restaurantsReducer from "../../../store/restaurants";
 import { ModalProvider, Modal } from "../../../context/Modal";
 import GetAllReviews from "./index";
+import { axe } from "../../../testUtils/axe";
 
 /**
  * A review whose author deleted their account stays on the page -- it is part
@@ -81,10 +82,13 @@ test("the author's Edit and Delete sit in the review's header, named for what th
     </Provider>
   );
 
-  const edit = await screen.findByRole("button", { name: "Edit your review" });
+  // Edit goes to the edit page, so it is a link: it opens in a new tab.
+  const edit = await screen.findByRole("link", { name: "Edit your review" });
+  expect(edit.getAttribute("href")).toMatch(/^\/3\/reviews\/\d+\/update$/);
   const del = screen.getByRole("button", { name: "Delete your review" });
   // Only on rita's own review, and in its header row with her name.
-  expect(screen.getAllByRole("button", { name: /your review/ })).toHaveLength(2);
+  expect(screen.getAllByRole("link", { name: /your review/ })).toHaveLength(1);
+  expect(screen.getAllByRole("button", { name: /your review/ })).toHaveLength(1);
   expect(edit.closest(".review-user-data")).toHaveTextContent("rita");
   expect(edit.closest(".row-actions")).toBe(del.closest(".row-actions"));
 
@@ -220,7 +224,7 @@ test("your review comes first, set apart, even when it is the oldest", async () 
   expect(shownIds()[0]).toBe(mine);
   const yours = screen.getByText("Your review").closest(".single-review-container")!;
   expect(yours).toHaveClass("your-review");
-  expect(within(yours as HTMLElement).getByRole("button", { name: "Edit your review" })).toBeInTheDocument();
+  expect(within(yours as HTMLElement).getByRole("link", { name: "Edit your review" })).toBeInTheDocument();
   expect(screen.getAllByText("Your review")).toHaveLength(1);
   expect(screen.queryByRole("link", { name: "Write a review" })).not.toBeInTheDocument();
 
@@ -370,4 +374,16 @@ test("a refused delete of your review keeps it, and the dialog says why", async 
 
   expect(await within(screen.getByRole("dialog")).findByRole("alert")).toHaveTextContent("Unauthorized");
   expect(shownIds()).toContain(mine);
+});
+
+// --- what a screen reader gets (#122) ------------------------------------------------
+
+test("each author's link has no id of its own, so a page of reviews repeats none", async () => {
+  serveReviews(5, 2);
+  const { container } = renderReviews(998);
+  await waitFor(() => expect(shownIds()).toHaveLength(5));
+
+  const ids = Array.from(container.querySelectorAll("[id]")).map((node) => node.id);
+  expect(ids.filter((id, index) => ids.indexOf(id) !== index)).toEqual([]);
+  expect(await axe(container)).toHaveNoViolations();
 });

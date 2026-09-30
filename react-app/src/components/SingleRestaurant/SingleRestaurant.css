@@ -564,6 +564,13 @@
     background-color: var(--color-gray-50);
 }
 
+/* Inside the row, and rounded like the card: the card clips what is outside
+   its edge, and the ring was cut off there (#122). */
+.restaurant-page a.restaurant-contact-row:focus-visible {
+    outline-offset: -3px;
+    border-radius: var(--radius-xl);
+}
+
 .restaurant-contact-text {
     display: flex;
     flex-direction: column;
