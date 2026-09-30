@@ -94,7 +94,7 @@ def test_nobody_changes_anyone_elses_password(client, ids):
 
 def test_changing_a_password_needs_someone_logged_in(client, ids):
     visit(client)
-    assert change_password(client, ids["bystander"], "password", "a-new-password").status_code in (302, 401)
+    assert change_password(client, ids["bystander"], "password", "a-new-password").status_code == 401
 
 
 def test_the_demo_accounts_password_cannot_change(client, ids):
@@ -260,7 +260,7 @@ def test_deleting_logs_you_out(client, ids):
 
     delete(client, ids["bystander"])
 
-    assert client.get("/api/auth/").status_code == 401
+    assert client.get("/api/auth/").get_json() == {"user": None}
 
 
 def test_the_wrong_password_deletes_nothing(client, ids):

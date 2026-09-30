@@ -5,7 +5,7 @@ strings, whatever the endpoint and whatever went wrong.
 import pytest
 from werkzeug.exceptions import NotFound
 
-from tests.conftest import login
+from tests.conftest import login, visit
 
 
 def restaurant_body(**overrides):
@@ -61,6 +61,9 @@ def forbidden_edit(client, ids):
 
 
 def signed_out_delete(client, ids):
+    # With the CSRF cookie a page would have, so what refuses it is the login
+    # check: without one it was a 400, and the old check let that pass.
+    visit(client)
     return client.delete(f"/api/restaurants/{ids['restaurant']}")
 
 
@@ -95,10 +98,14 @@ def test_every_failure_is_a_flat_list_of_messages(client, ids, make_request):
 
 
 def test_signed_out_requests_keep_the_shape(client, ids):
-    """flask-login can answer these itself, so they are worth their own check."""
+    """
+    flask-login can answer these itself, so they are worth their own check.
+    It used to be only when the status happened to be 401 -- and it was a 302
+    to an HTML page, so the check checked nothing (#126).
+    """
     res = signed_out_delete(client, ids)
-    if res.status_code == 401:
-        assert res.get_json()["errors"] == ["Unauthorized"]
+    assert res.status_code == 401
+    assert res.get_json()["errors"] == ["Unauthorized"]
 
 
 def test_validation_messages_name_their_own_field(client, ids):
@@ -114,11 +121,15 @@ def test_validation_messages_name_their_own_field(client, ids):
     assert any("Restaurant name" in message for message in res.get_json()["errors"]), res.get_json()
 
 
-def test_the_session_probe_answers_401_when_nobody_is_signed_in(client):
-    """It used to answer 200 with an errors body, which says both at once."""
+def test_the_session_probe_says_nobody_is_signed_in(client):
+    """
+    Being signed out is an answer, not an error: a 401 here was a red line in
+    every signed-out visitor's console (#126). Nor an errors body with a 200,
+    which says both at once.
+    """
     res = client.get("/api/auth/")
-    assert res.status_code == 401
-    assert res.get_json()["errors"] == ["Unauthorized"]
+    assert res.status_code == 200
+    assert res.get_json() == {"user": None}
 
 
 def test_the_session_probe_still_returns_the_signed_in_user(client):

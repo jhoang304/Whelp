@@ -20,11 +20,15 @@ UNKNOWN_ACCOUNT_HASH = generate_password_hash("no account has this address")
 @auth_routes.route('/')
 def authenticate():
     """
-    Authenticates a user.
+    Who is signed in: their user, or {"user": null} when nobody is.
+
+    The app asks on every page load, and being signed out is an answer, not an
+    error: a 401 here was a red line in every signed-out visitor's console
+    (#126). Routes that need a user still refuse with a 401.
     """
     if current_user.is_authenticated:
         return current_user.to_dict()
-    return {'errors': ['Unauthorized']}, 401
+    return {'user': None}
 
 
 @auth_routes.route('/login', methods=['POST'])
@@ -98,10 +102,3 @@ def sign_up():
         return user.to_dict()
     return {'errors': error_messages(form.errors)}, 400
 
-
-@auth_routes.route('/unauthorized')
-def unauthorized():
-    """
-    Returns unauthorized JSON when flask-login authentication fails
-    """
-    return {'errors': ['Unauthorized']}, 401

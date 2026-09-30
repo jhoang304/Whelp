@@ -88,9 +88,9 @@ test("a garbled answer at start-up still draws the page", async () => {
 const axeWholePage = configureAxe({ rules: { "color-contrast": { enabled: false } } });
 
 function renderAppAt(path: string) {
-  // Signed out.
+  // Signed out, as the API says it: {"user": null}, with a 200 (#126).
   (global as any).fetch = jest.fn(() => Promise.resolve({
-    ok: false, status: 401, json: () => Promise.resolve({ errors: ["Unauthorized"] }),
+    ok: true, status: 200, json: () => Promise.resolve({ user: null }),
   }));
   const store = createStore(
     combineReducers({

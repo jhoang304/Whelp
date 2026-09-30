@@ -28,7 +28,7 @@ def test_missing_profile_is_404(client):
 def test_edit_profile_requires_login(client, ids):
     visit(client)
     res = client.put(f"/api/users/{ids['owner']}/edit", json={"username": "x"})
-    assert res.status_code in (302, 401)  # Flask-Login redirects to /api/auth/unauthorized
+    assert res.status_code == 401
 
 
 def test_cannot_edit_someone_elses_profile(client, ids):
