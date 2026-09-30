@@ -48,9 +48,9 @@
 }
 
 /*
- * Fading in and out. The names are the modal's own: several stylesheets
- * already define a global `fadeIn`, and a second one would quietly replace
- * theirs.
+ * Fading in and out. The names are the modal's own: keyframes names are
+ * global across every stylesheet, and two files defining one name leave only
+ * the last loaded.
  *
  * Closing, the modal stays FADE_OUT_MS (Modal.tsx) with this class while it
  * fades, taking no clicks. The out animations hold their last frame, so it

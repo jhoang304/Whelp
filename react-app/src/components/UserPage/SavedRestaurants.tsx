@@ -7,6 +7,7 @@ import { Restaurant } from "../../types";
 import FavoriteButton from "../FavoriteButton";
 import RatingStar from "../RatingStar";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
+import "../../styles/show-more.css";
 
 interface SavedRestaurantsProps {
     userId: number;
@@ -150,10 +151,10 @@ function SavedRestaurants({ userId }: SavedRestaurantsProps): React.JSX.Element 
                 ))}
             </div>
             {items.length < total && (
-                <div className="restaurant-list-more">
+                <div className="show-more">
                     <button
                         type="button"
-                        className="restaurant-list-more-button"
+                        className="show-more-button"
                         onClick={showMore}
                         disabled={loadingMore}
                     >

@@ -29,7 +29,7 @@
 
 .homepage-hero h1 {
   font-size: 4rem;
-  margin-bottom: 20px;
+  margin: var(--space-2) var(--space-2) 20px;
   font-weight: 700;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
   animation: fadeInDown 1s ease-out;

@@ -87,28 +87,48 @@
 
 /* Base styles */
 body {
+    /* The browser's own 8px margin put white strips either side of the
+       edge-to-edge photos, and threw the floating nav's sums out (#120). */
+    margin: 0;
     /* Said outright: left transparent, a browser in dark mode paints the
        page black behind every white card and bar. */
     background-color: white;
-    font-family: 'Open Sans', 'Helvetica Neue', sans-serif;
+    /* Open Sans was first here, and nothing ever loaded it. */
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
     font-size: var(--text-base);
     line-height: var(--leading-normal);
     color: var(--color-gray-700);
 }
 
-/* Base button using design system */
+/*
+ * A base for every element, and no more: each component styles its own.
+ * These used to be looks -- every button grey with a 4px margin, every link
+ * bold 16px and, from SearchBar.css, display: flex -- and a rule written for
+ * one page reached every other (#120).
+ */
+
+/* Controls take the page's typeface and size, not the browser's 13px
+   system font. Only those: the page's line-height would make every button
+   and field taller. */
+button,
+input,
+select,
+textarea {
+    font-family: inherit;
+    font-size: inherit;
+}
+
 button {
-    margin: var(--space-1);
-    border: 1px solid var(--color-gray-300);
-    border-radius: var(--radius-sm);
-    padding: var(--space-2) var(--space-5);
-    background-color: var(--color-gray-200);
-    font-size: var(--text-base);
-    font-weight: var(--font-normal);
-    color: var(--color-gray-700);
+    margin: 0;
+    color: inherit;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: none;
+}
+
+/* A link looks like what it sits in. One in running text says so itself:
+   see .signup-link a, .login-link a and .account-settings a. */
+a {
+    color: inherit;
+    text-decoration: none;
 }
 
 /*
@@ -122,11 +142,6 @@ button {
 :focus-visible {
     outline: 2px solid var(--color-primary);
     outline-offset: 2px;
-}
-
-button:hover {
-    background-color: var(--color-gray-300);
-    border-color: var(--color-gray-400);
 }
 
 .red-button {

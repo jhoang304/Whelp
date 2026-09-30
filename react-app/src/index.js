@@ -1,3 +1,8 @@
+// First, so every component's stylesheet comes after the base and can build
+// on it. Last, it won every tie, and some pages worked only because of that
+// (#120).
+import "./index.css";
+
 import React from "react";
 import { createRoot } from "react-dom/client";
 import { Provider } from "react-redux";
@@ -7,8 +12,6 @@ import { ModalProvider, Modal, CloseModalOnNavigation } from "./context/Modal";
 import configureStore from "./store";
 import * as sessionActions from "./store/session";
 import App from "./App";
-
-import "./index.css";
 
 const store = configureStore();
 

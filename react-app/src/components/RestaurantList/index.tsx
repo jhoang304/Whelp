@@ -3,6 +3,8 @@ import { useHistory, useLocation } from "react-router-dom"
 import "./RestaurantList.css"
 import RestaurantListEntry from "../RestaurantListEntry";
 import FilterBar from "../FilterBar";
+import Loading from "../Loading";
+import "../../styles/show-more.css";
 import { getAllRestaurants, inOrder } from "../../store/restaurants";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { NO_FILTERS, RestaurantFilters, filterSearch, isFiltered, readFilters } from "../../utils/filters";
@@ -86,17 +88,7 @@ function RestaurantList(): React.JSX.Element {
             />
 
             {!isLoaded ? (
-                <div className="loading-container">
-                    <div className="loading-spinner"></div>
-                    <div className="loading-text">
-                        <span className="loading-word">Loading</span>
-                        <span className="loading-dots">
-                            <span>.</span>
-                            <span>.</span>
-                            <span>.</span>
-                        </span>
-                    </div>
-                </div>
+                <Loading />
             ) : listError ? (
                 // A refused filter and an empty result read the same on the
                 // page unless the message is shown, and only one of them is
@@ -147,15 +139,15 @@ function RestaurantList(): React.JSX.Element {
                         }
                     </div>
                     {hasMore && (
-                        <div className="restaurant-list-more">
+                        <div className="show-more">
                             <button
-                                className="restaurant-list-more-button"
+                                className="show-more-button"
                                 onClick={showMore}
                                 disabled={isLoadingMore}
                             >
                                 {isLoadingMore ? "Loading…" : `Show more (${allRestaurants.length} of ${total})`}
                             </button>
-                            {moreError && <p className="restaurant-list-more-error" role="alert">{moreError}</p>}
+                            {moreError && <p className="show-more-error" role="alert">{moreError}</p>}
                         </div>
                     )}
                 </>

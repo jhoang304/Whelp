@@ -17,6 +17,7 @@ import ConfirmDeleteModal from "../../ConfirmDeleteModal";
 import { avatarUrl, onAvatarError } from "../../../utils/images";
 import "./GetAllReviews.css";
 import "../../RowActions/RowActions.css";
+import "../../../styles/show-more.css";
 
 interface GetAllReviewsProps {
   restaurantId: string | number;
@@ -243,17 +244,17 @@ function GetAllReviews({ restaurantId }: GetAllReviewsProps): React.JSX.Element 
       })}
 
       {reviews.length < total && (
-        <div className="restaurant-list-more">
+        <div className="show-more">
           <button
             type="button"
-            className="restaurant-list-more-button"
+            className="show-more-button"
             onClick={showMore}
             disabled={loadingMore}
           >
             {loadingMore ? "Loading…" : `Show more reviews (${reviews.length} of ${total})`}
           </button>
           {moreFailed && (
-            <p className="restaurant-list-more-error" role="alert">We couldn't load more reviews. Please try again.</p>
+            <p className="show-more-error" role="alert">We couldn't load more reviews. Please try again.</p>
           )}
         </div>
       )}

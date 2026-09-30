@@ -51,7 +51,7 @@ function SignupFormPage(): React.JSX.Element {
               </div>
             )}
             <div className="name-inputs">
-              <div className="input-group">
+              <div className="signup-field">
                 <label htmlFor="first_name">First Name</label>
                 <input
                   id="first_name"
@@ -62,7 +62,7 @@ function SignupFormPage(): React.JSX.Element {
                   required
                 />
               </div>
-              <div className="input-group">
+              <div className="signup-field">
                 <label htmlFor="last_name">Last Name</label>
                 <input
                   id="last_name"
@@ -74,7 +74,7 @@ function SignupFormPage(): React.JSX.Element {
                 />
               </div>
             </div>
-            <div className="input-group">
+            <div className="signup-field">
               <label htmlFor="email">Email Address</label>
               <input
                 id="email"
@@ -88,7 +88,7 @@ function SignupFormPage(): React.JSX.Element {
                 required
               />
             </div>
-            <div className="input-group">
+            <div className="signup-field">
               <label htmlFor="username">Username</label>
               <input
                 id="username"
@@ -101,7 +101,7 @@ function SignupFormPage(): React.JSX.Element {
                 required
               />
             </div>
-            <div className="input-group">
+            <div className="signup-field">
               <label htmlFor="password">Password</label>
               <input
                 id="password"
@@ -113,7 +113,7 @@ function SignupFormPage(): React.JSX.Element {
                 required
               />
             </div>
-            <div className="input-group">
+            <div className="signup-field">
               <label htmlFor="confirmPassword">Confirm Password</label>
               <input
                 id="confirmPassword"

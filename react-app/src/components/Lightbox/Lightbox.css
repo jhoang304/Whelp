@@ -1,7 +1,7 @@
 /*
  * The full-screen photo viewer, moved out of DisplayPhotos.css when review
- * photos needed the same one. Its fade has its own name: `fadeIn` is defined
- * by several stylesheets, and which one a rule gets depends on load order.
+ * photos needed the same one. Its fade is named for it: keyframes names are
+ * global across every stylesheet, so each file names its own.
  */
 /* Image Viewer Overlay */
 .image-viewer-overlay {
