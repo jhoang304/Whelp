@@ -140,5 +140,5 @@
 .review-photo-picker .review-photo-picker-notice {
     margin: 0;
     font-size: var(--text-xs);
-    color: var(--color-error);
+    color: var(--color-error-text);
 }

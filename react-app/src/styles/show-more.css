@@ -15,15 +15,15 @@
     padding: 12px 28px;
     font-size: 1rem;
     font-weight: 600;
-    color: #d32323;
+    color: var(--color-primary);
     background: #fff;
-    border: 1px solid #d32323;
+    border: 1px solid var(--color-primary);
     border-radius: 4px;
     cursor: pointer;
 }
 
 .show-more-button:hover:not(:disabled) {
-    background: #d32323;
+    background: var(--color-primary);
     color: #fff;
 }
 

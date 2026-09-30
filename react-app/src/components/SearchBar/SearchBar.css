@@ -19,7 +19,7 @@
 
 .search-loading i {
     font-size: 2rem;
-    color: #ff6b35;
+    color: var(--color-primary);
     margin-bottom: 15px;
 }
 
@@ -30,12 +30,12 @@
 
 .search-error p {
     font-size: 18px;
-    color: #d32f2f;
+    color: var(--color-error-text);
     margin-bottom: 15px;
 }
 
 .search-error button {
-    background-color: #ff6b35;
+    background-color: var(--color-primary);
     color: white;
     border: none;
     padding: 10px 20px;
@@ -44,7 +44,7 @@
 }
 
 .search-error button:hover {
-    background-color: #e55a2b;
+    background-color: var(--color-primary-dark);
 }
 
 /* Search Results using Restaurant component */
@@ -118,7 +118,7 @@
 
 .view-all-link {
     display: inline-block;
-    background-color: #ff6b35;
+    background-color: var(--color-primary);
     color: white;
     padding: 12px 24px;
     border-radius: 5px;
@@ -129,7 +129,7 @@
 }
 
 .view-all-link:hover {
-    background-color: #e55a2b;
+    background-color: var(--color-primary-dark);
     text-decoration: none;
 }
 

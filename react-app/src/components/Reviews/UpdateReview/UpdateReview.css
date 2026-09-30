@@ -51,7 +51,7 @@
 .update-review-container select {
     width: 100%; /* Make them fill the container */
     padding: 0.8em; /* Add padding */
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-input);
     border-radius: 4px;
     box-sizing: border-box; /* Include padding and border in element's total width and height */
     font-size: 1em; /* Consistent font size */
@@ -70,7 +70,7 @@
 /* Button styling */
 .update-review-container button {
     padding: 0.8em 1.5em;
-    background-color: #007bff; /* Example blue color */
+    background-color: var(--color-primary); /* Example blue color */
     color: white;
     border: none;
     border-radius: 4px;
@@ -84,7 +84,7 @@
 
 /* Button hover effect */
 .update-review-container button:hover {
-    background-color: #0056b3; /* Darker blue on hover */
+    background-color: var(--color-primary-dark); /* Darker blue on hover */
 }
 
 /* Error message styling */
@@ -92,14 +92,14 @@
     list-style: none;
     padding: 0;
     margin: 0 0 1em 0; /* Space below errors */
-    color: #dc3545; /* Red color for errors */
+    color: var(--color-error-text); /* Red color for errors */
     font-size: 0.9em;
 }
 
 .update-review-container li {
     margin-bottom: 0.5em;
     padding: 0.5em;
-    background-color: #f8d7da; /* Light red background */
+    background-color: #fef2f2; /* Light red background */
     border: 1px solid #f5c6cb; /* Red border */
     border-radius: 4px;
 }

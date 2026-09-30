@@ -97,7 +97,7 @@
 .signup-input {
   width: 100%;
   padding: 10px 15px; /* Slightly smaller padding */
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-input);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -106,7 +106,7 @@
 
 .signup-input:focus {
   outline: none;
-  border-color: #f00c13;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.2);
 }
 
@@ -131,13 +131,13 @@
   transition: all 0.3s ease;
   margin-top: 15px; /* Adjusted margin */
   letter-spacing: 0.5px;
-  background-color: #f00c13;
+  background-color: var(--color-primary);
   color: white;
   border: none;
 }
 
 .signup-submit-button:hover {
-  background-color: #e00b12;
+  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(240, 12, 19, 0.3);
 }
@@ -154,7 +154,7 @@
 }
 
 .login-link a {
-  color: #f00c13;
+  color: var(--color-primary);
   font-weight: 600;
   /* A link in a sentence: underlined, not told apart by colour alone. */
   text-decoration: underline;
@@ -163,7 +163,7 @@
 }
 
 .login-link a:hover {
-  color: #e00b12;
+  color: var(--color-primary-dark);
   text-decoration: underline;
 }
 

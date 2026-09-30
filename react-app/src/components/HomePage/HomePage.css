@@ -63,7 +63,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: white;
-  background-color: #f00c13;
+  background-color: var(--color-primary);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -74,7 +74,7 @@
 }
 
 .explore-button:hover {
-  background-color: #e00b12;
+  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(240, 12, 19, 0.3);
 }
@@ -116,7 +116,7 @@
 .feature-icon {
   width: 80px;
   height: 80px;
-  background-color: #f00c13;
+  background-color: var(--color-primary);
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -175,7 +175,7 @@
   font-size: 1.1rem;
   font-weight: 600;
   color: white;
-  background-color: #f00c13;
+  background-color: var(--color-primary);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -183,7 +183,7 @@
 }
 
 .cta-button:hover {
-  background-color: #e00b12;
+  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(240, 12, 19, 0.3);
 }

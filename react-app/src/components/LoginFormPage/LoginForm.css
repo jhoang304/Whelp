@@ -82,7 +82,7 @@
 .login-input {
   width: 100%;
   padding: 12px 15px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-input);
   border-radius: 8px;
   font-size: 1rem;
   transition: border-color 0.3s ease, box-shadow 0.3s ease;
@@ -91,7 +91,7 @@
 
 .login-input:focus {
   outline: none;
-  border-color: #f00c13;
+  border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.2);
 }
 
@@ -109,13 +109,13 @@
 }
 
 .login-submit-button {
-  background-color: #f00c13;
+  background-color: var(--color-primary);
   color: white;
   border: none;
 }
 
 .login-submit-button:hover {
-  background-color: #e00b12;
+  background-color: var(--color-primary-dark);
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(240, 12, 19, 0.3);
 }
@@ -144,7 +144,7 @@
 }
 
 .signup-link a {
-  color: #f00c13;
+  color: var(--color-primary);
   font-weight: 600;
   /* A link in a sentence: underlined, not told apart by colour alone. */
   text-decoration: underline;
@@ -153,7 +153,7 @@
 }
 
 .signup-link a:hover {
-  color: #e00b12;
+  color: var(--color-primary-dark);
   text-decoration: underline;
 }
 
@@ -184,7 +184,7 @@
   top: 100px; /* Below the sticky nav */
   /* left: 50%; Center horizontally */
   transform: translateX(-50%); /* Adjust for own width */
-  background-color: #d9534f; /* Error color */
+  background-color: var(--color-error-text);
   color: white;
   padding: 15px 25px;
   border-radius: 8px;

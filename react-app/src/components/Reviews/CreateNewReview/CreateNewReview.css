@@ -45,7 +45,7 @@
 .create-review-container select {
     width: 100%;
     padding: 0.8em;
-    border: 1px solid #ccc;
+    border: 1px solid var(--color-border-input);
     border-radius: 4px;
     box-sizing: border-box;
     font-size: 1em;
@@ -61,7 +61,7 @@
 
 .create-review-container button {
     padding: 0.8em 1.5em;
-    background-color: #007bff;
+    background-color: var(--color-primary);
     color: white;
     border: none;
     border-radius: 4px;
@@ -74,21 +74,21 @@
 }
 
 .create-review-container button:hover {
-    background-color: #0056b3;
+    background-color: var(--color-primary-dark);
 }
 
 .create-review-container ul {
     list-style: none;
     padding: 0;
     margin: 0 0 1em 0;
-    color: #dc3545;
+    color: var(--color-error-text);
     font-size: 0.9em;
 }
 
 .create-review-container li {
     margin-bottom: 0.5em;
     padding: 0.5em;
-    background-color: #f8d7da;
+    background-color: #fef2f2;
     border: 1px solid #f5c6cb;
     border-radius: 4px;
 }
