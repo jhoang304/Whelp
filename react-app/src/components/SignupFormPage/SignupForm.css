@@ -184,3 +184,21 @@
     padding: 70px 60px;
   }
 }
+
+/* On a phone: the card's 40px sides left 184px for the form at 320px, and
+   First and Last name, side by side, about 85px each. One above the other
+   there (#127). */
+@media (max-width: 600px) {
+  .signup-page-container {
+    padding: 24px 12px;
+  }
+
+  .signup-form-section {
+    padding: 32px 20px;
+  }
+
+  .name-inputs {
+    flex-direction: column;
+    gap: 0;
+  }
+}

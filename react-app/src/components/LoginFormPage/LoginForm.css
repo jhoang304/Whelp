@@ -192,3 +192,14 @@
 .login-input[aria-invalid="true"] {
   border-color: var(--color-error-text);
 }
+
+/* On a phone: the card's 40px sides left 184px for the form at 320px (#127). */
+@media (max-width: 600px) {
+  .login-page-container {
+    padding: 24px 12px;
+  }
+
+  .login-form-section {
+    padding: 32px 20px;
+  }
+}

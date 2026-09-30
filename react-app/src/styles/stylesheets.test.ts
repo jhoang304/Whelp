@@ -184,10 +184,12 @@ test.each([
 
 // --- the footer under the page, not over it (#125) ------------------------------------
 
+/** Laid over the window, and sized by it: the modal and the photo viewer. */
+const OVERLAYS = ["context/Modal.css", "components/Lightbox/Lightbox.css"];
+
 test("only an overlay is fixed to the window", () => {
     // The footer was: over the bottom 40px of every page, with nothing keeping
     // that space clear, so the last search result ran under it.
-    const OVERLAYS = ["context/Modal.css", "components/Lightbox/Lightbox.css"];
     const fixed = rules
         .filter(({ file, body }) => !OVERLAYS.includes(file) && /(^|[;\s])position:\s*fixed/.test(body))
         .flatMap(({ file, selectors }) => selectors.map((selector) => `${file}: ${selector}`));
@@ -205,7 +207,7 @@ test("no page sizes itself by guessing the nav's and the footer's heights", () =
     // "calc(100vh - 160px)" was login's and signup's. The page's row is the
     // height left between them, and a page fills it with min-height: 100%.
     const guesses = rules
-        .filter(({ file, body }) => file !== "context/Modal.css" && /calc\(\s*100d?vh\s*-/.test(body))
+        .filter(({ file, body }) => !OVERLAYS.includes(file) && /calc\(\s*100d?vh\s*-/.test(body))
         .flatMap(({ file, selectors }) => selectors.map((selector) => `${file}: ${selector}`));
     expect(guesses).toEqual([]);
 });
@@ -217,4 +219,131 @@ test("no rule restyles every link in a list of cards", () => {
         .filter((selector) => /^\.(restaurant-list|search-restaurant-list)\s+a$/.test(selector))
         .map((selector) => `${file}: ${selector}`));
     expect(everyLink).toEqual([]);
+});
+
+// --- phones and tablets (#127) ----------------------------------------------------------
+
+type MediaRule = { selectors: string[]; body: string };
+
+/** Each `@media (max-width: Npx)` block in a file, as its width and its rules. */
+function mediaBlocks(file: string): { width: number; rules: MediaRule[] }[] {
+    const css = source(file);
+    const blocks: { width: number; rules: MediaRule[] }[] = [];
+    const pattern = /@media\s*\(max-width:\s*(\d+)px\)\s*\{/g;
+    let match: RegExpExecArray | null;
+    while ((match = pattern.exec(css))) {
+        let depth = 1;
+        let j = pattern.lastIndex;
+        while (depth > 0 && j < css.length) {
+            if (css[j] === "{") depth += 1;
+            if (css[j] === "}") depth -= 1;
+            j += 1;
+        }
+        const inner = css.slice(pattern.lastIndex, j - 1);
+        blocks.push({
+            width: Number(match[1]),
+            rules: Array.from(inner.matchAll(/([^{}]+)\{([^{}]*)\}/g)).map((rule) => ({
+                selectors: rule[1].trim().split(",").map((part) => part.trim()),
+                body: rule[2],
+            })),
+        });
+    }
+    return blocks;
+}
+
+const fileNamed = (name: string) => files.find((file) => relative(file) === name)!;
+
+test("what a link jumps to, and what sticks, clears the nav at every width", () => {
+    // The nav's bottom edge, measured: one row on a desktop, two below 900px,
+    // and 8px from the top rather than 12 on a phone.
+    const NAV_BOTTOM = { desktop: 89, 900: 147, 600: 132 };
+    const offset = (body: string | undefined) => Number(body?.match(/--nav-offset:\s*(\d+)px/)?.[1]);
+    const index = fileNamed("index.css");
+    const root = rules.find(({ file, selectors, body }) => file === "index.css" && selectors.includes(":root") && /--nav-offset/.test(body));
+    expect(offset(root?.body)).toBeGreaterThanOrEqual(NAV_BOTTOM.desktop);
+    for (const width of [900, 600] as const) {
+        const block = mediaBlocks(index).find((media) => media.width === width);
+        const value = offset(block?.rules.find(({ selectors }) => selectors.includes(":root"))?.body);
+        expect(value).toBeGreaterThanOrEqual(NAV_BOTTOM[width]);
+    }
+
+    const page = rules.filter(({ file }) => file === "components/SingleRestaurant/SingleRestaurant.css");
+    // Every rule for it: a class can have more than one.
+    const bodyOf = (selector: string) => page.filter(({ selectors }) => selectors.includes(selector)).map(({ body }) => body).join(";");
+    expect(bodyOf(".restaurant-reviews")).toMatch(/scroll-margin-top:\s*var\(--nav-offset\)/);
+    expect(bodyOf(".restaurant-hours")).toMatch(/scroll-margin-top:\s*var\(--nav-offset\)/);
+    expect(bodyOf(".restaurant-sidebar")).toMatch(/top:\s*calc\(var\(--nav-offset\)/);
+});
+
+test("the photo viewer leaves room in the window for the controls around the photo", () => {
+    const photo = rules.find(({ file, selectors }) => file === "components/Lightbox/Lightbox.css"
+        && selectors.includes(".image-viewer-photo"))!.body;
+    // Arrows 70px out either side, counter and close 50px below and above.
+    expect(photo).toMatch(/max-width:\s*min\([^;]*calc\(100vw - 180px\)\)/);
+    expect(photo).toMatch(/max-height:\s*min\([^;]*calc\(100dvh - 140px\)\)/);
+    // And the minimums give way to that room, rather than outgrowing it.
+    expect(photo).toMatch(/min-width:\s*min\(600px, calc\(100vw - 180px\)\)/);
+    expect(photo).toMatch(/min-height:\s*min\(400px, calc\(100dvh - 140px\)\)/);
+});
+
+/** A font-size in px: 14px, 0.9rem, or a --text-* token from index.css. Null for anything else. */
+function fontSizePx(body: string): number | null {
+    const value = body.match(/font-size:\s*([^;]+)/)?.[1]?.trim();
+    if (!value) return null;
+    const token = value.match(/^var\(--(text-[\w-]+)\)$/)?.[1];
+    const literal = token
+        ? source(fileNamed("index.css")).match(new RegExp(`--${token}:\\s*([\\d.]+)(rem|px)`))
+        : value.match(/^([\d.]+)(rem|px|em)$/);
+    if (!literal) return null;
+    return Number(literal[1]) * (literal[2] === "px" ? 1 : 16);
+}
+
+test("a form control is 16px on a phone, so iOS doesn't zoom in when it takes focus", () => {
+    const control = (selector: string) => /\b(input|select|textarea)\b/.test(selector)
+        && !/type="(checkbox|radio|file|submit)"|::placeholder|:focus/.test(selector);
+    // The rules at the top level of each file: a control's size everywhere.
+    const topLevel = files.flatMap((file) => {
+        const css = source(file);
+        return Array.from(keyframes(css).rest.replace(/@media[^{]*\{(?:[^{}]*\{[^{}]*\})*[^{}]*\}/g, "")
+            .matchAll(/([^{}]+)\{([^{}]*)\}/g))
+            .map((rule) => ({ file: relative(file), selectors: rule[1].trim().split(",").map((part) => part.trim()), body: rule[2] }));
+    });
+    const small = topLevel.filter(({ selectors, body }) => selectors.some(control) && (fontSizePx(body) ?? 16) < 16);
+    expect(small.map(({ selectors }) => selectors.join(", "))).toEqual(expect.arrayContaining([".filter-control select"]));
+
+    const zooming = small.flatMap(({ file, selectors }) => selectors.filter(control).filter((selector) =>
+        !mediaBlocks(fileNamed(file)).some((media) => media.width >= 600 && media.rules.some((rule) =>
+            rule.selectors.includes(selector) && (fontSizePx(rule.body) ?? 0) >= 16)))
+        .map((selector) => `${file}: ${selector}`));
+    expect(zooming).toEqual([]);
+});
+
+test.each([
+    ["components/AddPhotoModal/AddPhoto.css", ".add-photo-modal"],
+    ["components/ConfirmDeleteModal/ConfirmDeleteModal.css", ".confirm-delete-modal"],
+    ["components/DisplayPhotos/DisplayPhotos.css", ".display-photos-modal"],
+    ["components/UserPage/UpdateProfile.css", ".update-profile-container"],
+])("%s stays inside the modal's 16px gutter", (file, selector) => {
+    // 92vw was wider than the window less the gutter under 400px.
+    const rule = rules.find((r) => r.file === file && r.selectors.includes(selector));
+    expect(rule?.body).toMatch(/max-width:\s*calc\(100vw - 2 \* var\(--space-4\)\)/);
+});
+
+test.each([
+    // [file, selector, declaration it needs, phone-only]
+    ["components/UserPage/UserProfilePage.css", ".profile-identity", /overflow-wrap:\s*anywhere/, false],
+    ["components/Navigation/Navigation.css", ".user-dropdown-username", /overflow-wrap:\s*anywhere/, false],
+    ["components/UserPage/UserProfilePage.css", ".profile-tabs", /overflow-x:\s*auto/, true],
+    ["components/UserPage/UserProfilePage.css", ".profile-review-header", /flex-wrap:\s*wrap/, true],
+    ["components/SignupFormPage/SignupForm.css", ".name-inputs", /flex-direction:\s*column/, true],
+    ["components/Reviews/OwnerResponse/OwnerResponse.css", ".owner-response-form-footer", /flex-wrap:\s*wrap/, false],
+    ["components/AddPhotoModal/AddPhoto.css", ".add-photo-mode", /flex-wrap:\s*wrap/, true],
+] as const)("%s %s fits a narrow phone", (file, selector, declaration, phoneOnly) => {
+    // A long name that ran out of the header, tabs and actions that ran off a
+    // 320px screen, name fields 85px wide, a row of buttons that didn't wrap.
+    const bodies = phoneOnly
+        ? mediaBlocks(fileNamed(file)).filter((media) => media.width === 600)
+            .flatMap((media) => media.rules).filter((rule) => rule.selectors.includes(selector)).map((rule) => rule.body)
+        : rules.filter((rule) => rule.file === file && rule.selectors.includes(selector)).map((rule) => rule.body);
+    expect(bodies.join(";")).toMatch(declaration);
 });

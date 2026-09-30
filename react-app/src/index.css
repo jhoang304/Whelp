@@ -133,6 +133,30 @@ body {
  * min-height: 100%. The one column is minmax(0, 1fr) so that nothing wide
  * inside a page -- the photo strip -- can widen it past the window.
  */
+/*
+ * Where the floating nav ends: sticky 12px from the top (8px on a phone), one
+ * row on a desktop and two below the tablet breakpoint, where the search
+ * wraps onto a row of its own. A link that jumps down the page, and anything
+ * that sticks, goes this far down, clear of it (#127). It was 100px
+ * everywhere, and below 900px the headings a link jumped to landed behind
+ * the nav, which ends at 147px there.
+ */
+:root {
+    --nav-offset: 90px;
+}
+
+@media (max-width: 900px) {
+    :root {
+        --nav-offset: 148px;
+    }
+}
+
+@media (max-width: 600px) {
+    :root {
+        --nav-offset: 132px;
+    }
+}
+
 #root {
     display: grid;
     grid-template-rows: auto 1fr auto;

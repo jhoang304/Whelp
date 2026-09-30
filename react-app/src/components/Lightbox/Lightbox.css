@@ -20,18 +20,26 @@
 
 .image-viewer-container {
     position: relative;
-    max-width: 90vw;
-    max-height: 90vh;
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
+/*
+ * With room left around it for the controls outside it on a desktop: an
+ * arrow 70px out on either side, the counter and the close 50px below and
+ * above (#127). Capped at 90vw by 90vh, a wide photo put the next arrow off
+ * the right edge of a 1024px window, and a tall one the counter off the
+ * bottom; and on a short, wide screen the 400px minimum outgrew the window.
+ * The minimums give way to the room there is.
+ */
 .image-viewer-photo {
-    max-width: 90vw;
-    max-height: 90vh;
-    min-width: 600px;
-    min-height: 400px;
+    max-width: min(90vw, calc(100vw - 180px));
+    max-height: min(90vh, calc(100vh - 140px));
+    max-height: min(90dvh, calc(100dvh - 140px));
+    min-width: min(600px, calc(100vw - 180px));
+    min-height: min(400px, calc(100vh - 140px));
+    min-height: min(400px, calc(100dvh - 140px));
     object-fit: contain;
     border-radius: 8px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);

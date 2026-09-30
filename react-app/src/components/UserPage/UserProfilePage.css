@@ -30,9 +30,12 @@
     flex-shrink: 0;
 }
 
+/* A long name, username or email with nowhere to break breaks anywhere,
+   rather than running out of the header (#127). */
 .profile-identity {
     flex: 1;
     min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .profile-name {
@@ -150,6 +153,12 @@
 .profile-tabs button.active {
     color: var(--color-primary);
     border-bottom-color: var(--color-primary);
+}
+
+/* Inside the tab: on a phone the row scrolls, and would clip a ring drawn
+   outside it. */
+.profile-tabs button:focus-visible {
+    outline-offset: -3px;
 }
 
 .profile-tab-count {
@@ -452,5 +461,35 @@ button.profile-link-button:hover {
     .profile-actions button.profile-edit-button,
     .profile-actions .profile-settings-link {
         flex: 1;
+    }
+
+    /* The three tabs fit a 375px phone; on a narrower one they scroll among
+       themselves, where they widened the whole page at 320px (#127). */
+    .profile-tabs {
+        padding: 0 var(--space-2);
+        gap: 0;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .profile-tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-tabs button {
+        flex-shrink: 0;
+        padding: var(--space-3);
+        font-size: var(--text-sm);
+    }
+
+    .profile-content {
+        padding-left: var(--space-4);
+        padding-right: var(--space-4);
+    }
+
+    /* Edit and Delete go under the restaurant when there isn't room beside
+       it: they ran off the edge of a 320px phone. */
+    .profile-review-header {
+        flex-wrap: wrap;
     }
 }

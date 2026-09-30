@@ -151,3 +151,12 @@
     font-size: var(--text-xs);
     color: var(--color-error-text);
 }
+
+/* 16px below the tablet breakpoint: iOS zooms the page in when a smaller
+   control takes focus, and leaves it zoomed (#127). */
+@media (max-width: 900px) {
+    .hours-editor .hours-editor-timezone select,
+    .hours-editor .hours-editor-times input[type="time"] {
+        font-size: 16px;
+    }
+}
