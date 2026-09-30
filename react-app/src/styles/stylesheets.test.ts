@@ -181,3 +181,40 @@ test.each([
     const minHeight = Number(rule?.body.match(/min-height:\s*(\d+)px/)?.[1]);
     expect(minHeight).toBeGreaterThanOrEqual(24);
 });
+
+// --- the footer under the page, not over it (#125) ------------------------------------
+
+test("only an overlay is fixed to the window", () => {
+    // The footer was: over the bottom 40px of every page, with nothing keeping
+    // that space clear, so the last search result ran under it.
+    const OVERLAYS = ["context/Modal.css", "components/Lightbox/Lightbox.css"];
+    const fixed = rules
+        .filter(({ file, body }) => !OVERLAYS.includes(file) && /(^|[;\s])position:\s*fixed/.test(body))
+        .flatMap(({ file, selectors }) => selectors.map((selector) => `${file}: ${selector}`));
+    expect(fixed).toEqual([]);
+});
+
+test("the app is three rows, the nav, the page and the footer, at least the window tall", () => {
+    const root = rules.find(({ file, selectors }) => file === "index.css" && selectors.includes("#root"));
+    expect(root?.body).toMatch(/display:\s*grid/);
+    expect(root?.body).toMatch(/grid-template-rows:\s*auto 1fr auto/);
+    expect(root?.body).toMatch(/min-height:\s*100dvh/);
+});
+
+test("no page sizes itself by guessing the nav's and the footer's heights", () => {
+    // "calc(100vh - 160px)" was login's and signup's. The page's row is the
+    // height left between them, and a page fills it with min-height: 100%.
+    const guesses = rules
+        .filter(({ file, body }) => file !== "context/Modal.css" && /calc\(\s*100d?vh\s*-/.test(body))
+        .flatMap(({ file, selectors }) => selectors.map((selector) => `${file}: ${selector}`));
+    expect(guesses).toEqual([]);
+});
+
+test("no rule restyles every link in a list of cards", () => {
+    // `.search-restaurant-list a { margin: auto }` was for the old card-sized
+    // link; once the cuisines were links, it spread them across the card.
+    const everyLink = rules.flatMap(({ file, selectors }) => selectors
+        .filter((selector) => /^\.(restaurant-list|search-restaurant-list)\s+a$/.test(selector))
+        .map((selector) => `${file}: ${selector}`));
+    expect(everyLink).toEqual([]);
+});

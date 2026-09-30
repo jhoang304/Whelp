@@ -122,6 +122,26 @@ body {
 }
 
 /*
+ * The app in three rows: the nav, the page, and the footer (#125). The page
+ * takes whatever height is left, so the footer sits at the bottom of the
+ * window on a short page and after the content on a long one. It used to be
+ * fixed over the bottom 40px of the window, and nothing kept that space
+ * clear: the last search result ran under it, with no further to scroll.
+ *
+ * A grid rather than a flex column, because a stretched grid row counts as a
+ * definite height, and a page that should fill it (login, signup) can say
+ * min-height: 100%. The one column is minmax(0, 1fr) so that nothing wide
+ * inside a page -- the photo strip -- can widen it past the window.
+ */
+#root {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100vh;
+    min-height: 100dvh;
+}
+
+/*
  * A base for every element, and no more: each component styles its own.
  * These used to be looks -- every button grey with a 4px margin, every link
  * bold 16px and, from SearchBar.css, display: flex -- and a rule written for
