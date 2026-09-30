@@ -77,7 +77,10 @@ function LoginFormPage(): React.JSX.Element {
                 id="email"
                 className="login-input"
                 placeholder="Enter your email"
-                type="text"
+                type="email"
+                autoCapitalize="none"
+                autoComplete="email"
+                spellCheck={false}
                 value={email_address}
                 onChange={(e) => setEmail_Address(e.target.value)}
                 required
@@ -89,6 +92,7 @@ function LoginFormPage(): React.JSX.Element {
                 id="password"
                 className="login-input"
                 type="password"
+                autoComplete="current-password"
                 placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}

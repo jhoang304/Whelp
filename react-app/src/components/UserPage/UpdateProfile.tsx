@@ -71,8 +71,12 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
         const trimmedUsername = username.trim();
         if (!trimmedUsername) validation.push("Username is required.");
         if (trimmedUsername.length > 40) validation.push("Username must be 40 characters or fewer.");
-        if (firstName.trim().length > 50) validation.push("First name must be 50 characters or fewer.");
-        if (lastName.trim().length > 50) validation.push("Last name must be 50 characters or fewer.");
+        // Required, as at signup: a cleared name used to "save" while the API
+        // quietly kept the old one (#117).
+        if (!firstName.trim()) validation.push("First name is required.");
+        else if (firstName.trim().length > 50) validation.push("First name must be 50 characters or fewer.");
+        if (!lastName.trim()) validation.push("Last name is required.");
+        else if (lastName.trim().length > 50) validation.push("Last name must be 50 characters or fewer.");
         const urlProblem = imageMode === "url" && imageUrl.trim()
             ? imageUrlProblem(imageUrl.trim(), "Profile picture URL")
             : null;
@@ -195,6 +199,8 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                     <span>Username</span>
                     <input
                         type="text"
+                        autoCapitalize="none"
+                        spellCheck={false}
                         value={username}
                         maxLength={40}
                         onChange={(e) => setUsername(e.target.value)}
@@ -210,6 +216,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                             value={firstName}
                             maxLength={50}
                             onChange={(e) => setFirstName(e.target.value)}
+                            required
                         />
                     </label>
                     <label className="update-profile-item">
@@ -219,6 +226,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                             value={lastName}
                             maxLength={50}
                             onChange={(e) => setLastName(e.target.value)}
+                            required
                         />
                     </label>
                 </div>

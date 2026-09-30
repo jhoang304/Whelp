@@ -53,3 +53,22 @@ test("a save that can't reach the server gives the form back, saying so", async 
   expect(screen.getByRole("button", { name: "Save changes" })).not.toBeDisabled();
   expect(screen.getByRole("button", { name: "Cancel" })).not.toBeDisabled();
 });
+
+test("a name cleared to spaces is refused here, not quietly kept by the API", async () => {
+  // It used to "save": the modal closed, and the old name came back (#117).
+  (global as any).fetch = jest.fn();
+  const store = createStore(combineReducers({ session: (state = { user }) => state }), applyMiddleware(thunk));
+  render(
+    <Provider store={store as any}>
+      <UpdateProfile user={user as any} />
+    </Provider>
+  );
+
+  fireEvent.change(screen.getByLabelText("First name"), { target: { value: "   " } });
+  fireEvent.change(screen.getByLabelText("Last name"), { target: { value: " " } });
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+  expect(await screen.findByText("First name is required.")).toBeInTheDocument();
+  expect(screen.getByText("Last name is required.")).toBeInTheDocument();
+  expect((global as any).fetch).not.toHaveBeenCalled();
+});
