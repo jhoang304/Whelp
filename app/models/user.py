@@ -47,6 +47,17 @@ class User(db.Model, UserMixin):
         """The account with this address, whatever case either is written in."""
         return cls.query.filter(func.lower(cls.email) == email.strip().lower()).first()
 
+    @classmethod
+    def username_taken(cls, username, by_anyone_but=None):
+        """
+        Whether someone already goes by this name, whatever its case: "Owner"
+        beside "owner" reads as the same person next to a review.
+        """
+        query = cls.query.filter(func.lower(cls.username) == username.strip().lower())
+        if by_anyone_but is not None:
+            query = query.filter(cls.id != by_anyone_but)
+        return query.first() is not None
+
     @property
     def is_demo(self):
         return self.email == DEMO_EMAIL

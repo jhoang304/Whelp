@@ -1,5 +1,4 @@
 from flask_wtf import FlaskForm
-from sqlalchemy import func
 from wtforms.validators import DataRequired, Email, ValidationError, Length
 from app.models import User
 from .fields import TextField, email_address, trimmed
@@ -16,10 +15,7 @@ def user_exists(form, field):
 
 
 def username_exists(form, field):
-    # "Owner" beside "owner" reads as the same person next to a review.
-    username = field.data
-    user = User.query.filter(func.lower(User.username) == username.lower()).first()
-    if user:
+    if User.username_taken(field.data):
         raise ValidationError('Username is already in use.')
 
 

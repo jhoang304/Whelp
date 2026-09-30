@@ -133,3 +133,23 @@ def login(client, email, password="password"):
     res = client.post("/api/auth/login", json={"email": email, "password": password})
     assert res.status_code == 200, res.get_json()
     return res.get_json()
+
+
+def critics(count, start=0):
+    """
+    The ids of `count` people who can each review anything. One person may
+    review a restaurant once -- the database holds it (#119) -- so a test
+    that wants several reviews wants several reviewers. None of them logs
+    in, so none of them costs a password hash.
+    """
+    users = []
+    for number in range(start, start + count):
+        username = f"critic{number}"
+        user = User.query.filter_by(username=username).first()
+        if user is None:
+            user = User(username=username, email=f"{username}@test.io", hashed_password="-",
+                        first_name="Critic", last_name=str(number))
+            db.session.add(user)
+        users.append(user)
+    db.session.commit()
+    return [user.id for user in users]

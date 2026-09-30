@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.sql import func
 
 from app.models import db, Review, ReviewImage, ReviewResponse
@@ -8,6 +9,8 @@ from app.api.utils import error_messages, key_still_referenced, review_with_deta
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 
 review_routes = Blueprint('reviews', __name__)
+
+ALREADY_ANSWERED = "This review already has a response. Edit the existing response instead."
 
 
 # Get one review
@@ -128,6 +131,11 @@ def _load_review_for_owner(review_id):
   return review, None
 
 
+def has_response(review_id):
+  """Whether the review has an owner's reply already."""
+  return ReviewResponse.query.filter(ReviewResponse.review_id == review_id).first() is not None
+
+
 # Create an owner response for a review
 @review_routes.route('/<int:id>/response', methods=["POST"])
 @login_required
@@ -140,20 +148,29 @@ def create_review_response(id):
   if error:
     return error
 
-  if review.response:
-    return {"errors": ["This review already has a response. Edit the existing response instead."]}, 400
+  if has_response(review.id):
+    return {"errors": [ALREADY_ANSWERED]}, 400
 
   form = ReviewResponseForm()
   form["csrf_token"].data = request.cookies.get("csrf_token")
 
   if form.validate_on_submit():
+    review_id = review.id
     response = ReviewResponse(
-      review_id = review.id,
+      review_id = review_id,
       user_id = current_user.id,
       response = form.data["response"].strip(),
     )
     db.session.add(response)
-    db.session.commit()
+    try:
+      db.session.commit()
+    except IntegrityError:
+      # Two replies posted at once both pass the check above; the database
+      # keeps one, and the other used to be a 500 (#119).
+      db.session.rollback()
+      if has_response(review_id):
+        return {"errors": [ALREADY_ANSWERED]}, 409
+      raise
     return response.to_dict(), 201
   return {"errors": error_messages(form.errors)}, 400
 

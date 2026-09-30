@@ -15,7 +15,7 @@ import pytest
 from sqlalchemy import event
 
 from app.models import Restaurant, RestaurantImage, Review, User, db
-from tests.conftest import login
+from tests.conftest import critics, login
 
 
 @contextmanager
@@ -144,9 +144,8 @@ def test_a_page_of_reviews_costs_the_same_however_many_there_are(client, ids):
         assert client.get(url).status_code == 200
 
     db.session.add_all([
-        Review(user_id=ids["reviewer"], restaurant_id=ids["restaurant"],
-               review=f"Bulk review {n}", rating=4)
-        for n in range(SELECTIN_BATCH + 100)
+        Review(user_id=author, restaurant_id=ids["restaurant"], review=f"Bulk review {n}", rating=4)
+        for n, author in enumerate(critics(SELECTIN_BATCH + 100))
     ])
     db.session.commit()
 
