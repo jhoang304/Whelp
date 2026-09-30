@@ -11,6 +11,7 @@ from datetime import datetime
 import pytest
 
 from app.models import Category, Restaurant, Review, db
+from tests.conftest import critics
 
 
 def add_restaurant(owner_id, name, price="$", city="Austin", ratings=(),
@@ -23,8 +24,8 @@ def add_restaurant(owner_id, name, price="$", city="Austin", ratings=(),
     db.session.add(restaurant)
     db.session.commit()
 
-    for number, rating in enumerate(ratings):
-        db.session.add(Review(user_id=owner_id, restaurant_id=restaurant.id,
+    for number, (rating, author) in enumerate(zip(ratings, critics(len(ratings)))):
+        db.session.add(Review(user_id=author, restaurant_id=restaurant.id,
                               review=f"Review {number} of {name}", rating=rating))
     if categories:
         restaurant.categories = Category.query.filter(Category.slug.in_(categories)).all()

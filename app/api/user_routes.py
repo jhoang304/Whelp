@@ -1,5 +1,6 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user, logout_user
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
@@ -137,9 +138,7 @@ def edit_profile(id):
     if not username:
         return {'errors': ['Username is required.']}, 400
     # Case aside, as at signup: "Owner" is somebody else's "owner" (#117).
-    taken = User.query.filter(func.lower(User.username) == username.lower(),
-                              User.id != profile.id).first()
-    if taken:
+    if User.username_taken(username, by_anyone_but=profile.id):
         return {'errors': ['Username is already in use.']}, 400
 
     # A name that is sent must be there. A blank one used to be skipped with
@@ -168,7 +167,15 @@ def edit_profile(id):
             replaced_key = old_key
 
     profile.updatedAt = func.now()
-    db.session.commit()
+    profile_id = profile.id
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Someone took the name between the check above and this commit (#119).
+        db.session.rollback()
+        if User.username_taken(username, by_anyone_but=profile_id):
+            return {'errors': ['Username is already in use.']}, 409
+        raise
 
     # After the commit, and only for an object this user uploaded: pointing
     # this at a url was two calls away from deleting a stranger's picture.

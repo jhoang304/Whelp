@@ -1,4 +1,5 @@
 from flask import Blueprint, request
+from sqlalchemy.exc import IntegrityError
 from werkzeug.security import check_password_hash, generate_password_hash
 from app.models import User, db
 from app.forms import LoginForm
@@ -78,7 +79,21 @@ def sign_up():
             password=form.data['password']
         )
         db.session.add(user)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Two signups for one address or username at once both pass the
+            # form's checks, and the database refuses the second: say which,
+            # as the form would have, not "Something went wrong" (#119).
+            db.session.rollback()
+            taken = []
+            if User.with_email(form.data['email']):
+                taken.append('Email address is already in use.')
+            if User.username_taken(form.data['username']):
+                taken.append('Username is already in use.')
+            if taken:
+                return {'errors': taken}, 409
+            raise
         login_user(user)
         return user.to_dict()
     return {'errors': error_messages(form.errors)}, 400

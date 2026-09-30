@@ -530,6 +530,12 @@ def get_reviews_by_restaurant_id(id):
                          page_request, total)
 
 
+def has_reviewed(user_id, restaurant_id):
+    """Whether this person has a review of this restaurant already."""
+    return Review.query.filter(Review.restaurant_id == restaurant_id,
+                               Review.user_id == user_id).first() is not None
+
+
 # Create a review by restaurant's id
 @restaurant_routes.route('/<int:id>/reviews', methods=["POST"])
 @login_required
@@ -542,9 +548,8 @@ def create_review_by_restaurant_id(id):
     if restaurant.user_id == current_user.id:
         return {"errors": ["You can't review your own restaurant"]}, 403
 
-    review = Review.query.filter(Review.restaurant_id == id, Review.user_id == current_user.id).all()
-
-    if len(review) > 0:
+    user_id = current_user.id
+    if has_reviewed(user_id, id):
         return {"errors": ["You've already reviewed this restaurant"]}, 403
 
     form = ReviewForm()
@@ -552,13 +557,23 @@ def create_review_by_restaurant_id(id):
 
     if form.validate_on_submit():
         review = Review(
-            user_id = int(current_user.id),
+            user_id = user_id,
             restaurant_id = id,
             review = form.data["review"],
             rating = form.data["rating"],
         )
 
         db.session.add(review)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except IntegrityError:
+            # Two requests close together -- a double click, a retry, two
+            # tabs -- can both pass the check above, and the database lets
+            # only one in (#119). The other is told what the check would
+            # have said, rather than "Something went wrong".
+            db.session.rollback()
+            if has_reviewed(user_id, id):
+                return {"errors": ["You've already reviewed this restaurant"]}, 409
+            raise
         return review.to_dict()
     return {"errors": error_messages(form.errors)}, 400

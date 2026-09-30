@@ -6,8 +6,15 @@ from .restaurant import Restaurant
 class Review(db.Model):
     __tablename__ = 'reviews'
 
-    if environment == "production":
-        __table_args__ = {'schema': SCHEMA}
+    # Both rules used to live only in the routes, which check and then
+    # insert: two requests close together could each pass the check and
+    # leave two reviews of one restaurant by one person (#119). A review
+    # whose author has left has no user_id, and NULLs never clash, so any
+    # number of "Deleted user" reviews can stand.
+    __table_args__ = (
+        db.UniqueConstraint("user_id", "restaurant_id", name="uq_reviews_user_restaurant"),
+        db.CheckConstraint("rating BETWEEN 1 AND 5", name="ck_reviews_rating_range"),
+    ) + (({'schema': SCHEMA},) if environment == "production" else ())
 
     id = db.Column(db.Integer, primary_key=True)
     # Null once the author has deleted their account. The review stays -- its
