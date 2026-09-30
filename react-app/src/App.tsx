@@ -16,6 +16,7 @@ import RestaurantBySearch, { LegacySearchRedirect } from "./components/SearchBar
 import HomePage from "./components/HomePage";
 import AccountSettings from "./components/AccountSettings";
 import ErrorBoundary from "./components/ErrorBoundary";
+import NotFound from "./components/NotFound";
 
 function App(): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -73,6 +74,11 @@ function App(): React.JSX.Element {
                 </Route>
                 <Route exact path={UPDATE_REVIEW_PATH}>
                   <UpdateReview />
+                </Route>
+                {/* Last: whatever nothing above matched. It was a blank page
+                    between the nav and the footer (#124). */}
+                <Route path="*">
+                  <NotFound />
                 </Route>
               </Switch>
             </ErrorBoundary>

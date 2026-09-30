@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
@@ -142,4 +142,43 @@ test("home goes h1, then h2s, and its buttons are links to the list", async () =
   expect(screen.getByRole("link", { name: "Explore Restaurants" })).toHaveAttribute("href", "/restaurants");
   expect(screen.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/restaurants");
   expect(await axeWholePage(container)).toHaveNoViolations();
+});
+
+// --- an address the app has no page for (#124) ---------------------------------------
+
+test.each([
+  "/this-page-does-not-exist",
+  "/restaurant/1",
+  "/user/1",
+  "/single",
+  "/users/get",
+  "/restaurants/create-review",
+  "/3/reviews/abc/update",
+])("%s is a not-found page inside the app, not a blank one", async (path) => {
+  renderAppAt(path);
+
+  const heading = await screen.findByRole("heading", { level: 1, name: "We couldn't find that page." });
+  expect(screen.getByRole("main")).toContainElement(heading);
+  expect(screen.getByRole("navigation")).toBeInTheDocument();
+  expect(screen.getByRole("contentinfo")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Browse restaurants" })).toHaveAttribute("href", "/restaurants");
+  expect(screen.getByRole("link", { name: "Go to the home page" })).toHaveAttribute("href", "/");
+});
+
+test("a page that exists is not the not-found page", async () => {
+  renderAppAt("/login");
+  await screen.findByRole("heading", { level: 1, name: "Log In to Whelp" });
+  expect(screen.queryByText("We couldn't find that page.")).not.toBeInTheDocument();
+});
+
+test("its tab says so, until you leave it for a page that exists", async () => {
+  document.title = "Whelp";
+  const { container } = renderAppAt("/nowhere");
+  await screen.findByRole("heading", { level: 1, name: "We couldn't find that page." });
+  expect(document.title).toBe("Page not found · Whelp");
+  expect(await axeWholePage(container)).toHaveNoViolations();
+
+  fireEvent.click(screen.getByRole("link", { name: "Go to the home page" }));
+  await screen.findByRole("heading", { level: 1, name: "Welcome to Whelp" });
+  expect(document.title).toBe("Whelp");
 });

@@ -12,6 +12,8 @@ interface PageMessageProps {
    * a page in the app, `href` for a full page load, such as a reload.
    */
   action?: { to: string; label: string } | { href: string; label: string };
+  /** A second, quieter way on, beside the first: "Go to the home page". */
+  secondaryAction?: { to: string; label: string };
 }
 
 /**
@@ -19,7 +21,7 @@ interface PageMessageProps {
  * isn't there, something you have to log in for, or a page that broke. One
  * component, so each of them says it the same way.
  */
-function PageMessage({ icon, title, children, action }: PageMessageProps): React.JSX.Element {
+function PageMessage({ icon, title, children, action, secondaryAction }: PageMessageProps): React.JSX.Element {
   return (
     <div className="page-message">
       <i className={icon} aria-hidden="true"></i>
@@ -29,6 +31,9 @@ function PageMessage({ icon, title, children, action }: PageMessageProps): React
       {action && ("to" in action
         ? <Link to={action.to} className="page-message-action">{action.label}</Link>
         : <a href={action.href} className="page-message-action">{action.label}</a>
+      )}
+      {secondaryAction && (
+        <Link to={secondaryAction.to} className="page-message-secondary">{secondaryAction.label}</Link>
       )}
     </div>
   );
