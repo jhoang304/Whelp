@@ -156,19 +156,6 @@
     box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }
 
-.fa-spin {
-    animation: fa-spin 1s infinite linear;
-}
-
-@keyframes fa-spin {
-    0% {
-        transform: rotate(0deg);
-    }
-    100% {
-        transform: rotate(360deg);
-    }
-}
-
 @media (max-width: 600px) {
     .add-restaurant-form .image-picker-tabs {
         width: 100%;

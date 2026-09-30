@@ -5,6 +5,12 @@
     margin: 0 auto;
 }
 
+/* The whole card is the link. It used to get display: flex from a global
+   a:link rule in SearchBar.css (#120). */
+.restaurant-list-entry .restaurant-list-link {
+    display: flex;
+}
+
 .restaurant-list-entry .restaurant-list-favorite {
     position: absolute;
     top: var(--space-5);

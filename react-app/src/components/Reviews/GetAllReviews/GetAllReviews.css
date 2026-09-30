@@ -79,6 +79,9 @@
   #review-user-name {
     margin: 0px;
     padding: 0px;
+    font-size: var(--text-base);
+    font-weight: var(--font-bold);
+    color: var(--color-gray-700);
   }
 
   .review-time-star {

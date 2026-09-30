@@ -47,6 +47,7 @@
 
 .owner-response-title a:hover {
     color: var(--color-primary);
+    text-decoration: underline;
 }
 
 .owner-response-business {

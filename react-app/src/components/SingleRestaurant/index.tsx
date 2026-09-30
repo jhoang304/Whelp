@@ -17,6 +17,7 @@ import FavoriteButton from "../FavoriteButton";
 import Lightbox from "../Lightbox";
 import PhotoCarousel from "./PhotoCarousel";
 import PageMessage from "../PageMessage";
+import Loading from "../Loading";
 import { useAppDispatch, useAppSelector } from "../../store";
 
 
@@ -110,19 +111,7 @@ function SingleRestaurant(): React.JSX.Element {
     }
 
     if (status === "loading" || !singleRestaurant) {
-        return (
-            <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <div className="loading-text">
-                    <span className="loading-word">Loading</span>
-                    <span className="loading-dots">
-                        <span>.</span>
-                        <span>.</span>
-                        <span>.</span>
-                    </span>
-                </div>
-            </div>
-        );
+        return <Loading />;
     }
 
     const isOwner = !!sessionUser && sessionUser.id === singleRestaurant.user_id;

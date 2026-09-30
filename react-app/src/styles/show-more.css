@@ -1,0 +1,40 @@
+/*
+ * "Show more" under a list that loads a page at a time: the restaurant list,
+ * search results, a restaurant's reviews and the Saved tab. Each of them
+ * imports this. It used to live in RestaurantList.css alone, and the other
+ * three were styled only because App happened to import RestaurantList (#120).
+ */
+.show-more {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 24px 16px 48px;
+}
+
+.show-more-button {
+    padding: 12px 28px;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #d32323;
+    background: #fff;
+    border: 1px solid #d32323;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.show-more-button:hover:not(:disabled) {
+    background: #d32323;
+    color: #fff;
+}
+
+.show-more-button:disabled {
+    opacity: 0.6;
+    cursor: default;
+}
+
+/* Why Show more didn't bring anything; the button is there to try again. */
+.show-more-error {
+    margin: var(--space-3) 0 0;
+    font-size: var(--text-sm);
+    color: #b91c1c;
+}

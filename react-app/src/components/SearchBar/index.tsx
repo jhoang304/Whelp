@@ -9,6 +9,7 @@ import {
 } from "../../utils/filters";
 
 import './SearchBar.css';
+import '../../styles/show-more.css';
 
 /**
  * `/search/:keyword`, the old form of a search link: bookmarks and shared
@@ -176,9 +177,9 @@ function RestaurantBySearch(): React.JSX.Element {
                     );
                 })}
                 {restaurantArr.length < total && (
-                    <div className="restaurant-list-more">
+                    <div className="show-more">
                         <button
-                            className="restaurant-list-more-button"
+                            className="show-more-button"
                             onClick={showMore}
                             disabled={isLoadingMore}
                         >

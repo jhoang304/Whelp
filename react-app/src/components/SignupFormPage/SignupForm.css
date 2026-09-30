@@ -45,7 +45,7 @@
   color: #333;
   font-size: 2.5rem;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin: var(--space-2) var(--space-2) 10px;
   text-align: center;
 }
 
@@ -82,11 +82,11 @@
 }
 
 /* Input Groups */
-.input-group {
+.signup-field {
   margin-bottom: 15px; /* Slightly less margin for signup */
 }
 
-.input-group label {
+.signup-field label {
   display: block;
   margin-bottom: 6px; /* Slightly less margin */
   font-weight: 600;
@@ -116,7 +116,7 @@
   gap: 15px;
 }
 
-.name-inputs .input-group {
+.name-inputs .signup-field {
   flex: 1;
 }
 
@@ -156,7 +156,8 @@
 .login-link a {
   color: #f00c13;
   font-weight: 600;
-  text-decoration: none;
+  /* A link in a sentence: underlined, not told apart by colour alone. */
+  text-decoration: underline;
   transition: color 0.3s ease;
   margin-left: 5px;
 }

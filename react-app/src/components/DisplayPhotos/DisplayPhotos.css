@@ -207,19 +207,6 @@
     }
 }
 
-/* Kept here although the viewer that used it moved to Lightbox.css:
-   `fadeIn` is a global name several stylesheets define, and removing this
-   definition could change which one every other `animation: fadeIn`
-   resolves to. */
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
-}
-
 /* The photos couldn't be loaded: the message, and a way to try again. */
 .photo-errors p {
     margin: 0 0 var(--space-3);

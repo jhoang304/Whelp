@@ -46,7 +46,7 @@
   color: #333;
   font-size: 2.5rem;
   font-weight: 700;
-  margin-bottom: 10px;
+  margin: var(--space-2) var(--space-2) 10px;
   text-align: center;
 }
 
@@ -67,11 +67,11 @@
 /* .login-error-message { ... } */
 
 /* Input Groups */
-.input-group {
+.login-field {
   margin-bottom: 20px;
 }
 
-.input-group label {
+.login-field label {
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
@@ -146,7 +146,8 @@
 .signup-link a {
   color: #f00c13;
   font-weight: 600;
-  text-decoration: none;
+  /* A link in a sentence: underlined, not told apart by colour alone. */
+  text-decoration: underline;
   transition: color 0.3s ease;
   margin-left: 5px; /* Added space */
 }

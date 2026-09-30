@@ -71,7 +71,7 @@ function LoginFormPage(): React.JSX.Element {
           <h1 className="login-title">Log In to Whelp</h1>
           <p className="login-subtitle">Access your account</p>
           <form onSubmit={handleSubmit} className="login-form">
-            <div className="input-group">
+            <div className="login-field">
               <label htmlFor="email">Email Address</label>
               <input
                 id="email"
@@ -86,7 +86,7 @@ function LoginFormPage(): React.JSX.Element {
                 required
               />
             </div>
-            <div className="input-group">
+            <div className="login-field">
               <label htmlFor="password">Password</label>
               <input
                 id="password"
