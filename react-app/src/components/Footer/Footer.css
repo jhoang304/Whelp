@@ -1,18 +1,24 @@
+/*
+ * The last row of the app (see #root in index.css): under the page rather
+ * than over it. It was fixed to the bottom of the window, over the last 40px
+ * of every page, and over a phone's screen for good (#125). The safe-area
+ * padding keeps it clear of a phone's home indicator.
+ */
 .footer-container {
     display: flex;
     flex-direction: row;
-    width: 100%;
     justify-content: space-evenly;
     align-items: center;
+    min-height: 40px;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
     border-top: 1px solid rgb(211, 211, 211);
     background-color: white;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    height: 40px;
   }
 
+  /* No margins of its own: they made the footer 57px tall once it was no
+     longer held to 40. */
   .name {
+    margin: 0;
     font-size: 16px;
   }
 

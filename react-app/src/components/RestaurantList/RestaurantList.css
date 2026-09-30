@@ -18,6 +18,12 @@
 }
 
 
+/* Room before the footer when the list is the last thing on the page (#125).
+   Show more, when it follows, has its own. */
+.restaurant-list:last-child {
+    padding-bottom: var(--space-10);
+}
+
 @keyframes restaurant-list-rise {
   from {
     opacity: 0;

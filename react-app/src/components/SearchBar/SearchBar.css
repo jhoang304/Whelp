@@ -70,9 +70,11 @@
     margin-top: 20px;
 }
 
-.search-restaurant-list a {
-    margin-left: auto;
-    margin-right: auto;
+/* Room before the footer after the last result, which ran under it when the
+   footer was fixed and now sits on it (#125). Show more, when it is last,
+   has its own. */
+.search-restaurant-list > .restaurant-list-entry:last-child {
+    margin-bottom: var(--space-10);
 }
 
 .search-restaurant-list-item {
@@ -136,7 +138,10 @@
 
 /* Responsive Design */
 @media (max-width: 900px) {
+    /* The padding inside the 95%: outside it, the page was wider than a
+       phone under 400px, and scrolled sideways. */
     .search-restaurants-container {
+        box-sizing: border-box;
         width: 95%;
         padding: 0 10px;
     }
