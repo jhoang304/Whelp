@@ -32,6 +32,10 @@ def _undo_all():
     undo_categories()
     undo_restaurants()
     undo_users()
+    # The undos delete with raw SQL, behind the session's back: objects it
+    # still holds would clash with the reseed's rows of the same ids ("Identity
+    # map already had an identity", 66 times in the test run). Forget them.
+    db.session.expunge_all()
 
 
 def _seed_all():

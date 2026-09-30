@@ -26,6 +26,11 @@ class Config:
 
     ENV = current_environment()
     SQLALCHEMY_TRACK_MODIFICATIONS = False
+    # Neon suspends an idle database and drops its connections. Checked out of
+    # the pool after that, a connection fails its first query -- a 500 -- before
+    # SQLAlchemy discards it. A ping on checkout finds it dead first and opens
+    # a new one (#129).
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     # SQLAlchemy 1.4 no longer supports url strings that start with 'postgres'
     # (only 'postgresql') but heroku's postgres add-on automatically sets the
     # url in the hidden config vars to start with postgres.
