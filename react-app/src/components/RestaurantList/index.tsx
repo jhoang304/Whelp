@@ -18,6 +18,7 @@ function RestaurantList(): React.JSX.Element {
     const total = useAppSelector((state) => state.Restaurants.totalRestaurants ?? 0);
     const loadedPage = useAppSelector((state) => state.Restaurants.loadedPage ?? 1);
     const listError = useAppSelector((state) => state.Restaurants.listError);
+    const categories = useAppSelector((state) => state.categories.list);
 
     const [isLoaded, setIsLoaded] = useState<boolean>(false);
     const [isLoadingMore, setIsLoadingMore] = useState<boolean>(false);
@@ -79,8 +80,12 @@ function RestaurantList(): React.JSX.Element {
 
     const hasMore = allRestaurants.length < total;
 
+    // The page's heading, and the cuisine's name when there is one (#122).
+    const cuisine = categories.find((category) => category.slug === filters.category);
+
     return (
         <>
+            <h1 className="restaurant-list-title">{cuisine ? cuisine.name : "All restaurants"}</h1>
             <FilterBar
                 filters={filters}
                 onChange={applyFilters}
@@ -94,7 +99,7 @@ function RestaurantList(): React.JSX.Element {
                 // page unless the message is shown, and only one of them is
                 // worth clearing the filters over.
                 <div className="filter-empty">
-                    <h3>We could not use those filters</h3>
+                    <h2>We could not use those filters</h2>
                     <p>{listError}</p>
                     <button type="button" onClick={() => applyFilters(NO_FILTERS)}>
                         Clear filters
@@ -102,7 +107,7 @@ function RestaurantList(): React.JSX.Element {
                 </div>
             ) : loadErrors ? (
                 <div className="filter-empty" role="alert">
-                    <h3>We couldn't load restaurants</h3>
+                    <h2>We couldn't load restaurants</h2>
                     <p>{loadErrors[0]}</p>
                     <button type="button" onClick={() => setAttempt((n) => n + 1)}>
                         Try again
@@ -110,7 +115,7 @@ function RestaurantList(): React.JSX.Element {
                 </div>
             ) : allRestaurants.length === 0 ? (
                 <div className="filter-empty">
-                    <h3>No restaurants match these filters</h3>
+                    <h2>No restaurants match these filters</h2>
                     <p>Try a different cuisine, or widen the price or rating.</p>
                     {isFiltered(filters) && (
                         <button type="button" onClick={() => applyFilters(NO_FILTERS)}>

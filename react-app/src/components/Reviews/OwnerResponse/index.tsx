@@ -10,6 +10,7 @@ import {
 import { avatarUrl, onAvatarError } from "../../../utils/images";
 import OpenModalButton from "../../OpenModalButton";
 import ConfirmDeleteModal from "../../ConfirmDeleteModal";
+import FormErrors from "../../FormErrors";
 import "./OwnerResponse.css";
 import "../../RowActions/RowActions.css";
 
@@ -94,13 +95,7 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
   // The dialog shows a refusal itself, and stays open to do it.
   const handleDelete = () => dispatch(deleteReviewResponse(review.id));
 
-  const errorList = errors.length > 0 && (
-    <ul className="owner-response-errors">
-      {errors.map((error, idx) => (
-        <li key={idx}>{error}</li>
-      ))}
-    </ul>
-  );
+  const errorList = <FormErrors errors={errors} className="owner-response-errors" />;
 
   const form = (
     <form className="owner-response-form" onSubmit={handleSubmit}>
@@ -140,7 +135,7 @@ function OwnerResponse({ review, canManage, businessName }: OwnerResponseProps):
           form
         ) : (
           <button type="button" className="owner-response-cta" onClick={startEditing}>
-            <i className="fa-solid fa-reply"></i>
+            <i className="fa-solid fa-reply" aria-hidden="true"></i>
             Respond to this review
           </button>
         )}

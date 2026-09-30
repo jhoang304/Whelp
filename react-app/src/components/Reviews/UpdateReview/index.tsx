@@ -4,6 +4,7 @@ import { deleteReviewImage, fetchReview, updateOneReview } from '../../../store/
 import { useAppDispatch, useAppSelector } from "../../../store";
 import { ReviewImage } from "../../../types";
 import PageMessage from "../../PageMessage";
+import FormErrors from "../../FormErrors";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
 import './UpdateReview.css'
@@ -197,11 +198,9 @@ function UpdateReview(): React.JSX.Element {
 
     return (
       <div  className="update-review-container">
-        <h2>{oldReview.restaurant ? `Edit your review of ${oldReview.restaurant.name}` : "Edit your review"}</h2>
+        <h1>{oldReview.restaurant ? `Edit your review of ${oldReview.restaurant.name}` : "Edit your review"}</h1>
         <form onSubmit={handleSubmit} className="update-new-review-form">
-          <ul>
-            {errors.map((error, idx) => <li key={idx}>{error}</li>)}
-          </ul>
+          <FormErrors errors={errors} className="review-form-errors" />
           <label>
             <span>review:</span>
             <input

@@ -151,5 +151,5 @@ test("someone logged out gets no heart", () => {
     </Provider>
   );
   expect(screen.queryByRole("button", { name: /save/i })).not.toBeInTheDocument();
-  expect(screen.getByRole("link")).toHaveAttribute("href", "/single/7");
+  expect(screen.getByRole("link", { name: "Nancy's Hustle" })).toHaveAttribute("href", "/single/7");
 });

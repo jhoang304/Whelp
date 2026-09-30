@@ -125,3 +125,59 @@ test("the checks see what they are looking for", () => {
   expect(".input-group".match(TOP_LEVEL_CLASS)![1]).toBe("input-group");
   expect(".restaurant-actions .favorite".match(TOP_LEVEL_CLASS)).toBeNull();
 });
+
+// --- focus you can see (#122) ---------------------------------------------------------
+
+/** Every rule, @media ones included, as its file, selectors and declarations. */
+const rules = files.flatMap((file) => {
+    const { rest } = keyframes(source(file));
+    return Array.from(rest.matchAll(/([^{}]+)\{([^{}]*)\}/g)).map((match) => ({
+        file: relative(file),
+        selectors: match[1].trim().split(",").map((part) => part.trim()),
+        body: match[2],
+    }));
+});
+
+/**
+ * Focused on purpose, and not controls: focus is put there so a screen reader
+ * starts in the right place, and nobody tabs to them.
+ */
+const NOT_CONTROLS = [
+    "context/Modal.css: #modal-content:focus",
+    "components/Lightbox/Lightbox.css: .image-viewer-overlay:focus",
+    "components/RestaurantForm/RestaurantForm.css: .restaurant-form .error-container:focus",
+    "components/UserPage/UserProfilePage.css: .profile-empty h2:focus",
+];
+
+test("a control's own focus style keeps an outline, for Windows' high contrast mode", () => {
+    // High contrast mode drops box-shadows and border colours, and keeps an
+    // outline, drawn in its own colour even when it is transparent. So
+    // `outline: none` beside a glow leaves nothing to see there.
+    const removed = rules
+        .filter(({ body }) => /(^|[;\s])outline:\s*(none|0)\s*(;|$)/.test(body))
+        .flatMap(({ file, selectors }) => selectors.filter((s) => /:focus/.test(s)).map((s) => `${file}: ${s}`))
+        .filter((rule) => !NOT_CONTROLS.includes(rule));
+    expect(removed).toEqual([]);
+});
+
+test("a file picker's invisible input shows its focus on what can be seen", () => {
+    // The input is laid over its box at opacity 0, and its ring goes with it.
+    const hidden = rules.flatMap(({ file, selectors, body }) => /opacity:\s*0\s*(;|$)/.test(body)
+        ? selectors.filter((s) => /input\[type="file"\]$/.test(s)).map((s) => ({ file, box: s.replace(/\s*input\[type="file"\]$/, "") }))
+        : []);
+    expect(hidden.map(({ box }) => box)).toEqual(expect.arrayContaining([".add-photo-dropzone", ".update-profile-file"]));
+    const unseen = hidden.filter(({ box }) => !rules.some(({ selectors }) =>
+        selectors.some((s) => s.startsWith(`${box}:focus-within`))));
+    expect(unseen.map(({ file, box }) => `${file}: ${box}`)).toEqual([]);
+});
+
+test.each([
+    ".hours-editor .hours-editor-timezone select",
+    ".update-profile-remove",
+    ".filter-clear",
+])("%s is a target big enough to tap", (selector) => {
+    // WCAG 2.2 asks 24px; these were 18 to 21.
+    const rule = rules.find(({ selectors }) => selectors.includes(selector));
+    const minHeight = Number(rule?.body.match(/min-height:\s*(\d+)px/)?.[1]);
+    expect(minHeight).toBeGreaterThanOrEqual(24);
+});

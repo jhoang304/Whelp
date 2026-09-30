@@ -3,6 +3,7 @@ import { Link, Redirect } from "react-router-dom";
 import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from "../../utils/password";
 import { signUp } from "../../store/session";
 import { useAppDispatch, useAppSelector } from "../../store";
+import FormErrors from "../FormErrors";
 import './SignupForm.css';
 
 function SignupFormPage(): React.JSX.Element {
@@ -43,13 +44,7 @@ function SignupFormPage(): React.JSX.Element {
           <h1 className="signup-title">Create Your Account</h1>
           <p className="signup-subtitle">Join the Whelp community</p>
           <form onSubmit={handleSubmit} className="signup-form">
-            {errors.length > 0 && (
-              <div className="signup-errors-container">
-                {errors.map((error, idx) => (
-                  <div className="signup-error-message" key={idx}>{error}</div>
-                ))}
-              </div>
-            )}
+            <FormErrors errors={errors} className="signup-errors-container" itemClassName="signup-error-message" />
             <div className="name-inputs">
               <div className="signup-field">
                 <label htmlFor="first_name">First Name</label>
@@ -57,6 +52,7 @@ function SignupFormPage(): React.JSX.Element {
                   id="first_name"
                   className="signup-input"
                   type="text"
+                  autoComplete="given-name"
                   value={first_name}
                   onChange={(e) => setFirst_Name(e.target.value)}
                   required
@@ -68,6 +64,7 @@ function SignupFormPage(): React.JSX.Element {
                   id="last_name"
                   className="signup-input"
                   type="text"
+                  autoComplete="family-name"
                   value={last_name}
                   onChange={(e) => setLast_Name(e.target.value)}
                   required
@@ -94,6 +91,7 @@ function SignupFormPage(): React.JSX.Element {
                 id="username"
                 className="signup-input"
                 type="text"
+                autoComplete="username"
                 autoCapitalize="none"
                 spellCheck={false}
                 value={username}

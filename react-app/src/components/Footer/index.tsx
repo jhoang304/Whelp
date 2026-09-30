@@ -33,7 +33,8 @@ const linkedinSvg = (
 );
 export default function Footer() {
   return (
-    <div className="footer-container">
+    // A footer, so it is the page's contentinfo landmark (#122).
+    <footer className="footer-container">
       <p className="name">Joshua Hoang</p>
       <a
         className="github-button"
@@ -55,6 +56,6 @@ export default function Footer() {
       >
         {linkedinSvg}
       </a>
-    </div>
+    </footer>
   );
 }

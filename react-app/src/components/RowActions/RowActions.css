@@ -9,7 +9,8 @@
     gap: var(--space-1);
 }
 
-.row-actions button {
+.row-actions button,
+.row-actions a {
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
@@ -23,7 +24,8 @@
     border-radius: var(--radius-sm);
 }
 
-.row-actions button:hover {
+.row-actions button:hover,
+.row-actions a:hover {
     background-color: var(--color-gray-200);
     border-color: var(--color-gray-300);
     color: var(--color-gray-800);

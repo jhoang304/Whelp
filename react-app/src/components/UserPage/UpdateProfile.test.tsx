@@ -3,6 +3,7 @@ import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
 import UpdateProfile from "./UpdateProfile";
+import { axe } from "../../testUtils/axe";
 
 /** A pasted profile picture link is held to what the API takes before it is sent (#114). */
 
@@ -71,4 +72,34 @@ test("a name cleared to spaces is refused here, not quietly kept by the API", as
   expect(await screen.findByText("First name is required.")).toBeInTheDocument();
   expect(screen.getByText("Last name is required.")).toBeInTheDocument();
   expect((global as any).fetch).not.toHaveBeenCalled();
+});
+
+// --- what a screen reader and autofill get (#122) ------------------------------------
+
+function renderForm() {
+  const store = createStore(combineReducers({ session: (state = { user }) => state }), applyMiddleware(thunk));
+  return render(
+    <Provider store={store as any}>
+      <UpdateProfile user={user as any} />
+    </Provider>
+  );
+}
+
+test("the boxes say what they hold, for autofill", () => {
+  renderForm();
+  expect(screen.getByLabelText("Username")).toHaveAttribute("autocomplete", "username");
+  expect(screen.getByLabelText("First name")).toHaveAttribute("autocomplete", "given-name");
+  expect(screen.getByLabelText("Last name")).toHaveAttribute("autocomplete", "family-name");
+  fireEvent.click(screen.getByRole("button", { name: "Use a URL" }));
+  expect(screen.getByLabelText("Photo URL")).toHaveAttribute("autocomplete", "photo");
+});
+
+test("a refusal is announced, and the form has nothing axe objects to", async () => {
+  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  const { container } = renderForm();
+  expect(await axe(container)).toHaveNoViolations();
+
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't reach the server.");
+  expect(await axe(container)).toHaveNoViolations();
 });

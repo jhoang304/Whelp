@@ -100,7 +100,8 @@
     margin-top: 30px;
 }
 
-.no-results-suggestions h3 {
+.no-results-suggestions h2 {
+    font-size: var(--text-lg);
     color: #333;
     margin-bottom: 20px;
 }

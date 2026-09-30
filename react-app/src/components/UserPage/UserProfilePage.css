@@ -368,6 +368,7 @@
     outline: none;
 }
 
+.profile-empty h1,
 .profile-empty h2 {
     margin: 0;
     font-size: var(--text-2xl);

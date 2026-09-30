@@ -8,6 +8,7 @@ import categoriesReducer from "../../store/categories";
 import RestaurantList from "./index";
 import RestaurantBySearch from "../SearchBar";
 import { deferredFetch, ok as okHeld, query, refused } from "../../testUtils/deferredFetch";
+import { axe } from "../../testUtils/axe";
 
 /**
  * Sort by, and search's relevance, reach the page: the cards come out in the
@@ -250,4 +251,68 @@ test("a Show more that fails says so, and can be pressed again", async () => {
   expect(screen.getByRole("alert")).toHaveTextContent("Couldn't reach the server");
   expect(screen.getByRole("button", { name: "Show more (1 of 2)" })).not.toBeDisabled();
   expect(shown()).toEqual(["Any 1"]);
+});
+
+// --- what a screen reader and a keyboard get (#122) ---------------------------------
+
+const WINE = { id: 4, name: "Wine Bars", slug: "wine-bars" };
+const BISTRO = { id: 6, name: "Bistros", slug: "bistros" };
+
+function renderCards(path: string, routePath: string, element: React.ReactNode) {
+  const cards = [
+    { ...card(9, "Best"), categories: [WINE, BISTRO], oneReview: "Lovely." },
+    { ...card(2, "Second"), categories: [BISTRO] },
+  ];
+  (global as any).fetch = jest.fn((url: string) => {
+    if (url.startsWith("/api/categories")) return Promise.resolve(ok({ items: [WINE, BISTRO] }));
+    if (url.startsWith("/api/restaurants/cities")) return Promise.resolve(ok({ items: ["Houston"] }));
+    return Promise.resolve(ok({ items: cards, page: 1, per_page: 20, total: 2 }));
+  });
+  const store = createStore(
+    combineReducers({
+      session: (state = { user: null }) => state,
+      Restaurants: restaurantsReducer,
+      categories: categoriesReducer,
+    }),
+    applyMiddleware(thunk)
+  );
+  return render(
+    <Provider store={store as any}>
+      <MemoryRouter initialEntries={[path]}>
+        <Route path={routePath}>{element}</Route>
+      </MemoryRouter>
+    </Provider>
+  );
+}
+
+test("each card is one link, named for its restaurant, with its cuisines as links beside it", async () => {
+  const { container } = renderCards("/restaurants", "/restaurants", <RestaurantList />);
+
+  const best = await screen.findByRole("link", { name: "Best" });
+  expect(best).toHaveAttribute("href", "/single/9");
+  // The name, not the whole card read out: price, cuisines, the review...
+  expect(screen.getByRole("heading", { level: 2, name: "Best" })).toContainElement(best);
+  // Cuisines are links of their own, and nothing is inside another link.
+  expect(screen.getAllByRole("link", { name: "Bistros" }).map((link) => link.getAttribute("href")))
+    .toEqual(["/restaurants?category=bistros", "/restaurants?category=bistros"]);
+  expect(container.querySelectorAll("a a, a button, button a")).toHaveLength(0);
+  expect(await axe(container)).toHaveNoViolations();
+});
+
+test("the list has a heading, which names the cuisine it is filtered to", async () => {
+  renderCards("/restaurants", "/restaurants", <RestaurantList />);
+  expect(await screen.findByRole("heading", { level: 1, name: "All restaurants" })).toBeInTheDocument();
+  await screen.findByRole("link", { name: "Best" });
+});
+
+test("filtered to a cuisine, the heading says which", async () => {
+  renderCards("/restaurants?category=wine-bars", "/restaurants", <RestaurantList />);
+  expect(await screen.findByRole("heading", { level: 1, name: "Wine Bars" })).toBeInTheDocument();
+});
+
+test("search results are headed by what was found", async () => {
+  const { container } = renderCards("/search?q=bistro", "/search", <RestaurantBySearch />);
+  expect(await screen.findByRole("heading", { level: 1, name: '2 search results for "bistro"' })).toBeInTheDocument();
+  await screen.findByRole("link", { name: "Best" });
+  expect(await axe(container)).toHaveNoViolations();
 });

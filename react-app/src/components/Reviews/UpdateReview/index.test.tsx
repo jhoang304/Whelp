@@ -7,6 +7,7 @@ import reviewReducer from "../../../store/reviews";
 import restaurantsReducer from "../../../store/restaurants";
 import { UPDATE_REVIEW_PATH } from "../paths";
 import UpdateReview from "./index";
+import { axe } from "../../../testUtils/axe";
 
 /**
  * The edit form, where a review's photos can go as well as come.
@@ -246,4 +247,16 @@ test("a reader who is not logged in is asked to", async () => {
   expect(await screen.findByRole("heading", { name: "Log in to edit your review" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
   expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+});
+
+// --- what a screen reader gets (#122) ------------------------------------------------
+
+test("the form is headed as the page, and why photos are missing is announced", async () => {
+  serve();
+  const { container } = renderForm({ state: { notice: ["Your review was posted, but some photos could not be attached:"] } });
+  await reviewBox();
+
+  expect(screen.getByRole("heading", { level: 1, name: "Edit your review of Uchi" })).toBeInTheDocument();
+  expect(screen.getByRole("alert")).toHaveTextContent("some photos could not be attached");
+  expect(await axe(container)).toHaveNoViolations();
 });

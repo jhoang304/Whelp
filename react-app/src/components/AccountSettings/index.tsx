@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 
 import "./AccountSettings.css";
+import FormErrors from "../FormErrors";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
     DeletionSummary, changePassword, deleteAccount, fetchDeletionSummary,
@@ -55,24 +56,24 @@ function AccountSettings(): React.JSX.Element {
 
     if (deleted) {
         return (
-            <main className="account-settings">
+            <div className="account-settings">
                 <h1>Your account has been deleted</h1>
                 <p role="status">
                     Everything you owned on Whelp is gone. The reviews you wrote stay, shown as by "Deleted user".
                 </p>
                 <Link to="/" className="account-settings-home">Back to Whelp</Link>
-            </main>
+            </div>
         );
     }
 
     if (!sessionUser || !userId) {
         return (
-            <main className="account-settings">
+            <div className="account-settings">
                 <h1>Account settings</h1>
                 <p>
                     <Link to="/login">Log in</Link> to change your password or delete your account.
                 </p>
-            </main>
+            </div>
         );
     }
 
@@ -139,7 +140,7 @@ function AccountSettings(): React.JSX.Element {
     };
 
     return (
-        <main className="account-settings">
+        <div className="account-settings">
             <h1>Account settings</h1>
 
             {isDemo && (
@@ -152,11 +153,7 @@ function AccountSettings(): React.JSX.Element {
             <section className="account-settings-section" aria-labelledby="change-password-heading">
                 <h2 id="change-password-heading">Change password</h2>
                 <form onSubmit={submitPassword} noValidate>
-                    {passwordErrors.length > 0 && (
-                        <ul className="account-settings-errors" role="alert">
-                            {passwordErrors.map((error) => <li key={error}>{error}</li>)}
-                        </ul>
-                    )}
+                    <FormErrors errors={passwordErrors} className="account-settings-errors" />
                     {passwordChanged && (
                         <p className="account-settings-success" role="status">Your password has been changed.</p>
                     )}
@@ -221,11 +218,7 @@ function AccountSettings(): React.JSX.Element {
                     </>
                 )}
                 <form onSubmit={askToDelete} noValidate>
-                    {deleteErrors.length > 0 && (
-                        <ul className="account-settings-errors" role="alert">
-                            {deleteErrors.map((error) => <li key={error}>{error}</li>)}
-                        </ul>
-                    )}
+                    <FormErrors errors={deleteErrors} className="account-settings-errors" />
                     <label>
                         <span>Your password</span>
                         <input type="password" autoComplete="current-password" value={deletePassword}
@@ -236,7 +229,7 @@ function AccountSettings(): React.JSX.Element {
                     </button>
                 </form>
             </section>
-        </main>
+        </div>
     );
 }
 

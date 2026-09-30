@@ -10,6 +10,7 @@ import reviewReducer from "./store/reviews";
 import userProfileReducer from "./store/userProfile";
 import categoriesReducer from "./store/categories";
 import { ModalProvider } from "./context/Modal";
+import { configureAxe } from "jest-axe";
 import App from "./App";
 
 /**
@@ -79,4 +80,66 @@ test("a garbled answer at start-up still draws the page", async () => {
   );
 
   expect(await screen.findByRole("button", { name: "Log in as Demo User" })).toBeInTheDocument();
+});
+
+// --- landmarks, and the page each lands in (#122) ------------------------------------
+
+// Every rule this time, "region" included: all of a page is inside a landmark.
+const axeWholePage = configureAxe({ rules: { "color-contrast": { enabled: false } } });
+
+function renderAppAt(path: string) {
+  // Signed out.
+  (global as any).fetch = jest.fn(() => Promise.resolve({
+    ok: false, status: 401, json: () => Promise.resolve({ errors: ["Unauthorized"] }),
+  }));
+  const store = createStore(
+    combineReducers({
+      session,
+      Restaurants: restaurantsReducer,
+      photos: photoReducer,
+      reviews: reviewReducer,
+      user: userProfileReducer,
+      categories: categoriesReducer,
+    }),
+    applyMiddleware(thunk)
+  );
+  return render(
+    <Provider store={store as any}>
+      <ModalProvider>
+        <MemoryRouter initialEntries={[path]}>
+          <App />
+        </MemoryRouter>
+      </ModalProvider>
+    </Provider>
+  );
+}
+
+test("every page is the main landmark, between the nav and the footer", async () => {
+  const { container } = renderAppAt("/login");
+  const heading = await screen.findByRole("heading", { level: 1, name: "Log In to Whelp" });
+
+  expect(screen.getByRole("main")).toContainElement(heading);
+  expect(screen.getByRole("navigation")).not.toContainElement(heading);
+  expect(screen.getByRole("contentinfo")).toHaveTextContent("Joshua Hoang");
+  expect(await axeWholePage(container)).toHaveNoViolations();
+});
+
+test("a page with a <main> of its own doesn't put one inside the app's", async () => {
+  // /settings had the only <main> before; it would be a second one now.
+  const { container } = renderAppAt("/settings");
+  await screen.findByRole("heading", { level: 1 });
+  expect(screen.getAllByRole("main")).toHaveLength(1);
+  expect(await axeWholePage(container)).toHaveNoViolations();
+});
+
+test("home goes h1, then h2s, and its buttons are links to the list", async () => {
+  const { container } = renderAppAt("/");
+  await screen.findByRole("heading", { level: 1, name: "Welcome to Whelp" });
+
+  const levels = Array.from(screen.getByRole("main").querySelectorAll("h1, h2, h3, h4, h5, h6"))
+    .map((heading) => heading.tagName);
+  expect(levels).toEqual(["H1", "H2", "H2", "H2", "H2"]);
+  expect(screen.getByRole("link", { name: "Explore Restaurants" })).toHaveAttribute("href", "/restaurants");
+  expect(screen.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/restaurants");
+  expect(await axeWholePage(container)).toHaveNoViolations();
 });

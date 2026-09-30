@@ -90,7 +90,10 @@
 }
 
 .login-input:focus {
-  outline: none;
+  /* Transparent, not none: Windows' high contrast mode drops the border
+     colour and the shadow below, and draws this outline in its own colour,
+     so focus still shows there (#122). */
+  outline: 2px solid transparent;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.2);
 }
@@ -168,41 +171,21 @@
   }
 }
 
-/* --- Toast Notification Styles --- */
-@keyframes toastFadeIn {
-  from { opacity: 0; transform: translateY(-20px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-@keyframes toastFadeOut {
-  from { opacity: 1; transform: translateY(0); }
-  to { opacity: 0; transform: translateY(-20px); }
-}
-
-.toast-notification {
-  position: fixed; /* Position relative to viewport */
-  top: 100px; /* Below the sticky nav */
-  /* left: 50%; Center horizontally */
-  transform: translateX(-50%); /* Adjust for own width */
-  background-color: var(--color-error-text);
-  color: white;
-  padding: 15px 25px;
+/* Why the login was refused, above the fields it is about, until the next
+   try. It was a toast that left after four seconds. */
+.login-errors {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 12px 15px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--color-error-text);
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
   border-radius: 8px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  z-index: 1100; /* Above nav bar */
-  opacity: 0; /* Start hidden */
-  visibility: hidden; /* Hidden for accessibility */
-  transition: opacity 0.5s ease, visibility 0.5s ease, transform 0.5s ease;
 }
 
-.toast-notification.show {
-  opacity: 1;
-  visibility: visible;
-  animation: toastFadeIn 0.5s ease forwards;
+/* A field the login was refused over. */
+.login-input[aria-invalid="true"] {
+  border-color: var(--color-error-text);
 }
-
-/* Optional: Add this if you want fade out animation */
-/* .toast-notification.hide {
-  animation: toastFadeOut 0.5s ease forwards;
-} */
-/* --- End Toast Styles --- */

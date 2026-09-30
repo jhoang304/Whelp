@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link, useHistory, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { Restaurant, Review } from "../../types";
 import { getProfileThunk } from "../../store/userProfile";
@@ -35,7 +35,6 @@ const plural = (count: number, singular: string, pluralForm?: string): string =>
 
 export default function UserProfilePage(): React.JSX.Element {
     const dispatch = useAppDispatch();
-    const history = useHistory();
     const { userId } = useParams<{ userId: string }>();
 
     const sessionUser = useAppSelector((state) => state.session.user);
@@ -92,8 +91,8 @@ export default function UserProfilePage(): React.JSX.Element {
         return (
             <div className="profile-page">
                 <div className="profile-empty profile-not-found">
-                    <i className="fa-regular fa-face-frown"></i>
-                    <h2>{loadErrors[0] || "We couldn't find that user."}</h2>
+                    <i className="fa-regular fa-face-frown" aria-hidden="true"></i>
+                    <h1>{loadErrors[0] || "We couldn't find that user."}</h1>
                     <Link to="/restaurants" className="profile-link-button">Browse restaurants</Link>
                 </div>
             </div>
@@ -118,14 +117,14 @@ export default function UserProfilePage(): React.JSX.Element {
                         <div className="profile-username">@{profile.username}</div>
                         {isOwnProfile && profile.email && (
                             <div className="profile-email">
-                                <i className="fa-regular fa-envelope"></i> {profile.email}
+                                <i className="fa-regular fa-envelope" aria-hidden="true"></i> {profile.email}
                             </div>
                         )}
                         <div className="profile-meta">
-                            <span><i className="fa-solid fa-star"></i> {plural(profile.review_count, "review")}</span>
-                            <span><i className="fa-solid fa-store"></i> {plural(profile.restaurant_count, "business", "businesses")}</span>
+                            <span><i className="fa-solid fa-star" aria-hidden="true"></i> {plural(profile.review_count, "review")}</span>
+                            <span><i className="fa-solid fa-store" aria-hidden="true"></i> {plural(profile.restaurant_count, "business", "businesses")}</span>
                             {profile.createdAt && (
-                                <span><i className="fa-regular fa-calendar"></i> Member since {formatDate(profile.createdAt, MONTH_YEAR)}</span>
+                                <span><i className="fa-regular fa-calendar" aria-hidden="true"></i> Member since {formatDate(profile.createdAt, MONTH_YEAR)}</span>
                             )}
                         </div>
                     </div>
@@ -133,7 +132,7 @@ export default function UserProfilePage(): React.JSX.Element {
                         <div className="profile-actions">
                             <OpenModalButton
                                 className="profile-edit-button"
-                                buttonText={<><i className="fa-solid fa-pen"></i> Edit profile</>}
+                                buttonText={<><i className="fa-solid fa-pen" aria-hidden="true"></i> Edit profile</>}
                                 modalComponent={<UpdateProfile user={profile} />}
                             />
                             <Link to="/settings" className="profile-settings-link">
@@ -179,7 +178,7 @@ export default function UserProfilePage(): React.JSX.Element {
                 {activeTab === "reviews" && (
                     reviews.length === 0 ? (
                         <div className="profile-empty">
-                            <i className="fa-regular fa-comment-dots"></i>
+                            <i className="fa-regular fa-comment-dots" aria-hidden="true"></i>
                             <h2>{isOwnProfile ? "You haven't written any reviews yet" : `${profile.username} hasn't written any reviews yet`}</h2>
                             {isOwnProfile && <p>Find a restaurant you love (or don't) and tell everyone about it.</p>}
                             <Link to="/restaurants" className="profile-link-button">Browse restaurants</Link>
@@ -209,13 +208,12 @@ export default function UserProfilePage(): React.JSX.Element {
                                         </Link>
                                         {isOwnProfile && (
                                             <div className="profile-review-actions row-actions">
-                                                <button
-                                                    type="button"
+                                                <Link
+                                                    to={`/${review.restaurant_id}/reviews/${review.id}/update`}
                                                     aria-label={`Edit your review of ${review.restaurant ? review.restaurant.name : "this restaurant"}`}
-                                                    onClick={() => history.push(`/${review.restaurant_id}/reviews/${review.id}/update`)}
                                                 >
                                                     <i className="fa-solid fa-pen" aria-hidden="true"></i> Edit
-                                                </button>
+                                                </Link>
                                                 <OpenModalButton
                                                     className="danger"
                                                     ariaLabel={`Delete your review of ${review.restaurant ? review.restaurant.name : "this restaurant"}`}
@@ -253,14 +251,14 @@ export default function UserProfilePage(): React.JSX.Element {
                 {activeTab === "businesses" && (
                     businesses.length === 0 ? (
                         <div className="profile-empty">
-                            <i className="fa-solid fa-store"></i>
+                            <i className="fa-solid fa-store" aria-hidden="true"></i>
                             <h2>{isOwnProfile ? "You haven't added a business yet" : `${profile.username} doesn't own any businesses`}</h2>
                             {isOwnProfile && (
                                 <>
                                     <p>Own a restaurant? Add it to Whelp so customers can find and review it.</p>
                                     <OpenModalButton
                                         className="profile-link-button"
-                                        buttonText={<><i className="fa-solid fa-plus"></i> Add your business</>}
+                                        buttonText={<><i className="fa-solid fa-plus" aria-hidden="true"></i> Add your business</>}
                                         modalComponent={<CreateRestaurantModal />}
                                     />
                                 </>

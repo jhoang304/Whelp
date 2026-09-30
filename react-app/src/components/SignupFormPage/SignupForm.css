@@ -63,11 +63,12 @@
 
 /* Error Messages */
 .signup-errors-container {
+  list-style: none;
+  margin: 0 0 20px;
   background-color: rgba(240, 12, 19, 0.1);
   border: 1px solid rgba(240, 12, 19, 0.3);
   border-radius: 8px;
   padding: 15px;
-  margin-bottom: 20px;
 }
 
 .signup-error-message {
@@ -105,7 +106,10 @@
 }
 
 .signup-input:focus {
-  outline: none;
+  /* Transparent, not none: Windows' high contrast mode drops the border
+     colour and the shadow below, and draws this outline in its own colour,
+     so focus still shows there (#122). */
+  outline: 2px solid transparent;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.2);
 }

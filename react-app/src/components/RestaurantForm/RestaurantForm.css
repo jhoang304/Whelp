@@ -164,7 +164,10 @@
 
 .restaurant-form .restaurant-form-field input:focus,
 .restaurant-form .restaurant-form-field textarea:focus {
-    outline: none;
+    /* Transparent, not none: Windows' high contrast mode drops the border
+       colour and the shadow below, and draws this outline in its own colour,
+       so focus still shows there (#122). */
+    outline: 2px solid transparent;
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }

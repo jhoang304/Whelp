@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { useModal } from "../../context/Modal";
+import FormErrors from "../FormErrors";
 import "./ConfirmDeleteModal.css";
 
 interface ConfirmDeleteModalProps {
@@ -64,11 +65,7 @@ function ConfirmDeleteModal({ title, message, detail, confirmLabel, onConfirm }:
                 <p>{message}</p>
                 {detail && <p className="warning-text">{detail}</p>}
             </div>
-            {errors.length > 0 && (
-                <ul className="confirm-delete-errors" role="alert">
-                    {errors.map((error, idx) => <li key={idx}>{error}</li>)}
-                </ul>
-            )}
+            <FormErrors errors={errors} className="confirm-delete-errors" />
             <div className="confirm-delete-buttons">
                 <button type="button" className="cancel-button" onClick={closeModal} disabled={pending}>
                     Cancel

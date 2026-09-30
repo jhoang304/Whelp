@@ -45,13 +45,16 @@
     font-size: var(--text-xs);
 }
 
+/* 32px tall: at 12px text and 2px of padding it was about 20px, too small a
+   target to tap (#122). */
 .hours-editor .hours-editor-timezone select {
     width: auto;
     height: auto;
+    min-height: 32px;
     margin: 0;
-    padding: 2px var(--space-2);
+    padding: var(--space-1) var(--space-2);
     font-family: inherit;
-    font-size: var(--text-xs);
+    font-size: var(--text-sm);
     color: var(--color-gray-700);
     border: 1px solid var(--color-border-input);
     border-radius: var(--radius-sm);

@@ -4,7 +4,7 @@ import OpenModalButton from "../OpenModalButton";
 import LoginFormModal from "../LoginFormModal";
 import SignupFormModal from "../SignupFormModal";
 import CreateRestaurantModal from "../CreateRestaurantModal";
-import { useHistory } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import { useAppDispatch } from "../../store";
 import { User } from "../../types";
 import { onAvatarError } from "../../utils/images";
@@ -75,20 +75,6 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
     closeMenu();
   };
 
-  const loadProfile = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    if (user) {
-      history.push(`/users/get/${user.id}`);
-    }
-    closeMenu();
-  };
-
-  const loadSettings = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.preventDefault();
-    history.push("/settings");
-    closeMenu();
-  };
-
   const ulClassName = "profile-dropdown" + (showMenu ? "" : " hidden");
 
   return (
@@ -103,7 +89,7 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
         {user && user.profile_image_url ? (
           <img className="profileButton-avatar" src={user.profile_image_url} alt="" onError={onAvatarError} />
         ) : (
-          <i className="fa-solid fa-user"></i>
+          <i className="fa-solid fa-user" aria-hidden="true"></i>
         )}
       </button>
       <ul className={ulClassName} ref={ulRef}>
@@ -111,23 +97,25 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
           <>
             <li className='user-dropdown-username'>{user.username}</li>
             <li className='user-dropdown-email'>{user.email}</li>
+            {/* Links: they go to a page, so they open in a new tab like any
+                other (#122). */}
             <li>
-              <button className="user-profile-button" onClick={loadProfile}>
-                <i className="fa-solid fa-user-circle"></i>
+              <Link className="user-profile-button" to={`/users/get/${user.id}`} onClick={closeMenu}>
+                <i className="fa-solid fa-user-circle" aria-hidden="true"></i>
                 My Profile
-              </button>
+              </Link>
             </li>
             <li>
-              <button className="user-profile-button" onClick={loadSettings}>
-                <i className="fa-solid fa-gear"></i>
+              <Link className="user-profile-button" to="/settings" onClick={closeMenu}>
+                <i className="fa-solid fa-gear" aria-hidden="true"></i>
                 Account settings
-              </button>
+              </Link>
             </li>
             <li className="add-restaurant-dropdown-button">
               <OpenModalButton
                 buttonText={
                   <>
-                    <i className="fa-solid fa-plus"></i>
+                    <i className="fa-solid fa-plus" aria-hidden="true"></i>
                     Add Restaurant
                   </>
                 }
@@ -137,7 +125,7 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
             </li>
             <li>
               <button className='user-logout-button' onClick={handleLogout}>
-                <i className="fa-solid fa-arrow-right-from-bracket"></i>
+                <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
                 Log Out
               </button>
             </li>

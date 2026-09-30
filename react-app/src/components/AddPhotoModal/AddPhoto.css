@@ -1,4 +1,6 @@
 .add-photo-modal {
+    /* For the close button in its corner. */
+    position: relative;
     width: 560px;
     /* The window less the modal's own 16px gutter on either side. */
     max-width: calc(100vw - 2 * var(--space-4));
@@ -69,6 +71,14 @@
     background-color: rgba(240, 12, 19, 0.03);
 }
 
+/* The file input over the whole box has focus, and it is invisible, ring and
+   all: the box shows it instead (#122). */
+.add-photo-dropzone:focus-within {
+    border-color: var(--color-primary);
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
 .add-photo-dropzone input[type="file"] {
     position: absolute;
     inset: 0;
@@ -132,7 +142,10 @@
 }
 
 .add-photo-url input:focus {
-    outline: none;
+    /* Transparent, not none: Windows' high contrast mode drops the border
+       colour and the shadow below, and draws this outline in its own colour,
+       so focus still shows there (#122). */
+    outline: 2px solid transparent;
     border-color: var(--color-primary);
 }
 

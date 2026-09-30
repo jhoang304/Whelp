@@ -7,6 +7,11 @@
 }
 
 .restaurant-card {
+    /* For the name's link, stretched over it, and a stacking context of its
+       own: the link lies over everything on the card, the chips over the
+       link, and the heart beside the card over all of it. */
+    position: relative;
+    z-index: 0;
     display: flex;
     flex-direction: row;
     color: black;
@@ -64,8 +69,37 @@
 }
 
 
-.bold-name{
+.bold-name {
+    margin: 0;
     font-size: 20px;
+}
+
+/* The whole card is what the name's link covers, so a click anywhere on it
+   opens the restaurant. */
+.restaurant-card .restaurant-card-link::after {
+    content: "";
+    position: absolute;
+    /* Over the amenity ticks and the review's bubble, which are positioned
+       and would otherwise lie over it, dead to a click. */
+    z-index: 1;
+    inset: 0;
+    border-radius: 5px;
+}
+
+/* The ring goes round the card, not the name. The name's own is transparent
+   rather than none, for Windows' high contrast mode, which draws it in its
+   own colour. */
+.restaurant-card .restaurant-card-link:focus-visible {
+    outline: 2px solid transparent;
+}
+
+.restaurant-card .restaurant-card-link:focus-visible::after {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.restaurant-card:hover .restaurant-card-link {
+    text-decoration: underline;
 }
 
 .stars-home{

@@ -5,6 +5,7 @@ import { editProfileThunk, ProfileUpdates } from "../../store/userProfile";
 import { useModal } from "../../context/Modal";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 import { avatarUrl, DEFAULT_AVATAR, IMAGE_URL_PATTERN, imageUrlProblem, onAvatarError } from "../../utils/images";
+import FormErrors from "../FormErrors";
 import "./UpdateProfile.css";
 
 interface UpdateProfileProps {
@@ -131,13 +132,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
             <h2 className="update-profile-title">Edit profile</h2>
 
             <form className="update-profile-form" onSubmit={handleSubmit}>
-                {errors.length > 0 && (
-                    <ul className="update-profile-errors">
-                        {errors.map((error, idx) => (
-                            <li key={idx} className="update-profile-errors-item">{error}</li>
-                        ))}
-                    </ul>
-                )}
+                <FormErrors errors={errors} className="update-profile-errors" itemClassName="update-profile-errors-item" />
 
                 <div className="update-profile-photo">
                     <img
@@ -170,7 +165,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                             <label className="update-profile-file">
                                 <input type="file" accept={ACCEPTED_IMAGE_TYPES} onChange={handleFileChange} />
                                 <span className="update-profile-file-button">
-                                    <i className="fa-solid fa-upload"></i> Choose photo
+                                    <i className="fa-solid fa-upload" aria-hidden="true"></i> Choose photo
                                 </span>
                                 <span className="update-profile-file-name">
                                     {imageFile ? imageFile.name : `PNG, JPG, GIF, or WEBP up to ${MAX_UPLOAD_MB} MB`}
@@ -181,6 +176,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                                 className="update-profile-url"
                                 type="text"
                                 aria-label="Photo URL"
+                                autoComplete="photo"
                                 placeholder="https://example.com/me.jpg"
                                 value={imageUrl}
                                 onChange={(e) => handleUrlChange(e.target.value)}
@@ -189,7 +185,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
 
                         {hasPhoto && (
                             <button type="button" className="update-profile-remove" onClick={handleRemovePhoto}>
-                                <i className="fa-solid fa-trash"></i> Remove photo
+                                <i className="fa-solid fa-trash" aria-hidden="true"></i> Remove photo
                             </button>
                         )}
                     </div>
@@ -199,6 +195,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                     <span>Username</span>
                     <input
                         type="text"
+                        autoComplete="username"
                         autoCapitalize="none"
                         spellCheck={false}
                         value={username}
@@ -213,6 +210,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                         <span>First name</span>
                         <input
                             type="text"
+                            autoComplete="given-name"
                             value={firstName}
                             maxLength={50}
                             onChange={(e) => setFirstName(e.target.value)}
@@ -223,6 +221,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                         <span>Last name</span>
                         <input
                             type="text"
+                            autoComplete="family-name"
                             value={lastName}
                             maxLength={50}
                             onChange={(e) => setLastName(e.target.value)}
@@ -238,7 +237,7 @@ export default function UpdateProfile({ user }: UpdateProfileProps): React.JSX.E
                     <button type="submit" className="update-profile-save" disabled={isSaving}>
                         {isSaving ? (
                             <>
-                                <i className="fa-solid fa-spinner fa-spin"></i> Saving...
+                                <i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Saving...
                             </>
                         ) : (
                             "Save changes"

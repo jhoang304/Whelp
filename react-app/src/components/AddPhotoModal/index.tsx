@@ -5,6 +5,8 @@ import { addRestaurantImage } from "../../store/restaurantPhoto";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { uploadImage, ACCEPTED_IMAGE_TYPES, MAX_UPLOAD_MB } from "../../utils/uploads";
 import { imageUrlProblem } from "../../utils/images";
+import FormErrors from "../FormErrors";
+import ModalCloseButton from "../ModalCloseButton";
 
 interface AddPhotoModalProps {
     restaurantId: string | number;
@@ -91,6 +93,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
 
     return (
         <div className="add-photo-modal">
+            <ModalCloseButton label="Close Add Photo" />
             <h2 className="add-photo-text"><span>Add Photo</span></h2>
 
             <div className="add-photo-mode" role="group" aria-label="Photo source">
@@ -100,7 +103,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                     className={mode === "upload" ? "active" : ""}
                     onClick={() => { setMode("upload"); setErrors([]); }}
                 >
-                    <i className="fa-solid fa-upload"></i> Upload a photo
+                    <i className="fa-solid fa-upload" aria-hidden="true"></i> Upload a photo
                 </button>
                 <button
                     type="button"
@@ -108,18 +111,12 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                     className={mode === "url" ? "active" : ""}
                     onClick={() => { setMode("url"); setErrors([]); }}
                 >
-                    <i className="fa-solid fa-link"></i> Paste a URL
+                    <i className="fa-solid fa-link" aria-hidden="true"></i> Paste a URL
                 </button>
             </div>
 
             <form className="add-photo-form" onSubmit={handleSubmit}>
-                {errors.length > 0 && (
-                    <ul className="error-display">
-                        {errors.map((error, idx) => (
-                            <li key={idx}>{error}</li>
-                        ))}
-                    </ul>
-                )}
+                <FormErrors errors={errors} className="error-display" />
 
                 {mode === "upload" ? (
                     <label className="add-photo-dropzone">
@@ -127,7 +124,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                             <img className="add-photo-preview" src={previewSrc} alt="Selected file" />
                         ) : (
                             <span className="add-photo-placeholder">
-                                <i className="fa-regular fa-image"></i>
+                                <i className="fa-regular fa-image" aria-hidden="true"></i>
                                 <span>Click to choose a photo</span>
                                 <small>PNG, JPG, GIF, or WEBP up to {MAX_UPLOAD_MB} MB</small>
                             </span>
@@ -166,7 +163,7 @@ function AddPhotoModal({ restaurantId }: AddPhotoModalProps): React.JSX.Element 
                 <button type="submit" disabled={isSubmitting}>
                     {isSubmitting ? (
                         <>
-                            <i className="fa-solid fa-spinner fa-spin"></i> Adding...
+                            <i className="fa-solid fa-spinner fa-spin" aria-hidden="true"></i> Adding...
                         </>
                     ) : (
                         "Add Photo"
