@@ -1,17 +1,17 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
-from sqlalchemy import case, or_
+from sqlalchemy import case
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from app.models import (
-    Category, Favorite, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage,
-    User, db, restaurant_categories)
+    Favorite, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage, User, db)
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 from app.api.amenities import read_amenities
 from app.api.categories import read_categories
 from app.api.hours import (
     hours_to_dicts, open_status, read_hours, read_timezone)
 from app.api.filters import filtered_restaurants, read_filters
+from app.api.search import keyword_match
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
     clear_other_previews, error_messages, favorited_ids, key_still_referenced, page_response,
@@ -444,8 +444,9 @@ def search_restaurants_by_query():
 @restaurant_routes.route("/search/<keyword>")
 def search_restaurant(keyword):
     """
-    A page of the restaurants matching `keyword`, name matches first, then
-    cuisines, then a mention anywhere else.
+    A page of the restaurants matching every word of `keyword` -- in the
+    name, city, cuisines, description or state -- named for it first, then
+    serving it, then mentioning it anywhere else.
 
     Takes the same filters and sort as the listing. The whole thing is one
     query: it used to load every match into Python and slice the list, so a
@@ -462,33 +463,9 @@ def search_restaurant(keyword):
     if filters.error:
         return {"errors": [filters.error]}, 400
 
-    sanitized_keyword = keyword.strip()
-    pattern = f"%{sanitized_keyword}%"
-    name_match = Restaurant.name.ilike(pattern)
-    # "Italian" is what people type into a search box, and this page used to
-    # invite it while nothing recorded what a restaurant served -- so it found
-    # only the owners who had written the word into their description.
-    category_match = Restaurant.id.in_(
-        db.session.query(restaurant_categories.c.restaurant_id).join(
-            Category, Category.id == restaurant_categories.c.category_id
-        ).filter(Category.name.ilike(pattern))
-    )
-
-    if len(sanitized_keyword) < 3:
-        # One or two characters match too much of a description to be useful.
-        matches = or_(name_match, Restaurant.city.ilike(pattern))
-        relevance = case((name_match, 0), else_=1)
-    else:
-        matches = or_(
-            name_match,
-            category_match,
-            Restaurant.city.ilike(pattern),
-            Restaurant.description.ilike(pattern),
-            Restaurant.state.ilike(pattern),
-        )
-        # A restaurant named for the word beats one that serves it, which
-        # beats one that merely mentions it somewhere.
-        relevance = case((name_match, 0), (category_match, 1), else_=2)
+    # Every word matching some field, not the whole query inside one: see
+    # app/api/search.py (#118).
+    matches, relevance = keyword_match(keyword)
 
     query = filtered_restaurants(
         filters,
