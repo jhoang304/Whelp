@@ -130,8 +130,10 @@
     box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }
 
+/* The buttons go under the count when there isn't room beside it (#127). */
 .owner-response-form-footer {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-3);
@@ -149,6 +151,8 @@
 
 .owner-response-form-buttons {
     display: flex;
+    flex-wrap: wrap;
+    margin-left: auto;
     gap: var(--space-2);
 }
 
@@ -191,4 +195,12 @@
     background: #fef2f2;
     border: 1px solid #fecaca;
     border-radius: var(--radius-sm);
+}
+
+/* 16px below the tablet breakpoint: iOS zooms the page in when a smaller
+   control takes focus, and leaves it zoomed (#127). */
+@media (max-width: 900px) {
+    .owner-response-form textarea {
+        font-size: 16px;
+    }
 }

@@ -444,7 +444,7 @@
     grid-area: sidebar;
     /* Stays in view down the page, just under the floating navigation. */
     position: sticky;
-    top: 110px;
+    top: calc(var(--nav-offset) + var(--space-5));
     padding-top: var(--space-8);
 }
 
@@ -467,7 +467,7 @@
 /* The review link in the header jumps here; the floating bar would sit on
    top of the heading without this. */
 .restaurant-reviews {
-    scroll-margin-top: 100px;
+    scroll-margin-top: var(--nav-offset);
     border-top: 1px solid var(--color-gray-200);
 }
 
@@ -504,7 +504,7 @@
 
 /* "See hours" jumps here; clear of the floating bar. */
 .restaurant-hours {
-    scroll-margin-top: 100px;
+    scroll-margin-top: var(--nav-offset);
 }
 
 .restaurant-hours .opening-hours {

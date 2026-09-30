@@ -27,10 +27,14 @@
     }
 }
 
+/* A long username or email breaks anywhere, rather than running out of the
+   menu (#127). */
 .user-dropdown-username,
 .user-dropdown-email {
     display: flex;
     justify-content: center;
+    text-align: center;
+    overflow-wrap: anywhere;
     padding: var(--space-2) 0;
     font-weight: var(--font-medium);
     color: var(--color-gray-700);

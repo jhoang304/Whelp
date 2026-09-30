@@ -1,6 +1,9 @@
 .update-profile-container {
     width: 520px;
-    max-width: 92vw;
+    /* The window less the modal's own 16px gutter on either side, as the
+       other modals have it: 92vw was wider than that under 400px, and the
+       form scrolled sideways (#127). */
+    max-width: calc(100vw - 2 * var(--space-4));
     padding: var(--space-8);
     box-sizing: border-box;
     display: flex;
