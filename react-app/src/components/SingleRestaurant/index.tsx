@@ -19,6 +19,7 @@ import PhotoCarousel from "./PhotoCarousel";
 import PageMessage from "../PageMessage";
 import Loading from "../Loading";
 import { useAppDispatch, useAppSelector } from "../../store";
+import { directionsHref, telHref, websiteHref, websiteLabel } from "../../utils/contact";
 
 
 /** Font Awesome icons for each amenity the app knows; a tick for any other. */
@@ -37,10 +38,6 @@ const AMENITY_ICONS: { [slug: string]: string } = {
 function reviewCount(count: number): string {
     const shown = count >= 1000 ? `${(count / 1000).toFixed(1).replace(/\.0$/, "")}k` : String(count);
     return `${shown} ${count === 1 ? "review" : "reviews"}`;
-}
-
-function getMap(str: string): string {
-    return str.replace(/\s+/g, "+")
 }
 
 interface SingleRestaurantParams {
@@ -128,11 +125,6 @@ function SingleRestaurant(): React.JSX.Element {
 
     const address = [singleRestaurant.address, singleRestaurant.city, singleRestaurant.state,
         singleRestaurant.zipcode, singleRestaurant.country].filter(Boolean).join(", ");
-    const website = singleRestaurant.website.startsWith("http")
-        ? singleRestaurant.website
-        : `http://${singleRestaurant.website}`;
-    // "nancyshustle.com", not "http://nancyshustle.com/".
-    const websiteLabel = singleRestaurant.website.replace(/^https?:\/\//, "").replace(/\/$/, "");
     const average = Number(singleRestaurant.avgStarRating) || 0;
     const categories = singleRestaurant.categories || [];
     const hasHours = (singleRestaurant.hours?.length ?? 0) > 0;
@@ -287,14 +279,14 @@ function SingleRestaurant(): React.JSX.Element {
 
                 <aside className="restaurant-sidebar" aria-label="Contact">
                     <div className="restaurant-contact">
-                        <a className="restaurant-contact-row" href={website} target="_blank" rel="noreferrer">
+                        <a className="restaurant-contact-row" href={websiteHref(singleRestaurant.website)} target="_blank" rel="noreferrer">
                             <span className="restaurant-contact-text">
                                 <span className="restaurant-contact-label">Website</span>
-                                <span className="restaurant-contact-value">{websiteLabel}</span>
+                                <span className="restaurant-contact-value">{websiteLabel(singleRestaurant.website)}</span>
                             </span>
                             <i className="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i>
                         </a>
-                        <a className="restaurant-contact-row" href={`tel:${singleRestaurant.phone_number.replace(/[^\d+]/g, "")}`}>
+                        <a className="restaurant-contact-row" href={telHref(singleRestaurant.phone_number)}>
                             <span className="restaurant-contact-text">
                                 <span className="restaurant-contact-label">Phone</span>
                                 <span className="restaurant-contact-value">{singleRestaurant.phone_number}</span>
@@ -303,7 +295,7 @@ function SingleRestaurant(): React.JSX.Element {
                         </a>
                         <a
                             className="restaurant-contact-row"
-                            href={getMap("https://www.google.com/maps/place/" + address)}
+                            href={directionsHref(address)}
                             target="_blank"
                             rel="noreferrer"
                         >

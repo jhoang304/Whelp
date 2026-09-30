@@ -82,6 +82,13 @@ def open_status(hours, timezone_name, now=None):
     {"isOpen": ..., "until": "HH:MM"} or {"isOpen": False, "opensAt": ...}, or
     None when there is nothing to say.
 
+    A closed restaurant says when it next opens, and how many days away that
+    is in its own week: `opensInDays` is 0 for later today, 1 for tomorrow, and
+    7 when today was its only day and it has closed. The reader cannot work
+    that out from the weekday alone -- their today may not be the
+    restaurant's -- and "Opens 5:00 PM Saturday", said on a Saturday, read as
+    a week away (#123).
+
     `hours` is [(weekday, opens, closes), ...]. None comes back when the
     restaurant has no hours or no usable timezone: "we have not been told" is
     a different answer from "closed", and only one of them should be shown.
@@ -123,6 +130,7 @@ def open_status(hours, timezone_name, now=None):
             "opensAt": opens.strftime("%H:%M"),
             "opensWeekday": day,
             "opensDay": DAYS[day],
+            "opensInDays": ahead,
         }
 
     return {"isOpen": False}
@@ -202,7 +210,7 @@ def read_hours(payload):
 
 def read_timezone(payload, fallback_state=None):
     """
-    (timezone, error) for a create or edit body.
+    (timezone, error) for a create body; an edit is read_timezone_change.
 
     An absent timezone is taken from the state, which is where a restaurant's
     would start anyway; an unknown state simply leaves it unset, and the API
@@ -215,3 +223,32 @@ def read_timezone(payload, fallback_state=None):
         return name, None
 
     return timezone_for_state(fallback_state), None
+
+
+def read_timezone_change(payload, current, old_state, new_state):
+    """
+    (timezone, error) for an edit body: what the restaurant's timezone is to
+    be once it is saved.
+
+    - A name sets it.
+    - null clears it: the edit form's "Not set", a thing a restaurant may say.
+    - Left out, it stays as it was -- unless there was none, or the restaurant
+      has moved state, when the new state's zone is the best guess there is.
+
+    It used to take the state's zone whenever the body left the field out or
+    sent null, so a restaurant in El Paso corrected to America/Denver went back
+    to America/Chicago on its next edit, and a timezone could never be cleared
+    (#123).
+    """
+    if isinstance(payload, dict) and "timezone" in payload:
+        name = payload["timezone"]
+        if name is None:
+            return None, None
+        if not isinstance(name, str) or zone(name) is None:
+            return current, "timezone must be a name like America/Chicago."
+        return name, None
+
+    moved = (old_state or "").strip().upper() != (new_state or "").strip().upper()
+    if current is None or moved:
+        return timezone_for_state(new_state) or current, None
+    return current, None

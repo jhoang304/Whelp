@@ -31,7 +31,11 @@ export interface OpeningHours {
  */
 export type OpenStatus =
   | { isOpen: true; until: string }
-  | { isOpen: false; opensAt?: string; opensWeekday?: number; opensDay?: string }
+  | {
+      isOpen: false; opensAt?: string; opensWeekday?: number; opensDay?: string;
+      /** Days from the restaurant's today: 0 later today, 1 tomorrow, 7 a week on. */
+      opensInDays?: number;
+    }
   | null;
 
 export interface Restaurant {

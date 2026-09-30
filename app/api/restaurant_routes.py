@@ -9,7 +9,7 @@ from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 from app.api.amenities import read_amenities
 from app.api.categories import read_categories
 from app.api.hours import (
-    hours_to_dicts, open_status, read_hours, read_timezone)
+    hours_to_dicts, open_status, read_hours, read_timezone, read_timezone_change)
 from app.api.filters import filtered_restaurants, read_filters
 from app.api.search import keyword_match
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
@@ -349,10 +349,10 @@ def edit_restaurant_by_restaurant_id(restaurantId):
         if hours_error:
             return {"errors": [hours_error]}, 400
 
-        # A restaurant that has never had one gets the timezone its state
-        # suggests; one that has keeps it unless the body says otherwise.
-        timezone, timezone_error = read_timezone(
-            request.get_json(), form.data["state"])
+        # Read before the state is overwritten below: a move to another
+        # state is one of the times the zone is guessed again.
+        timezone, timezone_error = read_timezone_change(
+            request.get_json(), restaurant.timezone, restaurant.state, form.data["state"])
         if timezone_error:
             return {"errors": [timezone_error]}, 400
 
@@ -381,8 +381,7 @@ def edit_restaurant_by_restaurant_id(restaurantId):
             db.session.flush()
             restaurant.hours = [RestaurantHours(weekday=weekday, opens=opens, closes=closes)
                                 for weekday, opens, closes in hours]
-        if timezone is not None:
-            restaurant.timezone = timezone
+        restaurant.timezone = timezone
 
         db.session.commit()
         return with_details(restaurant)

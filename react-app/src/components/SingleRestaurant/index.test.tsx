@@ -95,8 +95,9 @@ test("the contact card links out, calls, and gives directions", async () => {
   expect(website).not.toHaveTextContent("http");
   expect(website).toHaveAttribute("href", "http://nancyshustle.com/");
   expect(screen.getByRole("link", { name: /Phone/ })).toHaveAttribute("href", "tel:8323448051");
-  expect(screen.getByRole("link", { name: /Get directions/ }).getAttribute("href"))
-    .toContain("2704+Polk+St,+Houston,+TX,+77003,+USA");
+  const directions = new URL(screen.getByRole("link", { name: /Get directions/ }).getAttribute("href")!);
+  expect(directions.origin + directions.pathname).toBe("https://www.google.com/maps/search/");
+  expect(directions.searchParams.get("query")).toBe("2704 Polk St, Houston, TX, 77003, USA");
 });
 
 test("the actions are only for someone logged in, and Edit and Delete only for the owner", async () => {

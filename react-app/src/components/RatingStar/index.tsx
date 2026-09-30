@@ -9,19 +9,23 @@ import { RatingStarProps } from "../../types";
 export const STAR_FILL = "#f2552c";
 
 /**
- * Five stars, drawn to the half.
+ * Five stars, drawn to the nearest half.
  *
  * To a screen reader it is one image named "4.5 out of 5 stars" rather than
  * five unnamed drawings, which it either skipped or read as "image, image,
  * image". The label rounds to one decimal: an average of 4.333 is "4.3".
+ *
+ * The drawing rounds to the nearest half (#123): any fraction at all used to
+ * draw a half star, so 4.1 and 4.9 both looked like 4.5, and 3.75 like 3.5.
  */
 function RatingStar({ rating, size = "20" }: RatingStarProps): React.JSX.Element {
     // A restaurant nobody has reviewed can arrive with no average at all, and
     // Array(NaN) throws: draw that, and anything out of range, as it clamps.
     const safeRating = Number.isFinite(rating) ? Math.min(Math.max(rating, 0), 5) : 0;
     const label = `${Math.round(safeRating * 10) / 10} out of 5 stars`;
-    const numberOfOneStar: number = Math.floor(safeRating);
-    const numberOfHalfStar: number = ((safeRating - numberOfOneStar) > 0) ? 1 : 0;
+    const drawn = Math.round(safeRating * 2) / 2;
+    const numberOfOneStar: number = Math.floor(drawn);
+    const numberOfHalfStar: number = drawn > numberOfOneStar ? 1 : 0;
     const numberOfZeroStar: number = 5 - numberOfOneStar - numberOfHalfStar;
 
     let oneStar = (
