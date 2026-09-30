@@ -132,9 +132,10 @@ def test_a_refusal_that_is_not_the_race_is_not_passed_off_as_one(client, ids, mo
         raise IntegrityError("INSERT INTO reviews ...", {}, Exception("FOREIGN KEY constraint failed"))
 
     monkeypatch.setattr(db.session, "commit", refuse)
-    res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews", json={"review": "Nice.", "rating": 4})
-
-    assert res.status_code == 500
+    # Not answered as a 409: raised, as any bug is under test -- and a 500 in
+    # production (test_error_shape covers that).
+    with pytest.raises(IntegrityError):
+        client.post(f"/api/restaurants/{ids['restaurant']}/reviews", json={"review": "Nice.", "rating": 4})
 
 
 # --- the migration --------------------------------------------------------------------

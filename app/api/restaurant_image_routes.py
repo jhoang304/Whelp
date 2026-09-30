@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from flask_login import login_required, current_user
-from app.models import RestaurantImage
+from app.models import Restaurant, RestaurantImage
 from app.models import db
 from app.api.aws_helpers import remove_key_from_s3
 from app.api.utils import (
@@ -88,7 +88,16 @@ def set_res_image_as_cover(imageId):
 @resImage_routes.route("/<int:restaurantId>/images")
 # @login_required
 def get_res_images_by_res_id(restaurantId):
-    res_images=RestaurantImage.query.filter(RestaurantImage.restaurant_id == restaurantId).all()
+    """
+    A restaurant's photos, oldest first.
 
-
+    A restaurant that isn't there is a 404, as on every other restaurant
+    route: it was an empty list, as if it had no photos (#129). And in id
+    order, not whatever order the database returns, which on Postgres can
+    change after an update such as a cover switch.
+    """
+    if db.session.get(Restaurant, restaurantId) is None:
+        return {"errors": ["Restaurant couldn't be found"]}, 404
+    res_images = RestaurantImage.query.filter(
+        RestaurantImage.restaurant_id == restaurantId).order_by(RestaurantImage.id).all()
     return [image.to_dict() for image in res_images]

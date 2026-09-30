@@ -237,7 +237,10 @@ def react_root(path):
     less) hid every typo and stale endpoint.
     """
     if path.startswith('api/'):
-        return api_not_found()
+        # api_error: api_not_found() was never defined, and only the static
+        # rule matching /api/ GETs first kept this line from being a NameError
+        # (#129).
+        return api_error()
     return app.send_static_file('index.html')
 
 
@@ -251,6 +254,14 @@ def http_exception_to_json(e):
     """
     if not request.path.startswith('/api/'):
         return e
+
+    # The SPA's catch-alls take GET on every path, so Werkzeug's 405 for an
+    # API path counts them: POST to a path no API rule has was a 405 offering
+    # GET, and PUT on a POST-only one offered GET too, itself a 405 there.
+    # api_error asks the API's own rules: 404 when none of them has the path,
+    # and a 405 whose Allow is what they really take (#129).
+    if e.code == 405:
+        return api_error()
 
     response = e.get_response()
     response.data = json.dumps({'errors': [e.description]})
@@ -277,7 +288,13 @@ def unexpected_error_to_json(e):
     500 page is not that, and the frontend's parser would fall back to a
     generic message -- so say it in the shape, and log it.
     """
-    if app.config.get('PROPAGATE_EXCEPTIONS', app.testing or app.debug):
+    # Flask's config always holds PROPAGATE_EXCEPTIONS, as None unless it is
+    # set, so .get() never fell back to testing/debug: a bug was a JSON 500
+    # under pytest and under FLASK_DEBUG, with the traceback swallowed (#129).
+    propagate = app.config.get('PROPAGATE_EXCEPTIONS')
+    if propagate is None:
+        propagate = app.testing or app.debug
+    if propagate:
         raise e
 
     app.logger.exception('Unhandled error on %s %s', request.method, request.path)

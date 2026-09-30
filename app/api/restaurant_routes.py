@@ -130,7 +130,8 @@ def restaurants_by_id(id):
 
     theUser=db.session.get(User, SingleRestaurant.user_id)
     hour_rows = [(row.weekday, row.opens, row.closes) for row in SingleRestaurant.hours]
-    images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).all()
+    # In id order: without one the database's own, which can change (#129).
+    images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).order_by(RestaurantImage.id).all()
 
     reviews=Review.query.filter(Review.restaurant_id==id).all()
     numReviews=len(reviews)
