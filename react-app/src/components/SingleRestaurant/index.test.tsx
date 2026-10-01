@@ -214,3 +214,18 @@ test("the all-photos grid has a close button too", async () => {
   fireEvent.click(within(dialog).getByRole("button", { name: "Close photos" }));
   expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
+
+// --- the tab's title (#130) ------------------------------------------------------------
+
+test("the tab is named for the restaurant once it loads, and given back when the page goes", async () => {
+  document.title = "Whelp";
+  const { unmount } = renderPage();
+  // While it loads, the site's name: not the last page's title.
+  expect(document.title).toBe("Whelp");
+
+  await screen.findByRole("heading", { level: 1, name: "Nancy's Hustle" });
+  expect(document.title).toBe("Nancy's Hustle – Houston, TX · Whelp");
+
+  unmount();
+  expect(document.title).toBe("Whelp");
+});

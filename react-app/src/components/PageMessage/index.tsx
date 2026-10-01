@@ -1,5 +1,6 @@
 import React from "react";
 import { Link } from "react-router-dom";
+import { SITE, pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "./PageMessage.css";
 
 interface PageMessageProps {
@@ -14,6 +15,12 @@ interface PageMessageProps {
   action?: { to: string; label: string } | { href: string; label: string };
   /** A second, quieter way on, beside the first: "Go to the home page". */
   secondaryAction?: { to: string; label: string };
+  /**
+   * The tab's title, before " · Whelp": the heading without its full stop
+   * unless this says otherwise, and "" for the site's name alone -- which a
+   * "Loading..." message wants, rather than to be announced (#130).
+   */
+  documentTitle?: string;
 }
 
 /**
@@ -21,7 +28,10 @@ interface PageMessageProps {
  * isn't there, something you have to log in for, or a page that broke. One
  * component, so each of them says it the same way.
  */
-function PageMessage({ icon, title, children, action, secondaryAction }: PageMessageProps): React.JSX.Element {
+function PageMessage({ icon, title, children, action, secondaryAction, documentTitle }: PageMessageProps): React.JSX.Element {
+  const tab = documentTitle ?? title.replace(/\.+$/, "");
+  useDocumentTitle(tab ? pageTitle(tab) : SITE);
+
   return (
     <div className="page-message">
       <i className={icon} aria-hidden="true"></i>

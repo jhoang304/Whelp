@@ -3,6 +3,7 @@ import { login } from "../../store/session";
 import { Link, Redirect } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store";
 import FormErrors from "../FormErrors";
+import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import './LoginForm.css';
 
 const ERRORS_ID = "login-errors";
@@ -17,6 +18,7 @@ function LoginFormPage(): React.JSX.Element {
   // of the first one only, gone after four seconds, over the nav bar on a
   // tablet, and never read out.
   const [errors, setErrors] = useState<string[]>([]);
+  useDocumentTitle(pageTitle("Log in"));
   // The login refused is the pair, not either field: both are marked, and
   // both point at the message.
   const invalid = errors.length > 0;

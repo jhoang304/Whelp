@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 
 import "./AccountSettings.css";
 import FormErrors from "../FormErrors";
+import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useAppDispatch, useAppSelector } from "../../store";
 import {
     DeletionSummary, changePassword, deleteAccount, fetchDeletionSummary,
@@ -24,6 +25,7 @@ function AccountSettings(): React.JSX.Element {
     const { setModalContent } = useModal();
     const sessionUser = useAppSelector((state) => state.session.user);
 
+    useDocumentTitle(pageTitle("Account settings"));
     const [summary, setSummary] = useState<DeletionSummary | null>(null);
     const [summaryErrors, setSummaryErrors] = useState<string[]>([]);
 

@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
@@ -180,5 +180,34 @@ test("its tab says so, until you leave it for a page that exists", async () => {
 
   fireEvent.click(screen.getByRole("link", { name: "Go to the home page" }));
   await screen.findByRole("heading", { level: 1, name: "Welcome to Whelp" });
-  expect(document.title).toBe("Whelp");
+  // Home's own title, since #130; it was the site's bare name before.
+  expect(document.title).toBe("Whelp – restaurant reviews");
+});
+
+// --- every page names its tab, and a screen reader hears the new one (#130) -----------
+
+test.each([
+  ["/", "Whelp – restaurant reviews", "Welcome to Whelp"],
+  ["/login", "Log in · Whelp", "Log In to Whelp"],
+  ["/signup", "Sign up · Whelp", "Create Your Account"],
+  ["/settings", "Account settings · Whelp", "Account settings"],
+  ["/nowhere", "Page not found · Whelp", "We couldn't find that page."],
+])("%s is titled %s", async (path, title, heading) => {
+  document.title = "Whelp";
+  renderAppAt(path);
+  await screen.findByRole("heading", { level: 1, name: heading });
+  expect(document.title).toBe(title);
+});
+
+test("a new page's title is read out; the first one, which the browser said, isn't", async () => {
+  document.title = "Whelp";
+  renderAppAt("/login");
+  await screen.findByRole("heading", { level: 1, name: "Log In to Whelp" });
+  const announcer = document.querySelector('[aria-live="polite"]') as HTMLElement;
+  expect(screen.getByRole("main")).toContainElement(announcer);
+  expect(announcer).toBeEmptyDOMElement();
+
+  fireEvent.click(screen.getAllByRole("link", { name: "Sign Up" })[0]);
+  await screen.findByRole("heading", { level: 1, name: "Create Your Account" });
+  await waitFor(() => expect(announcer).toHaveTextContent("Sign up · Whelp"));
 });

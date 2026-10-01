@@ -272,3 +272,16 @@ test("the form is headed as the page, and a refusal is announced", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("You've already reviewed this restaurant");
   expect(await axe(container)).toHaveNoViolations();
 });
+
+test("the form's tab names the restaurant, and a prompt's tab is the prompt", async () => {
+  serve();
+  const { unmount } = renderForm();
+  await screen.findByRole("heading", { level: 1, name: "Write a review for Uchi" });
+  expect(document.title).toBe("Write a review: Uchi · Whelp");
+  unmount();
+
+  serve();
+  renderForm(null);
+  await screen.findByRole("heading", { name: "Log in to write a review" });
+  expect(document.title).toBe("Log in to write a review · Whelp");
+});

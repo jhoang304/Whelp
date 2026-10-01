@@ -17,6 +17,7 @@ import HomePage from "./components/HomePage";
 import AccountSettings from "./components/AccountSettings";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./components/NotFound";
+import RouteAnnouncer from "./components/RouteAnnouncer";
 
 function App(): React.JSX.Element {
   const dispatch = useAppDispatch();
@@ -82,6 +83,9 @@ function App(): React.JSX.Element {
                 </Route>
               </Switch>
             </ErrorBoundary>
+            {/* Each page's new title, read out (#130). In <main>, as all
+                of a page's content is. */}
+            <RouteAnnouncer />
           </main>
           <Footer />
         </>

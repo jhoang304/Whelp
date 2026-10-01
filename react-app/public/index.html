@@ -2,9 +2,31 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
+    <!-- The site's name until a page names itself: useDocumentTitle sets
+         "Nancy's Hustle – Houston, TX · Whelp" and so on (#130). -->
     <title>Whelp</title>
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Find restaurants near you, read honest reviews, and share your own on Whelp." />
+    <!-- The brand red, as in the manifest: the browser's toolbar on a phone. -->
+    <meta name="theme-color" content="#e00b12" />
+
+    <!-- What a shared link previews as. Static, because the crawlers that
+         read these (Slack, iMessage, LinkedIn) don't run the app; and the
+         image's address absolute, because they don't resolve relative ones. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Whelp" />
+    <meta property="og:title" content="Whelp – restaurant reviews" />
+    <meta property="og:description" content="Find restaurants near you, read honest reviews, and share your own." />
+    <meta property="og:url" content="https://whelp-8ru8.onrender.com/" />
+    <meta property="og:image" content="https://whelp-8ru8.onrender.com/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="The Whelp logo, over the words: Find, review and share great restaurants" />
+    <meta name="twitter:card" content="summary_large_image" />
+
     <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
     <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
     <!-- One Font Awesome. Both prefixes in the markup, fas and fa-solid, are
          valid in 6.x, and the released 6.7 replaces a beta that was pinned
@@ -16,6 +38,7 @@
       integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" />
   </head>
   <body>
+    <noscript>Whelp needs JavaScript to show restaurants and reviews. Turn it on in your browser's settings, then reload this page.</noscript>
     <div id="root"></div>
   </body>
 </html>

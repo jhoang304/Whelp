@@ -260,3 +260,10 @@ test("the form is headed as the page, and why photos are missing is announced", 
   expect(screen.getByRole("alert")).toHaveTextContent("some photos could not be attached");
   expect(await axe(container)).toHaveNoViolations();
 });
+
+test("the edit form's tab names the restaurant", async () => {
+  serve();
+  renderForm();
+  await reviewBox();
+  expect(document.title).toBe("Edit your review: Uchi · Whelp");
+});
