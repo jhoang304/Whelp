@@ -8,6 +8,7 @@ import "../../styles/show-more.css";
 import { getAllRestaurants, inOrder } from "../../store/restaurants";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { NO_FILTERS, RestaurantFilters, filterSearch, isFiltered, readFilters } from "../../utils/filters";
+import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 function RestaurantList(): React.JSX.Element {
     const byId = useAppSelector((state) => state.Restaurants.allRestaurants);
@@ -82,6 +83,8 @@ function RestaurantList(): React.JSX.Element {
 
     // The page's heading, and the cuisine's name when there is one (#122).
     const cuisine = categories.find((category) => category.slug === filters.category);
+    // "Italian restaurants in Houston", or as much of it as the filters say.
+    useDocumentTitle(pageTitle(`${cuisine ? `${cuisine.name} restaurants` : "Restaurants"}${filters.city ? ` in ${filters.city}` : ""}`));
 
     return (
         <>

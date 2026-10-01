@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { SITE, pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { Restaurant, Review } from "../../types";
 import { getProfileThunk } from "../../store/userProfile";
@@ -63,6 +64,15 @@ export default function UserProfilePage(): React.JSX.Element {
     }, [dispatch, userId]);
 
     const isOwnProfile = !!sessionUser && !!profile && sessionUser.id === profile.id;
+
+    // "Marnie Johnson (@marnie)", or "@marnie" with no name given.
+    const loadingProfile = status === "loading" || (!!profile && profile.id !== Number(userId));
+    const nameOnTab = profile ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() : "";
+    useDocumentTitle(
+        loadingProfile ? SITE
+            : status === "error" || !profile ? pageTitle((loadErrors[0] || "User not found").replace(/\.+$/, ""))
+                : pageTitle(nameOnTab ? `${nameOnTab} (@${profile.username})` : `@${profile.username}`)
+    );
 
     // Resolves to the messages when the delete was refused, which the dialog
     // shows instead of closing (#116).

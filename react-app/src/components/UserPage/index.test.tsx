@@ -177,3 +177,19 @@ test("a profile that isn't there says so as the page's heading", async () => {
   });
   expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
 });
+
+// --- the tab's title (#130) ------------------------------------------------------------
+
+test("a profile's tab is the person's name and username", async () => {
+  const { server } = renderProfiles();
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+  await act(async () => answerProfile(server, 1, ok({ ...profile(1, "Marnie"), last_name: "Johnson" })));
+  expect(document.title).toBe("Marnie Johnson (@marnie) · Whelp");
+});
+
+test("one with no name given is its username", async () => {
+  const { server } = renderProfiles();
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+  await act(async () => answerProfile(server, 1, ok({ ...profile(1, "Ignored"), username: "zed", first_name: "", last_name: "" })));
+  expect(document.title).toBe("@zed · Whelp");
+});

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import PageMessage from "../PageMessage";
 
 /**
@@ -9,18 +9,11 @@ import PageMessage from "../PageMessage";
  * with the list and the home page to go to.
  */
 function NotFound(): React.JSX.Element {
-    useEffect(() => {
-        const previous = document.title;
-        document.title = "Page not found · Whelp";
-        return () => {
-            document.title = previous;
-        };
-    }, []);
-
     return (
         <PageMessage
             icon="fa-regular fa-compass"
             title="We couldn't find that page."
+            documentTitle="Page not found"
             action={{ to: "/restaurants", label: "Browse restaurants" }}
             secondaryAction={{ to: "/", label: "Go to the home page" }}
         >

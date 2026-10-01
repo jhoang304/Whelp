@@ -4,6 +4,7 @@ import { inOrder, search_restaurants } from '../../store/restaurants';
 import RestaurantListEntry from '../RestaurantListEntry';
 import FilterBar from '../FilterBar';
 import { useAppDispatch, useAppSelector } from "../../store";
+import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import {
     NO_FILTERS, RestaurantFilters, isFiltered, readFilters, readKeyword, searchLocation,
 } from "../../utils/filters";
@@ -93,6 +94,7 @@ function RestaurantBySearch(): React.JSX.Element {
     // them by id.
     const restaurantArr = useMemo(() => inOrder(byId, ids), [byId, ids]);
     const total = useAppSelector((state) => state.Restaurants.totalSearched ?? 0);
+    useDocumentTitle(pageTitle(keyword ? `"${keyword}" – Search` : "Search"));
     const loadedPage = useAppSelector((state) => state.Restaurants.searchedPage ?? 1);
     // A filter the API refused reads as "no results" unless it is shown.
     const searchError = useAppSelector((state) => state.Restaurants.searchError);

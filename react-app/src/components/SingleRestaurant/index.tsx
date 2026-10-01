@@ -20,6 +20,7 @@ import PageMessage from "../PageMessage";
 import Loading from "../Loading";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { directionsHref, telHref, websiteHref, websiteLabel } from "../../utils/contact";
+import { SITE, pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 
 
 /** Font Awesome icons for each amenity the app knows; a tick for any other. */
@@ -96,6 +97,16 @@ function SingleRestaurant(): React.JSX.Element {
         history.push("/");
         return null;
     };
+
+    // Its name and where it is once it has loaded; the site's name while it
+    // loads; and the message's own when it isn't there (null leaves it to it).
+    const place = singleRestaurant ? [singleRestaurant.city, singleRestaurant.state].filter(Boolean).join(", ") : "";
+    useDocumentTitle(
+        status === "loading" ? SITE
+            : status === "ready" && singleRestaurant
+                ? pageTitle(place ? `${singleRestaurant.name} – ${place}` : singleRestaurant.name)
+                : null
+    );
 
     if (status === "error" || (status === "ready" && !singleRestaurant)) {
         return (

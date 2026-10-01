@@ -4,6 +4,7 @@ import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from "../../utils/password";
 import { signUp } from "../../store/session";
 import { useAppDispatch, useAppSelector } from "../../store";
 import FormErrors from "../FormErrors";
+import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import './SignupForm.css';
 
 function SignupFormPage(): React.JSX.Element {
@@ -16,6 +17,7 @@ function SignupFormPage(): React.JSX.Element {
   const [password, setPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
   const [errors, setErrors] = useState<string[]>([]);
+  useDocumentTitle(pageTitle("Sign up"));
 
   if (sessionUser) return <Redirect to="/" />;
 

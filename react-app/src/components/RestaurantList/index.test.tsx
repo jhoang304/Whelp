@@ -316,3 +316,23 @@ test("search results are headed by what was found", async () => {
   await screen.findByRole("link", { name: "Best" });
   expect(await axe(container)).toHaveNoViolations();
 });
+
+// --- the tab's title (#130) ------------------------------------------------------------
+
+test("the list's tab says what it lists", async () => {
+  renderCards("/restaurants", "/restaurants", <RestaurantList />);
+  await screen.findByRole("link", { name: "Best" });
+  expect(document.title).toBe("Restaurants · Whelp");
+});
+
+test("filtered, the tab says to what", async () => {
+  renderCards("/restaurants?category=wine-bars&city=Houston", "/restaurants", <RestaurantList />);
+  await screen.findByRole("heading", { level: 1, name: "Wine Bars" });
+  await waitFor(() => expect(document.title).toBe("Wine Bars restaurants in Houston · Whelp"));
+});
+
+test("a search's tab names what was searched for", async () => {
+  renderCards("/search?q=bistro", "/search", <RestaurantBySearch />);
+  await screen.findByRole("link", { name: "Best" });
+  expect(document.title).toBe('"bistro" – Search · Whelp');
+});

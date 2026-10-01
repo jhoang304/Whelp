@@ -4,6 +4,7 @@ import { deleteReviewImage, fetchReview, updateOneReview } from '../../../store/
 import { useAppDispatch, useAppSelector } from "../../../store";
 import { ReviewImage } from "../../../types";
 import PageMessage from "../../PageMessage";
+import { pageTitle, useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import FormErrors from "../../FormErrors";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
@@ -159,7 +160,14 @@ function UpdateReview(): React.JSX.Element {
     history.replace(`/single/${restaurantId}`);
   }
 
-  const loading = <PageMessage icon="fa-solid fa-spinner fa-spin" title="Loading..." />;
+  // The form's own title; in every other state, the message's (null).
+  const showingForm = status === "ready" && !!oldReview && String(oldReview.restaurant_id) === restaurantId
+    && !!sessionUser && oldReview.user_id === sessionUser.id && filledFrom === oldReview.id;
+  useDocumentTitle(showingForm && oldReview
+    ? pageTitle(oldReview.restaurant ? `Edit your review: ${oldReview.restaurant.name}` : "Edit your review")
+    : null);
+
+  const loading = <PageMessage icon="fa-solid fa-spinner fa-spin" title="Loading..." documentTitle="" />;
 
   if (status === "loading") {
     return loading;

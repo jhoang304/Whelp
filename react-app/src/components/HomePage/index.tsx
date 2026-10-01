@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
+import { useDocumentTitle } from '../../hooks/useDocumentTitle';
 import './HomePage.css';
 
 function HomePage() {
+  useDocumentTitle('Whelp – restaurant reviews');
+
   // Links, not buttons that push history: they go somewhere, so they open in
   // a new tab and say "link" (#122).
   return (

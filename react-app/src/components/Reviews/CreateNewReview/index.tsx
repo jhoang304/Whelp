@@ -4,6 +4,7 @@ import { CreateReviewResult, createOneReview } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
 import { useAppDispatch, useAppSelector } from "../../../store";
 import PageMessage from "../../PageMessage";
+import { pageTitle, useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import FormErrors from "../../FormErrors";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
@@ -121,8 +122,13 @@ function CreateNewReview(): React.JSX.Element {
     history.replace(`/single/${restaurantId}`);
   }
 
+  // The form's own title; in every other state, the message's (null).
+  const showingForm = status === "ready" && !!restaurant && !!sessionUser
+    && sessionUser.id !== restaurant.user_id && !restaurant.viewerReviewId;
+  useDocumentTitle(showingForm && restaurant ? pageTitle(`Write a review: ${restaurant.name}`) : null);
+
   if (status === "loading") {
-    return <PageMessage icon="fa-solid fa-spinner fa-spin" title="Loading..." />;
+    return <PageMessage icon="fa-solid fa-spinner fa-spin" title="Loading..." documentTitle="" />;
   }
 
   if (status === "error" || !restaurant) {
