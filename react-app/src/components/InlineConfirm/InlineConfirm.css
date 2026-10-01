@@ -1,0 +1,74 @@
+/*
+ * The question and its two buttons. Where it sits, and on what, is up to the
+ * page: over a photo in the photos modal, under the thumbnails on the review
+ * being edited. Each rule names the box and a class of its own, so the forms'
+ * rules for every `button` and `p` inside them don't reach in.
+ */
+.inline-confirm {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.inline-confirm .inline-confirm-question {
+    margin: 0;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+}
+
+.inline-confirm .inline-confirm-detail {
+    margin: 0;
+    font-size: var(--text-xs);
+}
+
+.inline-confirm .inline-confirm-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2);
+}
+
+.inline-confirm .inline-confirm-buttons button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 6px 12px;
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    line-height: 1.4;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+}
+
+.inline-confirm .inline-confirm-cancel {
+    background-color: white;
+    color: var(--color-gray-700);
+    border: 1px solid var(--color-gray-300);
+}
+
+.inline-confirm .inline-confirm-cancel:hover {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+}
+
+.inline-confirm .inline-confirm-confirm {
+    background-color: var(--color-primary);
+    color: white;
+    border: 1px solid var(--color-primary);
+}
+
+.inline-confirm .inline-confirm-confirm:hover {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+}
+
+.inline-confirm .inline-confirm-confirm i {
+    font-size: var(--text-xs);
+}
+
+/* Under way: still focusable, so focus isn't dropped, but done for now. */
+.inline-confirm .inline-confirm-buttons button[aria-disabled="true"] {
+    opacity: 0.7;
+    cursor: progress;
+}

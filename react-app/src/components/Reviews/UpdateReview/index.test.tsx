@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { act, render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import { Provider } from "react-redux";
 import { createStore, combineReducers, applyMiddleware } from "redux";
 import thunk from "redux-thunk";
@@ -12,7 +12,8 @@ import { axe } from "../../../testUtils/axe";
 /**
  * The edit form, where a review's photos can go as well as come.
  *
- * Removing one it already has is its own request and takes effect at once.
+ * Removing one it already has is its own request and takes effect at once,
+ * once it has been asked and answered (#131).
  * Adding follows the create form -- upload, save, attach -- and when some
  * attach and some do not, only the failures stay staged, so trying again
  * cannot put the others on the review twice.
@@ -106,12 +107,26 @@ afterEach(() => {
 
 // --- photos -------------------------------------------------------------------
 
-test("a photo the review already has is removed at once", async () => {
+const deletes = () => ((global as any).fetch as jest.Mock).mock.calls.filter(([, options]) => options?.method === "DELETE");
+
+/**
+ * The × on the review's photo, and Remove when it asks, once the form is up.
+ * Not async: awaiting it would let the DELETE's answer arrive outside act.
+ */
+function removeExistingPhoto() {
+  fireEvent.click(screen.getByRole("button", { name: "Remove photo 1" }));
+  const question = screen.getByRole("group", { name: "Remove photo 1?" });
+  fireEvent.click(within(question).getByRole("button", { name: "Remove" }));
+}
+
+test("a photo the review already has is removed once asked and answered, without waiting for Submit", async () => {
   serve((_url, options) => options.method === "DELETE" ? okJson({ message: "Successfully deleted" }) : okJson({}));
   renderForm();
   expect(await screen.findByAltText("Already on this review, 1 of 1")).toBeInTheDocument();
 
   fireEvent.click(screen.getByRole("button", { name: "Remove photo 1" }));
+  expect(deletes()).toEqual([]);
+  fireEvent.click(within(screen.getByRole("group", { name: "Remove photo 1?" })).getByRole("button", { name: "Remove" }));
 
   await waitFor(() => expect(screen.queryByAltText("Already on this review, 1 of 1")).not.toBeInTheDocument());
   expect((global as any).fetch).toHaveBeenCalledWith(`/api/review-images/${EXISTING}`, { method: "DELETE" });
@@ -124,7 +139,7 @@ test("removing a photo keeps what has been typed", async () => {
 
   fireEvent.change(await reviewBox(), { target: { value: "Better than I said." } });
   fireEvent.change(ratingBox(), { target: { value: "5" } });
-  fireEvent.click(screen.getByRole("button", { name: "Remove photo 1" }));
+  removeExistingPhoto();
 
   await waitFor(() => expect(screen.queryByAltText("Already on this review, 1 of 1")).not.toBeInTheDocument());
   expect(screen.getByRole("textbox")).toHaveValue("Better than I said.");
@@ -136,11 +151,15 @@ test("a removal the server refuses keeps the photo and says why", async () => {
     ? refused(["You can only delete photos from your own review"], 403)
     : okJson({}));
   renderForm();
+  await screen.findByRole("button", { name: "Remove photo 1" });
 
-  fireEvent.click(await screen.findByRole("button", { name: "Remove photo 1" }));
+  removeExistingPhoto();
 
   expect(await screen.findByText("You can only delete photos from your own review")).toBeInTheDocument();
+  // Whatever was still on its way has arrived: the question stays up.
+  await act(async () => {});
   expect(screen.getByAltText("Already on this review, 1 of 1")).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: "Remove photo 1?" })).toBeInTheDocument();
 });
 
 test("when some photos attach and some do not, only the failures stay staged", async () => {

@@ -71,6 +71,8 @@
     position: relative;
     display: block;
     overflow: hidden;
+    /* The photo keeps its height; a card that needs more grows instead. */
+    flex-shrink: 0;
 }
 
 /* The photo is the button: nothing of the button should show but its focus. */
@@ -109,33 +111,65 @@
     font-size: 11px;
 }
 
+/*
+ * Quiet until they're wanted (#131): outlined, the way the Edit and Delete
+ * beside a review are, and red only on the way to removing something. They
+ * were a full-width solid red bar on every card, and the cover photo's card,
+ * with no "Set as cover", was shorter than the rest. One row, on every card
+ * whether it has two buttons, one or none, and at the card's foot, so the
+ * cards in a row all end level. Their size is the review's Edit and Delete
+ * too: at 14px the pair is wider than the narrowest card, 220px, and
+ * wrapped onto a second row.
+ */
 .photo-actions {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-1);
+    margin-top: auto;
+    min-height: 48px;
+    padding: var(--space-2);
+    box-sizing: border-box;
+    border-top: 1px solid var(--color-gray-200);
 }
 
 .photo-actions button {
-    padding: 12px 16px;
-    border: none;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
+    gap: 5px;
     margin: 0;
+    padding: 6px 8px;
+    font-size: var(--text-xs);
+    font-weight: var(--font-semibold);
+    line-height: 1.4;
+    color: var(--color-gray-700);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
 }
 
-/* Inside the button: the tile clips what is outside its edge, and the ring
-   was cut off there (#122). White on the red one, where red would not show. */
-.photo-actions button:focus-visible {
-    outline-offset: -4px;
+.photo-actions button i {
+    font-size: var(--text-xs);
 }
 
-.photo-actions .delete-photo:focus-visible {
-    outline-color: white;
+.photo-actions button:hover:not(:disabled) {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+}
+
+/* The one that removes, at the far end from the one that doesn't, and red
+   while it is pointed at or asking. */
+.photo-actions .delete-photo {
+    margin-left: auto;
+}
+
+.photo-actions .delete-photo:hover:not(:disabled),
+.photo-actions .delete-photo[aria-expanded="true"] {
+    color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    background-color: #fef2f2;
 }
 
 .photo-actions button:disabled {
@@ -143,39 +177,25 @@
     cursor: not-allowed;
 }
 
-.photo-actions .set-cover-photo {
-    background: #f8f8f8;
-    color: #333;
-    border-top: 1px solid #e6e6e6;
-}
-
-.set-cover-photo:hover:not(:disabled) {
-    background: #ececec;
-}
-
-.delete-photo {
-    padding: 12px 16px;
-    border: none;
-    background: var(--color-primary);
-    color: white;
-    font-weight: 600;
-    font-size: 14px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+/* "Remove this photo?", over the photo it means. */
+.photo-frame .photo-confirm {
+    position: absolute;
+    inset: 0;
     align-items: center;
     justify-content: center;
-    gap: 8px;
-    margin: 0;
+    padding: var(--space-4);
+    text-align: center;
+    color: white;
+    background-color: rgba(0, 0, 0, 0.78);
 }
 
-.delete-photo:hover:not(:disabled) {
-    background: #d60b12;
+.photo-frame .photo-confirm .inline-confirm-buttons {
+    justify-content: center;
 }
 
-.delete-photo i,
-.set-cover-photo i {
-    font-size: 12px;
+/* White, where the red ring would be lost on the dark. */
+.photo-frame .photo-confirm button:focus-visible {
+    outline-color: white;
 }
 
 .photo-errors {
@@ -194,10 +214,6 @@
     border-radius: 4px;
 }
 
-.empty-holder {
-    height: 44px;
-    background: #f8f8f8;
-}
 
 /* Responsive adjustments */
 @media (max-width: 900px) {
@@ -205,8 +221,10 @@
         max-height: 90vh;
     }
 
+    /* Cards stay 220px at the least, as above: a 180px one hasn't room for
+       Set as cover and Remove side by side (#131), so a narrow window shows
+       fewer cards, not cramped ones. */
     .photo-container {
-        grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
         gap: 15px;
         padding: 20px;
     }

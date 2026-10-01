@@ -4,6 +4,7 @@ import { MemoryRouter, Link } from "react-router-dom";
 import { ModalProvider, Modal, FADE_OUT_MS, CloseModalOnNavigation } from "./Modal";
 import OpenModalButton from "../components/OpenModalButton";
 import Lightbox from "../components/Lightbox";
+import InlineConfirm from "../components/InlineConfirm";
 
 /**
  * The modal behaves as a dialog: it is announced as one, by its heading;
@@ -287,4 +288,42 @@ test("staying on the page leaves it open", () => {
 
   expect(screen.getByRole("dialog", { name: "Add Something" })).toBeInTheDocument();
   expect(screen.getByLabelText("First")).toHaveValue("typed");
+});
+
+function PhotosWithQuestion() {
+  const [asking, setAsking] = useState(false);
+  return (
+    <div>
+      <h2>Photos</h2>
+      <button type="button" onClick={() => setAsking(true)}>Remove</button>
+      {asking && (
+        <InlineConfirm
+          question="Remove this photo?"
+          confirmLabel="Remove"
+          busyLabel="Removing..."
+          onConfirm={() => {}}
+          onCancel={() => setAsking(false)}
+        />
+      )}
+    </div>
+  );
+}
+
+test("with a question asked inside the modal, Escape takes back the question and not the modal (#131)", () => {
+  renderWith(<PhotosWithQuestion />);
+  fireEvent.click(screen.getByRole("button", { name: "Open" }));
+  const remove = screen.getByRole("button", { name: "Remove" });
+  remove.focus();
+  fireEvent.click(remove);
+  expect(screen.getByRole("button", { name: "Cancel" })).toHaveFocus();
+
+  fireEvent.keyDown(document.activeElement as Element, { key: "Escape" });
+
+  expect(screen.queryByRole("group")).not.toBeInTheDocument();
+  expect(screen.getByRole("dialog", { name: "Photos" })).toBeInTheDocument();
+  expect(remove).toHaveFocus();
+
+  // And the next Escape is the modal's.
+  fireEvent.keyDown(remove, { key: "Escape" });
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
 });
