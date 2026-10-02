@@ -88,9 +88,10 @@ test("a garbled answer at start-up still draws the page", async () => {
 const axeWholePage = configureAxe({ rules: { "color-contrast": { enabled: false } } });
 
 function renderAppAt(path: string) {
-  // Signed out, as the API says it: {"user": null}, with a 200 (#126).
+  // Signed out, as the API says it: {"user": null}, with a 200 (#126). And
+  // every list empty: the home page asks for four of them (#134).
   (global as any).fetch = jest.fn(() => Promise.resolve({
-    ok: true, status: 200, json: () => Promise.resolve({ user: null }),
+    ok: true, status: 200, json: () => Promise.resolve({ user: null, items: [] }),
   }));
   const store = createStore(
     combineReducers({
@@ -132,15 +133,19 @@ test("a page with a <main> of its own doesn't put one inside the app's", async (
   expect(await axeWholePage(container)).toHaveNoViolations();
 });
 
-test("home goes h1, then h2s, and its buttons are links to the list", async () => {
+test("home goes h1, then h2s, and its buttons are links", async () => {
+  // An empty site: the sections with nothing in them are left out (#134).
   const { container } = renderAppAt("/");
   await screen.findByRole("heading", { level: 1, name: "Welcome to Whelp" });
+  await screen.findByRole("heading", { level: 2, name: "No restaurants yet" });
 
   const levels = Array.from(screen.getByRole("main").querySelectorAll("h1, h2, h3, h4, h5, h6"))
     .map((heading) => heading.tagName);
-  expect(levels).toEqual(["H1", "H2", "H2", "H2", "H2"]);
-  expect(screen.getByRole("link", { name: "Explore Restaurants" })).toHaveAttribute("href", "/restaurants");
-  expect(screen.getByRole("link", { name: "Get Started" })).toHaveAttribute("href", "/restaurants");
+  expect(levels).toEqual(["H1", "H2", "H2"]);
+  expect(screen.getByRole("link", { name: "Explore all restaurants" })).toHaveAttribute("href", "/restaurants");
+  expect(screen.getByRole("link", { name: "Create an account" })).toHaveAttribute("href", "/signup");
+  // Two search regions, the nav's and the page's, told apart by name.
+  expect(screen.getAllByRole("search")).toHaveLength(2);
   expect(await axeWholePage(container)).toHaveNoViolations();
 });
 
