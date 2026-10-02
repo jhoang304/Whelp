@@ -3,15 +3,18 @@ import { Redirect, useHistory, useParams } from "react-router-dom";
 import { CreateReviewResult, createOneReview } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
 import { useAppDispatch, useAppSelector } from "../../../store";
+import { SingleRestaurantResponse } from "../../../types";
 import PageMessage from "../../PageMessage";
 import { pageTitle, useDocumentTitle } from "../../../hooks/useDocumentTitle";
-import FormErrors from "../../FormErrors";
+import ReviewForm from "../ReviewForm";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
-import './CreateNewReview.css'
 
-/** Matches the `review` column and ReviewForm's Length validator. */
-export const MAX_REVIEW_LENGTH = 255;
+/** Its cover photo, or failing that its first. */
+const coverOf = (restaurant: SingleRestaurantResponse): string | null => {
+  const images = restaurant.restaurantImages ?? [];
+  return (images.find((image) => image.preview) ?? images[0])?.url ?? null;
+};
 
 interface CreateNewReviewParams {
   restaurantId: string;
@@ -32,7 +35,9 @@ function CreateNewReview(): React.JSX.Element {
   const [status, setStatus] = useState<Status>("loading");
   const [loadErrors, setLoadErrors] = useState<string[]>([]);
   const [review, setReview] = useState<string>("");
-  const [rating, setRating] = useState<string>("3");
+  // None until the reader picks one: it started at 3, and every review
+  // whose writer didn't notice was a 3 (#132).
+  const [rating, setRating] = useState<number | null>(null);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [errors, setErrors] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -58,21 +63,8 @@ function CreateNewReview(): React.JSX.Element {
     };
   }, [dispatch, restaurantId]);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const trimmed = review.trim();
-    const validationErrors: string[] = [];
-
-    if (!trimmed) validationErrors.push("Review is required.")
-    else if (trimmed.length > MAX_REVIEW_LENGTH) validationErrors.push(`Reviews must be between 1 and ${MAX_REVIEW_LENGTH} characters.`)
-
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    setErrors([]);
+  // The form has checked there is a rating and something to say.
+  const send = async (trimmed: string, stars: number) => {
     setIsSubmitting(true);
 
     // Photos go up before the review exists: uploading is the step that
@@ -92,7 +84,7 @@ function CreateNewReview(): React.JSX.Element {
     let result: CreateReviewResult;
     try {
       result = await dispatch(
-        createOneReview({ review: trimmed, rating: Number(rating) }, +restaurantId)
+        createOneReview({ review: trimmed, rating: stars }, +restaurantId)
       );
     } catch (unexpected) {
       result = { errors: ["Something went wrong posting your review. Please try again."] };
@@ -164,38 +156,24 @@ function CreateNewReview(): React.JSX.Element {
     return <Redirect to={`/${restaurant.id}/reviews/${restaurant.viewerReviewId}/update`} />;
   }
 
-    return (
-      <div  className="create-review-container">
-        <h1>Write a review for {restaurant.name}</h1>
-        <form onSubmit={handleSubmit} className="create-new-review-form">
-          <FormErrors errors={errors} className="review-form-errors" />
-          <label>
-            <span>review:</span>
-            <input
-              type="text"
-              value={review}
-              onChange={e => setReview(e.target.value)}
-              maxLength={MAX_REVIEW_LENGTH}
-              required
-            />
-          </label>
-          <label>
-          <span>rating:</span>
-            <select onChange={e => setRating(e.target.value)} value={rating}>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-            </select>
-          </label>
-          <ReviewPhotoPicker pending={pending} onPendingChange={setPending} disabled={isSubmitting} />
-          <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? (pending.length ? "Uploading photos..." : "Submitting...") : "Submit"}
-          </button>
-        </form>
-      </div>
-    )
+  return (
+    <ReviewForm
+      title={`Write a review for ${restaurant.name}`}
+      restaurant={{ id: restaurant.id, name: restaurant.name, city: restaurant.city, state: restaurant.state, cover: coverOf(restaurant) }}
+      review={review}
+      onReviewChange={setReview}
+      rating={rating}
+      onRatingChange={setRating}
+      errors={errors}
+      onErrors={setErrors}
+      onSubmit={send}
+      submitLabel="Post review"
+      busy={isSubmitting}
+      busyLabel={pending.length ? "Uploading photos..." : "Posting..."}
+    >
+      <ReviewPhotoPicker pending={pending} onPendingChange={setPending} disabled={isSubmitting} />
+    </ReviewForm>
+  );
 }
 
 export default CreateNewReview

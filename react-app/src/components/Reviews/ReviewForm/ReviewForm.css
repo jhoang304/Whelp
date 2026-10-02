@@ -1,0 +1,236 @@
+/*
+ * The review pages, written and edited (#132): the restaurant's header over
+ * a card like the restaurant form's -- fields, then a footer with Cancel and
+ * the brand-red button -- and its errors in the same red-edged list.
+ */
+.review-form-page {
+    width: 100%;
+    max-width: 640px;
+    box-sizing: border-box;
+    margin: var(--space-8) auto;
+    padding: 0 var(--space-4);
+    color: var(--color-gray-800);
+}
+
+/* ---------- which restaurant ---------- */
+
+.review-form-page .review-form-restaurant {
+    display: flex;
+    align-items: center;
+    gap: var(--space-4);
+    margin-bottom: var(--space-5);
+}
+
+.review-form-page .review-form-cover {
+    flex-shrink: 0;
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: var(--radius-base);
+    background-color: var(--color-gray-100);
+}
+
+.review-form-page .review-form-heading {
+    min-width: 0;
+}
+
+.review-form-page .review-form-title {
+    margin: 0;
+    font-size: var(--text-2xl);
+    font-weight: var(--font-bold);
+    line-height: var(--leading-tight);
+    color: var(--color-gray-800);
+    overflow-wrap: anywhere;
+}
+
+.review-form-page .review-form-place {
+    margin: var(--space-1) 0 0;
+    font-size: var(--text-sm);
+    color: var(--color-gray-600);
+}
+
+/* ---------- the card ---------- */
+
+.review-form {
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.review-form .review-form-body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-6);
+}
+
+.review-form .review-form-field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+}
+
+.review-form .review-form-label {
+    font-size: var(--text-sm);
+    font-weight: var(--font-semibold);
+    color: var(--color-gray-700);
+}
+
+/* Room to write: the review was a one-line box that scrolled sideways. */
+.review-form .review-form-field textarea {
+    width: 100%;
+    min-height: 152px;
+    box-sizing: border-box;
+    margin: 0;
+    padding: var(--space-3);
+    border: 1px solid var(--color-border-input);
+    border-radius: var(--radius-base);
+    background-color: white;
+    font-family: inherit;
+    font-size: var(--text-base);
+    line-height: var(--leading-normal);
+    color: var(--color-gray-800);
+    resize: vertical;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.review-form .review-form-field textarea::placeholder {
+    color: var(--color-gray-500);
+}
+
+.review-form .review-form-field textarea:hover {
+    border-color: var(--color-gray-600);
+}
+
+.review-form .review-form-field textarea:focus {
+    /* Transparent, not none, as on the restaurant form: Windows' high
+       contrast mode draws it in its own colour (#122). */
+    outline: 2px solid transparent;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
+}
+
+.review-form .review-form-count {
+    align-self: flex-end;
+    font-size: var(--text-xs);
+    color: var(--color-gray-500);
+}
+
+.review-form .review-form-count.near-limit {
+    font-weight: var(--font-semibold);
+    color: var(--color-error-text);
+}
+
+/* ---------- errors, as on the restaurant form ---------- */
+
+.review-form .review-form-errors {
+    list-style: none;
+    margin: 0;
+    padding: var(--space-4);
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-base);
+}
+
+.review-form .review-form-error {
+    margin-bottom: var(--space-2);
+    padding: var(--space-1) 0 var(--space-1) var(--space-3);
+    border-left: 3px solid var(--color-error);
+    font-size: var(--text-sm);
+    color: var(--color-error-text);
+}
+
+.review-form .review-form-error:last-child {
+    margin-bottom: 0;
+}
+
+/* ---------- Cancel and send ---------- */
+
+.review-form .review-form-footer {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: var(--space-3);
+    padding: var(--space-4) var(--space-6);
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.review-form .review-form-cancel,
+.review-form .review-form-submit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2);
+    box-sizing: border-box;
+    margin: 0;
+    min-height: 44px;
+    padding: var(--space-2) var(--space-6);
+    border-radius: var(--radius-base);
+    font-size: var(--text-base);
+    font-weight: var(--font-semibold);
+    transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.review-form .review-form-cancel {
+    color: var(--color-gray-700);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+}
+
+.review-form .review-form-cancel:hover {
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-400);
+}
+
+.review-form .review-form-submit {
+    color: white;
+    background-color: var(--color-primary);
+    border: 1px solid var(--color-primary);
+}
+
+.review-form .review-form-submit:hover:not(:disabled) {
+    background-color: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+}
+
+.review-form .review-form-submit:disabled {
+    cursor: progress;
+    opacity: 0.7;
+}
+
+/* ---------- phones ---------- */
+
+@media (max-width: 600px) {
+    .review-form-page {
+        margin: var(--space-4) auto;
+    }
+
+    .review-form-page .review-form-cover {
+        width: 56px;
+        height: 56px;
+    }
+
+    .review-form-page .review-form-title {
+        font-size: var(--text-xl);
+    }
+
+    .review-form .review-form-body {
+        gap: var(--space-5);
+        padding: var(--space-4);
+    }
+
+    .review-form .review-form-footer {
+        padding: var(--space-3) var(--space-4);
+    }
+
+    /* Side by side, sharing the width: the one to send on the right, under
+       the thumb. */
+    .review-form .review-form-cancel,
+    .review-form .review-form-submit {
+        flex: 1 1 0;
+        padding: var(--space-2) var(--space-4);
+    }
+}

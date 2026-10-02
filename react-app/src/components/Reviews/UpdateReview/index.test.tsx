@@ -91,7 +91,8 @@ const attachCalls = () =>
     .map(([, options]) => JSON.parse(options.body).url);
 
 const reviewBox = () => screen.findByRole("textbox") as Promise<HTMLInputElement>;
-const ratingBox = () => screen.getByRole("combobox") as HTMLSelectElement;
+/** The stars chosen, as the checked radio's value. */
+const chosenRating = () => (screen.getByRole("radio", { checked: true }) as HTMLInputElement).value;
 
 beforeEach(() => {
   let n = 0;
@@ -119,6 +120,21 @@ function removeExistingPhoto() {
   fireEvent.click(within(question).getByRole("button", { name: "Remove" }));
 }
 
+test("while a photo is being removed, the review can't be saved", async () => {
+  let answer: (value: any) => void = () => {};
+  serve((_url, options) => options.method === "DELETE"
+    ? new Promise((resolve) => { answer = resolve; })
+    : okJson({}));
+  renderForm();
+  await screen.findByRole("button", { name: "Remove photo 1" });
+
+  removeExistingPhoto();
+
+  expect(screen.getByRole("button", { name: "Save changes" })).toBeDisabled();
+  await act(async () => answer(okJson({ message: "Successfully deleted" })));
+  await waitFor(() => expect(screen.getByRole("button", { name: "Save changes" })).not.toBeDisabled());
+});
+
 test("a photo the review already has is removed once asked and answered, without waiting for Submit", async () => {
   serve((_url, options) => options.method === "DELETE" ? okJson({ message: "Successfully deleted" }) : okJson({}));
   renderForm();
@@ -138,12 +154,12 @@ test("removing a photo keeps what has been typed", async () => {
   renderForm();
 
   fireEvent.change(await reviewBox(), { target: { value: "Better than I said." } });
-  fireEvent.change(ratingBox(), { target: { value: "5" } });
+  fireEvent.click(screen.getByRole("radio", { name: /^5 stars/ }));
   removeExistingPhoto();
 
   await waitFor(() => expect(screen.queryByAltText("Already on this review, 1 of 1")).not.toBeInTheDocument());
   expect(screen.getByRole("textbox")).toHaveValue("Better than I said.");
-  expect(ratingBox()).toHaveValue("5");
+  expect(chosenRating()).toBe("5");
 });
 
 test("a removal the server refuses keeps the photo and says why", async () => {
@@ -178,7 +194,7 @@ test("when some photos attach and some do not, only the failures stay staged", a
   fireEvent.change(input, {
     target: { files: [new File(["x"], "a.png", { type: "image/png" }), new File(["x"], "b.png", { type: "image/png" })] },
   });
-  fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
   expect(await screen.findByText("Your review was saved, but some photos could not be attached:")).toBeInTheDocument();
   expect(screen.getByText("b.png: Not today")).toBeInTheDocument();
@@ -187,7 +203,7 @@ test("when some photos attach and some do not, only the failures stay staged", a
   expect(mockReplace).not.toHaveBeenCalled();
 
   // Trying again sends only the one that failed.
-  fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
   await waitFor(() => expect(attachCalls()).toEqual([
     "https://bucket/a.png", "https://bucket/b.png", "https://bucket/b.png",
   ]));
@@ -209,7 +225,7 @@ test("a review that isn't in the store is loaded and filled in", async () => {
   renderForm();
 
   expect(await reviewBox()).toHaveValue("Solid.");
-  expect(ratingBox()).toHaveValue("4");
+  expect(chosenRating()).toBe("4");
   expect(screen.getByRole("heading", { name: "Edit your review of Uchi" })).toBeInTheDocument();
 });
 
@@ -218,7 +234,7 @@ test("the form is filled from the review as it is now, not as the store last saw
   renderForm({ stored: { [REVIEW]: review } });
 
   expect(await reviewBox()).toHaveValue("Edited elsewhere.");
-  expect(ratingBox()).toHaveValue("2");
+  expect(chosenRating()).toBe("2");
 });
 
 test("saving goes back to the restaurant, replacing the form in the history", async () => {
@@ -226,7 +242,7 @@ test("saving goes back to the restaurant, replacing the form in the history", as
   renderForm();
 
   fireEvent.change(await reviewBox(), { target: { value: "Better." } });
-  fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
   await waitFor(() => expect(mockReplace).toHaveBeenCalledWith(`/single/${RESTAURANT}`));
   expect(mockPush).not.toHaveBeenCalled();
@@ -285,4 +301,37 @@ test("the edit form's tab names the restaurant", async () => {
   renderForm();
   await reviewBox();
   expect(document.title).toBe("Edit your review: Uchi · Whelp");
+});
+
+// --- the form itself (#132) -----------------------------------------------------
+
+test("the whole review shows, in a box to edit, under the restaurant it's about", async () => {
+  // A one-line box cut this off at "Environment is casu".
+  const long = "It lives UP to the hype. Environment is casual but the food is anything but: every course "
+    + "of the omakase was better than the last, and the service was warm without hovering.";
+  serve(undefined, okJson({
+    ...review, review: long,
+    restaurant: { ...review.restaurant, city: "Austin", state: "TX", previewImage: "https://img/uchi.jpg" },
+  }));
+  renderForm();
+
+  const box = await reviewBox();
+  expect(box.tagName).toBe("TEXTAREA");
+  expect(box).toHaveValue(long);
+  expect(screen.getByText("Austin, TX")).toBeInTheDocument();
+  expect(document.querySelector(".review-form-cover")).toHaveAttribute("src", "https://img/uchi.jpg");
+  expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", `/single/${RESTAURANT}`);
+});
+
+test("saving sends the stars as they are now", async () => {
+  serve((_url, options) => options.method === "PUT" ? okJson({ ...review, rating: 2 }) : okJson({}));
+  renderForm();
+  await reviewBox();
+
+  fireEvent.click(screen.getByRole("radio", { name: /^2 stars/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
+
+  await waitFor(() => expect(mockReplace).toHaveBeenCalledWith(`/single/${RESTAURANT}`));
+  const [, saved] = ((global as any).fetch as jest.Mock).mock.calls.find(([, options]) => options?.method === "PUT");
+  expect(JSON.parse(saved.body)).toEqual({ review: "Solid.", rating: 2 });
 });

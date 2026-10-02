@@ -194,6 +194,12 @@ export const updateOneReview = (newReview: ReviewDraft, reviewId: Id) => async (
     return parseErrors(res, "Could not save your review. Please try again.")
 }
 
+/**
+ * The longest review the API takes: the `review` column and the server's
+ * ReviewForm Length validator. One definition, for both review pages.
+ */
+export const MAX_REVIEW_LENGTH = 255;
+
 // ---------------------------------------------------------------------------
 // Photos on a review. Only its author may add or remove them; the API checks.
 // ---------------------------------------------------------------------------
