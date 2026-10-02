@@ -67,13 +67,16 @@ test("the review is a box to write in, with a count of what's left", () => {
 
   expect(reviewBox().tagName).toBe("TEXTAREA");
   expect(reviewBox()).toHaveAttribute("maxLength", String(MAX_REVIEW_LENGTH));
-  expect(reviewBox()).toHaveAccessibleDescription(`0/${MAX_REVIEW_LENGTH}`);
+  expect(reviewBox()).toHaveAccessibleDescription("0/5,000");
 
   fireEvent.change(reviewBox(), { target: { value: "Great omakase." } });
-  expect(screen.getByText(`14/${MAX_REVIEW_LENGTH}`)).not.toHaveClass("near-limit");
+  expect(screen.getByText("14/5,000")).not.toHaveClass("near-limit");
 
-  fireEvent.change(reviewBox(), { target: { value: "x".repeat(MAX_REVIEW_LENGTH - 10) } });
-  expect(screen.getByText(`${MAX_REVIEW_LENGTH - 10}/${MAX_REVIEW_LENGTH}`)).toHaveClass("near-limit");
+  // Red for the last tenth (#133): 25 characters' warning was for 255.
+  fireEvent.change(reviewBox(), { target: { value: "x".repeat(4500) } });
+  expect(screen.getByText("4,500/5,000")).not.toHaveClass("near-limit");
+  fireEvent.change(reviewBox(), { target: { value: "x".repeat(4600) } });
+  expect(screen.getByText("4,600/5,000")).toHaveClass("near-limit");
 });
 
 test("the browser's own required-field bubbles are off: the form says what's missing itself", () => {
@@ -146,6 +149,18 @@ test("with its errors showing, nothing on it fails an accessibility check", asyn
 });
 
 test("a review over the limit is refused, with the limit in the message", () => {
-  expect(reviewProblems("x".repeat(MAX_REVIEW_LENGTH + 1), 3)).toEqual([`Reviews must be ${MAX_REVIEW_LENGTH} characters or fewer.`]);
+  expect(MAX_REVIEW_LENGTH).toBe(5000);
+  expect(reviewProblems("x".repeat(MAX_REVIEW_LENGTH + 1), 3)).toEqual(["Reviews must be 5,000 characters or fewer."]);
   expect(reviewProblems("x".repeat(MAX_REVIEW_LENGTH), 3)).toEqual([]);
+});
+
+test("a review well past the old 255 goes through", () => {
+  const onSubmit = jest.fn();
+  const long = "Every course was better than the last. ".repeat(20).trim();
+  render(<Harness initialReview={long} initialRating={5} onSubmit={onSubmit} />);
+
+  post();
+
+  expect(long.length).toBeGreaterThan(255);
+  expect(onSubmit).toHaveBeenCalledWith(long, 5);
 });

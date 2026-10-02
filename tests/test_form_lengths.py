@@ -6,11 +6,13 @@ strings, but Postgres raises StringDataRightTruncation, which surfaces as an
 unhandled 500. These tests pin each validator to its column.
 """
 import pytest
+import sqlalchemy as sa
 from wtforms.validators import Length
 
 from app.api.filters import PRICES
 from app.forms import (
     RestaurantForm, RestaurantImageForm, ReviewForm, ReviewImageForm, SignUpForm)
+from app.forms.review_form import MAX_REVIEW_LENGTH
 from app.models import Restaurant, RestaurantImage, Review, ReviewImage, User
 from tests.conftest import login
 
@@ -41,7 +43,6 @@ def column_length(model, column_name):
     (SignUpForm, "email", User, "email"),
     (SignUpForm, "first_name", User, "first_name"),
     (SignUpForm, "last_name", User, "last_name"),
-    (ReviewForm, "review", Review, "review"),
     # Missed by #19: a long pasted photo URL was a 500 on Postgres (#111).
     (RestaurantImageForm, "url", RestaurantImage, "url"),
     (ReviewImageForm, "url", ReviewImage, "url"),
@@ -52,6 +53,16 @@ def test_validator_fits_in_its_column(form_class, field, model, column):
     assert limit <= column_length(model, column), (
         f"{form_class.__name__}.{field} accepts {limit} characters but "
         f"{model.__name__}.{column} only holds {column_length(model, column)}")
+
+
+def test_a_review_is_text_and_the_form_is_its_only_limit():
+    """
+    The column was String(255), about two sentences (#133). It is TEXT now,
+    with no length of its own, and the form's 5,000 is the limit.
+    """
+    column = Review.__table__.columns["review"].type
+    assert isinstance(column, sa.Text) and column.length is None
+    assert max_length(ReviewForm, "review") == MAX_REVIEW_LENGTH == 5000
 
 
 def test_every_price_the_form_takes_fits_its_column():
@@ -131,13 +142,41 @@ def test_username_at_the_column_limit_is_accepted(client):
 def test_oversized_review_is_rejected(client, ids):
     login(client, "bystander@test.io")
     res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews",
-                      json={"review": "r" * 256, "rating": 5})
+                      json={"review": "r" * (MAX_REVIEW_LENGTH + 1), "rating": 5})
     assert res.status_code == 400
     assert Review.query.filter_by(user_id=ids["bystander"]).first() is None
 
 
-def test_review_at_the_column_limit_is_accepted(client, ids):
+def test_review_at_the_limit_is_accepted(client, ids):
     login(client, "bystander@test.io")
     res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews",
-                      json={"review": "r" * 255, "rating": 5})
+                      json={"review": "r" * MAX_REVIEW_LENGTH, "rating": 5})
     assert res.status_code == 200, res.get_json()
+
+
+# A real account of a meal: well past the old 255, with its paragraphs.
+LONG_REVIEW = "\n\n".join([
+    "We came for the omakase and stayed for three hours. " * 6,
+    "The service was warm without hovering, and the sake list is long. " * 5,
+    "Book ahead; the counter seats twelve. " * 4,
+])
+
+
+def test_a_long_review_is_posted_and_read_back_whole(client, ids):
+    assert len(LONG_REVIEW) > 255
+    login(client, "bystander@test.io")
+    res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews",
+                      json={"review": LONG_REVIEW, "rating": 5})
+    assert res.status_code == 200, res.get_json()
+
+    read = client.get(f"/api/reviews/{res.get_json()['id']}").get_json()
+    assert read["review"] == LONG_REVIEW
+
+
+def test_a_review_is_edited_to_a_long_one_and_read_back_whole(client, ids):
+    login(client, "reviewer@test.io")
+    res = client.put(f"/api/reviews/{ids['review']}", json={"review": LONG_REVIEW, "rating": 4})
+    assert res.status_code == 200, res.get_json()
+
+    read = client.get(f"/api/reviews/{ids['review']}").get_json()
+    assert read["review"] == LONG_REVIEW

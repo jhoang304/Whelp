@@ -3,6 +3,7 @@ Review create/edit failures must come back in the same shape as every other
 route: {"errors": [...]}, carrying the real WTForms messages. The UI reads that
 list to tell the user why a review was rejected (see issue #21).
 """
+from app.forms.review_form import MAX_REVIEW_LENGTH
 from app.models import Review, db
 from tests.conftest import login
 
@@ -46,7 +47,7 @@ def test_owner_cannot_review_their_own_restaurant(client, ids):
 
 def test_edit_review_validation_errors_are_a_list_of_messages(client, ids):
     login(client, "reviewer@test.io")
-    res = client.put(f"/api/reviews/{ids['review']}", json={"review": "r" * 256, "rating": 4})
+    res = client.put(f"/api/reviews/{ids['review']}", json={"review": "r" * (MAX_REVIEW_LENGTH + 1), "rating": 4})
     assert res.status_code == 400
     errors = res.get_json()["errors"]
     assert isinstance(errors, list) and errors

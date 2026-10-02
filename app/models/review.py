@@ -23,7 +23,9 @@ class Review(db.Model):
     # by "Deleted user". Nobody can edit or delete it after that.
     user_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("users.id")), nullable=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("restaurants.id")), nullable=False)
-    review = db.Column(db.String(255), nullable=False)
+    # Text, not String(255): two sentences was all a review could hold (#133).
+    # The limit is the form's, MAX_REVIEW_LENGTH.
+    review = db.Column(db.Text, nullable=False)
     rating = db.Column(db.Integer, nullable=False)
     createdAt = db.Column(db.DateTime, nullable=False, server_default=func.now())
     updatedAt = db.Column(db.DateTime, nullable=False, server_default=func.now(),

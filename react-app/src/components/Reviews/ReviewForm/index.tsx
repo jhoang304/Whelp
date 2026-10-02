@@ -6,6 +6,15 @@ import { MAX_REVIEW_LENGTH } from "../../../store/reviews";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../../utils/images";
 import "./ReviewForm.css";
 
+/** "1,234": the count and the limit run to four digits (#133). */
+const count = (n: number): string => n.toLocaleString("en-US");
+
+/**
+ * Where the count turns red: the last tenth. Twenty-five characters' warning
+ * was enough at 255, and none at all at 5,000.
+ */
+const NEAR_LIMIT = MAX_REVIEW_LENGTH * 0.9;
+
 /** The restaurant a review is about, as the form's header shows it. */
 export interface ReviewFormRestaurant {
     id: number;
@@ -44,7 +53,7 @@ export function reviewProblems(review: string, rating: number | null): string[] 
     if (rating === null) problems.push("Choose a rating, from one to five stars.");
     const trimmed = review.trim();
     if (!trimmed) problems.push("Write your review.");
-    else if (trimmed.length > MAX_REVIEW_LENGTH) problems.push(`Reviews must be ${MAX_REVIEW_LENGTH} characters or fewer.`);
+    else if (trimmed.length > MAX_REVIEW_LENGTH) problems.push(`Reviews must be ${count(MAX_REVIEW_LENGTH)} characters or fewer.`);
     return problems;
 }
 
@@ -121,9 +130,9 @@ function ReviewForm({
                         />
                         <span
                             id={`${id}-count`}
-                            className={`review-form-count${review.length > MAX_REVIEW_LENGTH - 25 ? " near-limit" : ""}`}
+                            className={`review-form-count${review.length > NEAR_LIMIT ? " near-limit" : ""}`}
                         >
-                            {review.length}/{MAX_REVIEW_LENGTH}
+                            {count(review.length)}/{count(MAX_REVIEW_LENGTH)}
                         </span>
                     </div>
 
