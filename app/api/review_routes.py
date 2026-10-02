@@ -1,16 +1,41 @@
 from flask import Blueprint, request
 from flask_login import current_user, login_required
 from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
 from app.models import db, Review, ReviewImage, ReviewResponse
 from app.forms import ReviewForm, ReviewImageForm, ReviewResponseForm
-from app.api.utils import error_messages, key_still_referenced, review_with_details
+from app.api.utils import (
+  error_messages, key_still_referenced, read_limit, review_with_details, reviews_with_details)
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 
 review_routes = Blueprint('reviews', __name__)
 
 ALREADY_ANSWERED = "This review already has a response. Edit the existing response instead."
+
+
+# The newest reviews, anywhere
+@review_routes.route('/recent')
+def recent_reviews():
+  """
+  The newest reviews on the site, each with its author, photos, the
+  restaurant it was left on and any reply: the home page's "Recent reviews"
+  (#134). Newest is createdAt, then id, as in every review feed.
+
+  `limit` is how many: 6 unless asked, and at most 20.
+  """
+  limit, error = read_limit(default=6, most=20)
+  if error:
+    return {"errors": [error]}, 400
+
+  reviews = Review.query.options(
+    selectinload(Review.user),
+    selectinload(Review.review_images),
+    selectinload(Review.response).selectinload(ReviewResponse.user),
+    selectinload(Review.restaurant),
+  ).order_by(Review.createdAt.desc(), Review.id.desc()).limit(limit).all()
+  return {"items": reviews_with_details(reviews)}
 
 
 # Get one review

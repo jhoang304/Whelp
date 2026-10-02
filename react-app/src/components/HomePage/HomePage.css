@@ -9,13 +9,13 @@
 
 .homepage-hero {
   text-align: center;
-  padding: 100px 20px;
+  padding: 72px 20px;
   background-image: linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url('https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&q=80');
   background-size: cover;
   background-position: center;
   border-radius: 16px;
   color: white;
-  margin-bottom: 60px;
+  margin-bottom: 48px;
   position: relative;
   overflow: hidden;
 }
@@ -47,7 +47,7 @@
 
 .hero-description {
   font-size: 1.2rem;
-  margin-bottom: 40px;
+  margin-bottom: 32px;
   line-height: 1.6;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
   animation: fadeInUp 1s ease-out 0.6s;
@@ -55,28 +55,28 @@
   animation-fill-mode: forwards;
 }
 
+/* The search is the first thing to do; browsing everything is the second,
+   so it is a quieter button under it. */
 .explore-button {
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 15px 30px;
-  font-size: 1.1rem;
+  margin-top: var(--space-5);
+  padding: 10px 20px;
+  font-size: 1rem;
   font-weight: 600;
   color: white;
-  background-color: var(--color-primary);
-  border: none;
+  background-color: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.8);
   border-radius: 8px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s ease;
   animation: fadeInUp 1s ease-out 0.9s;
   opacity: 0;
   animation-fill-mode: forwards;
 }
 
 .explore-button:hover {
-  background-color: var(--color-primary-dark);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(240, 12, 19, 0.3);
+  background-color: rgba(0, 0, 0, 0.45);
 }
 
 .explore-button i {
@@ -87,62 +87,385 @@
   transform: translateX(5px);
 }
 
-.homepage-features {
-  display: flex;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 30px;
-  margin-bottom: 60px;
-}
+/* ---------- the search (#134) ---------- */
 
-.feature-card {
-  flex: 1;
-  min-width: 300px;
-  background-color: white;
-  padding: 40px 30px;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.feature-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
-}
-
-.feature-icon {
-  width: 80px;
-  height: 80px;
-  background-color: var(--color-primary);
-  border-radius: 50%;
+.home-search {
   display: flex;
   align-items: center;
-  justify-content: center;
-  margin: 0 auto 25px;
-  transition: all 0.3s ease;
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 6px 6px 6px 18px;
+  background-color: white;
+  border-radius: 999px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-.feature-card:hover .feature-icon {
-  transform: scale(1.1);
+.home-search:focus-within {
+  outline: 3px solid white;
+  outline-offset: 3px;
 }
 
-.feature-icon i {
-  font-size: 2rem;
+.home-search .home-search-icon {
+  color: var(--color-gray-500);
+  font-size: 18px;
+}
+
+.home-search .home-search-input {
+  flex: 1;
+  min-width: 0;
+  margin: 0 var(--space-3);
+  padding: 10px 0;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  color: var(--color-gray-800);
+}
+
+/* The ring is on the whole pill, above. */
+.home-search .home-search-input:focus {
+  outline: 2px solid transparent;
+}
+
+.home-search .home-search-input::placeholder {
+  color: var(--color-gray-500);
+}
+
+.home-search .home-search-button {
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 var(--space-6);
+  border: none;
+  border-radius: 999px;
+  background-color: var(--color-primary);
   color: white;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
 }
 
-.feature-card h2 {
-  font-size: 1.5rem;
-  margin-bottom: 15px;
-  color: #333;
+.home-search .home-search-button:hover {
+  background-color: var(--color-primary-dark);
 }
 
-.feature-card p {
-  color: #666;
-  line-height: 1.6;
+/* ---------- a section: a heading, See all, and its items ---------- */
+
+.home-section {
+  margin-bottom: var(--space-12);
+}
+
+.home-section .home-section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.home-section .home-section-title {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--font-bold);
+  color: var(--color-gray-800);
+}
+
+.home-section .home-section-see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-primary-dark);
+}
+
+.home-section .home-section-see-all:hover {
+  text-decoration: underline;
+}
+
+.home-section .home-section-error {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: var(--radius-base);
+  color: var(--color-error-text);
+  font-size: var(--text-sm);
+}
+
+.home-section .home-section-error p {
+  margin: 0;
+}
+
+.home-section .home-section-error button {
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--color-error-text);
+  border-radius: var(--radius-base);
+  background-color: white;
+  color: var(--color-error-text);
+  font-weight: var(--font-semibold);
+}
+
+.home-section .home-section-error button:hover {
+  background-color: #fee2e2;
+}
+
+.home-empty p {
+  margin: 0;
+  color: var(--color-gray-600);
+}
+
+/* ---------- cuisines ---------- */
+
+.home-cuisines {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-cuisines .home-cuisine {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  box-sizing: border-box;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  border: 1px solid var(--color-gray-300);
+  border-radius: 999px;
+  background-color: white;
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-700);
+  transition: border-color 0.15s ease, color 0.15s ease;
+}
+
+.home-cuisines .home-cuisine:hover {
+  border-color: var(--color-primary-dark);
+  color: var(--color-primary-dark);
+}
+
+.home-cuisines .home-cuisine-count {
+  min-width: 24px;
+  padding: 2px var(--space-2);
+  box-sizing: border-box;
+  border-radius: 999px;
+  background-color: var(--color-gray-100);
+  font-size: var(--text-xs);
+  color: var(--color-gray-600);
+  text-align: center;
+}
+
+.home-cuisines .home-cuisine.home-skeleton {
+  width: 128px;
+}
+
+/* ---------- restaurant tiles ---------- */
+
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-tiles .home-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background-color: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+  transition: box-shadow 0.2s ease;
+}
+
+.home-tiles .home-tile:hover {
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* The link covers the tile, so its ring goes round the tile. */
+.home-tiles .home-tile:focus-within {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+.home-tiles .home-tile-photo {
+  display: block;
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  background-color: var(--color-gray-100);
+}
+
+.home-tiles .home-tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3);
+}
+
+.home-tiles .home-tile-name {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: var(--font-semibold);
+  line-height: var(--leading-tight);
+  overflow-wrap: anywhere;
+}
+
+/* One link, and the whole tile is it. */
+.home-tiles .home-tile-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+
+.home-tiles .home-tile-link:focus-visible {
+  outline: 2px solid transparent;
+}
+
+.home-tiles .home-tile-rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-xs);
+  color: var(--color-gray-600);
+}
+
+.home-tiles .home-tile-meta,
+.home-tiles .home-tile-cuisines {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--color-gray-600);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---------- recent reviews ---------- */
+
+.home-reviews {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-4);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-reviews .home-review {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: white;
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-lg);
+}
+
+.home-reviews .home-review-author {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.home-reviews .home-review-avatar {
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  object-fit: cover;
+  background-color: var(--color-gray-100);
+}
+
+.home-reviews .home-review-name {
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-800);
+}
+
+.home-reviews a.home-review-name:hover,
+.home-reviews .home-review-place a:hover {
+  text-decoration: underline;
+}
+
+.home-reviews .home-review-date {
+  font-size: var(--text-xs);
+  color: var(--color-gray-500);
+}
+
+.home-reviews .home-review-rating {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.home-reviews .home-review-place {
+  font-size: var(--text-sm);
+  color: var(--color-gray-600);
+}
+
+.home-reviews .home-review-place a {
+  font-weight: var(--font-semibold);
+  color: var(--color-gray-800);
+}
+
+/* The first few lines: the whole review is on the restaurant's page. */
+.home-reviews .home-review-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  font-size: var(--text-sm);
+  line-height: var(--leading-normal);
+  color: var(--color-gray-700);
+  overflow-wrap: anywhere;
+  -webkit-line-clamp: 4;
+  line-clamp: 4;
+  -webkit-box-orient: vertical;
+}
+
+/* ---------- stand-ins while a section loads ---------- */
+
+.home-skeleton .home-tile-photo,
+.home-skeleton .home-review-avatar,
+.home-skeleton .home-skeleton-line,
+.home-cuisine.home-skeleton {
+  background-color: var(--color-gray-100);
+  animation: homeShimmer 1.4s ease-in-out infinite;
+}
+
+.home-skeleton .home-skeleton-line {
+  width: 70%;
+  height: 12px;
+  border-radius: var(--radius-sm);
+}
+
+.home-skeleton .home-skeleton-line.wide {
+  width: 100%;
+}
+
+.home-skeleton .home-skeleton-line.short {
+  width: 40%;
+}
+
+.home-cuisine.home-skeleton {
+  height: 40px;
+  border-radius: 999px;
+}
+
+@keyframes homeShimmer {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
+  }
 }
 
 .homepage-cta {
@@ -189,6 +512,24 @@
   box-shadow: 0 4px 12px rgba(240, 12, 19, 0.3);
 }
 
+.cta-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-3);
+}
+
+.cta-button.secondary {
+  color: var(--color-gray-700);
+  background-color: white;
+  border: 1px solid var(--color-gray-300);
+}
+
+.cta-button.secondary:hover {
+  background-color: var(--color-gray-100);
+  box-shadow: none;
+}
+
 @keyframes fadeInDown {
   from {
     opacity: 0;
@@ -228,15 +569,6 @@
     font-size: 1rem;
   }
 
-  .homepage-features {
-    flex-direction: column;
-    gap: 20px;
-  }
-
-  .feature-card {
-    margin-bottom: 20px;
-  }
-
   .cta-content h2 {
     font-size: 2rem;
   }
@@ -260,9 +592,25 @@
     font-size: 1.2rem;
   }
 
-  /* 300px plus 60px of padding is more than a phone has left. */
-  .feature-card {
-    min-width: 0;
-    padding: 32px 20px;
+  .homepage-cta {
+    padding: 40px 20px;
+  }
+
+  .home-search {
+    padding-left: 14px;
+  }
+
+  .home-search .home-search-button {
+    padding: 0 var(--space-4);
+  }
+
+  /* Two across: the photos are still worth seeing at half a phone. */
+  .home-tiles {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--space-3);
+  }
+
+  .home-reviews {
+    grid-template-columns: minmax(0, 1fr);
   }
 }

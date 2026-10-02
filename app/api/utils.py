@@ -232,6 +232,24 @@ def review_stats(restaurant_ids):
     return {restaurant_id: (float(average), count) for restaurant_id, average, count in rows}
 
 
+def read_limit(default, most):
+    """
+    (limit, error) for a `limit` query parameter: a whole number from 1 to
+    `most`, or `default` when it is left out. For the short lists the home
+    page shows, which are a few of something rather than pages of it (#134).
+    """
+    raw = request.args.get("limit")
+    if raw is None or raw.strip() == "":
+        return default, None
+    try:
+        limit = int(raw)
+    except ValueError:
+        limit = 0
+    if not 1 <= limit <= most:
+        return None, f"limit must be a whole number from 1 to {most}"
+    return limit, None
+
+
 # The most of a review a card shows (#133). A review may run to 5,000
 # characters now; the card has room for a line or two, and a page of cards
 # needn't carry every word of every newest review.
