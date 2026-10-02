@@ -251,6 +251,8 @@
     line-height: var(--leading-relaxed);
     color: var(--color-gray-700);
     word-wrap: break-word;
+    /* A review may run to paragraphs now (#133): its line breaks show. */
+    white-space: pre-wrap;
 }
 
 .profile-review .owner-response {

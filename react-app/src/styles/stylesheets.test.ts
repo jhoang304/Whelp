@@ -347,3 +347,13 @@ test.each([
         : rules.filter((rule) => rule.file === file && rule.selectors.includes(selector)).map((rule) => rule.body);
     expect(bodies.join(";")).toMatch(declaration);
 });
+
+test.each([
+    ["components/Reviews/GetAllReviews/GetAllReviews.css", ".review-body"],
+    ["components/UserPage/UserProfilePage.css", ".profile-review-text"],
+])("%s %s keeps a review's paragraphs", (file, selector) => {
+    // Reviews run to 5,000 characters (#133), typed in a box that takes
+    // Enter: shown as normal text, every paragraph ran into one.
+    const bodies = rules.filter((rule) => rule.file === file && rule.selectors.includes(selector)).map((rule) => rule.body);
+    expect(bodies.join(";")).toMatch(/white-space:\s*pre-wrap/);
+});

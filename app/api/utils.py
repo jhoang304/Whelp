@@ -232,9 +232,34 @@ def review_stats(restaurant_ids):
     return {restaurant_id: (float(average), count) for restaurant_id, average, count in rows}
 
 
+# The most of a review a card shows (#133). A review may run to 5,000
+# characters now; the card has room for a line or two, and a page of cards
+# needn't carry every word of every newest review.
+CARD_EXCERPT_LENGTH = 200
+
+
+def excerpt(text, limit=CARD_EXCERPT_LENGTH):
+    """
+    The text as one line, or as much of it as fits in `limit` characters, cut
+    after a whole word and ended with an ellipsis. A paragraph break means
+    nothing in a teaser, so runs of whitespace become one space.
+    """
+    if text is None:
+        return None
+    flat = " ".join(text.split())
+    if len(flat) <= limit:
+        return flat
+    cut = flat[:limit + 1]
+    # Back to the last space, unless that loses more than half of it: one
+    # enormous word is cut where it is.
+    space = cut.rfind(" ")
+    cut = cut[:space] if space > limit // 2 else flat[:limit]
+    return cut.rstrip(" ,.;:!?-") + "\u2026"
+
+
 def latest_review_texts(restaurant_ids):
     """
-    {restaurant_id: the text of its newest review} -- the one line a card
+    {restaurant_id: an excerpt of its newest review} -- the one line a card
     shows -- in one query.
 
     Newest is createdAt first and id only as the tie-break, which is the order
@@ -260,7 +285,7 @@ def latest_review_texts(restaurant_ids):
 
     rows = db.session.query(ranked.c.restaurant_id, ranked.c.review).filter(
         ranked.c.position == 1).all()
-    return dict(rows)
+    return {restaurant_id: excerpt(review) for restaurant_id, review in rows}
 
 
 def favorited_ids(restaurant_ids):
