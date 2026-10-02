@@ -1,5 +1,5 @@
 import "./DisplayPhotos.css";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { getRestaurantRestaurantImages, deleteRestaurantImageThunk, setCoverPhotoThunk } from "../../store/restaurantPhoto";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { DEFAULT_RESTAURANT_IMAGE, onRestaurantImageError } from "../../utils/images";
@@ -7,6 +7,8 @@ import { RestaurantImage, SingleRestaurantResponse } from "../../types";
 import Lightbox from "../Lightbox";
 import FormErrors from "../FormErrors";
 import ModalCloseButton from "../ModalCloseButton";
+import InlineConfirm from "../InlineConfirm";
+import { useFocusAfterRender } from "../../hooks/useFocusAfterRender";
 
 interface DisplayPhotosProps {
     singleRestaurant: SingleRestaurantResponse;
@@ -23,6 +25,15 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     const [openIndex, setOpenIndex] = useState<number | null>(null);
     const [errors, setErrors] = useState<string[]>([]);
     const [busyPhotoId, setBusyPhotoId] = useState<number | null>(null);
+    // The photo whose Remove is asking "Remove this photo?" (#131). It used
+    // to delete on the first click, for good, and an owner can remove photos
+    // other people added.
+    const [confirmingId, setConfirmingId] = useState<number | null>(null);
+    // "Photo removed.", for a screen reader: the card just goes.
+    const [removedNote, setRemovedNote] = useState<string>("");
+    const modalRef = useRef<HTMLDivElement>(null);
+    const listRef = useRef<HTMLUListElement>(null);
+    const focusLater = useFocusAfterRender();
     const sessionUser = useAppSelector((state) => state.session.user);
     const dispatch = useAppDispatch()
 
@@ -71,7 +82,13 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
         }
     };
 
-    const handleRemove = async (photo: RestaurantImage) => {
+    const askToRemove = (photo: RestaurantImage) => {
+        setRemovedNote("");
+        setConfirmingId(photo.id);
+    };
+
+    // Asked and answered. A refusal leaves the question up, to try again.
+    const handleRemove = async (photo: RestaurantImage, index: number) => {
         setErrors([]);
         setBusyPhotoId(photo.id);
         try {
@@ -80,7 +97,16 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                 setErrors(failures);
                 return;
             }
+            setConfirmingId(null);
+            setRemovedNote("Photo removed.");
             await dispatch(getRestaurantRestaurantImages(singleRestaurant.id));
+            // On to the photo that took its place, or the one before it if
+            // it was the last; with none left, the modal's close button.
+            focusLater(() => {
+                const photos = listRef.current?.querySelectorAll<HTMLElement>(".photo-open");
+                return (photos && photos[Math.min(index, photos.length - 1)])
+                    || modalRef.current?.querySelector<HTMLElement>("button");
+            });
         } catch (unexpected) {
             setErrors(["Something went wrong removing the photo. Please try again."]);
         } finally {
@@ -106,16 +132,18 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     }
 
     return (
-        <div className="display-photos-modal">
+        <div className="display-photos-modal" ref={modalRef}>
             <ModalCloseButton label="Close photos" />
             <h2 className="display-h2">Photos for {singleRestaurant.name}</h2>
             <FormErrors errors={errors} className="photo-errors" />
-            <ul className="photo-container">
+            <p className="visually-hidden" role="status">{removedNote}</p>
+            <ul className="photo-container" ref={listRef}>
                 {allResPhotoArray.map((photo: RestaurantImage, index: number) => {
                     const isDefaultPhoto = photo.url === DEFAULT_RESTAURANT_IMAGE;
                     const isBusy = busyPhotoId === photo.id;
                     const showSetCover = isOwner && !photo.preview && !isDefaultPhoto;
                     const showRemove = canDelete(photo) && !isDefaultPhoto;
+                    const isConfirming = showRemove && confirmingId === photo.id;
                     return (
                         <li className="photo-li" key={photo.id}>
                             <div className="photo-frame">
@@ -140,33 +168,52 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
                                         Cover photo
                                     </span>
                                 )}
+                                {/* Over the photo it is about, so which one is
+                                    plain, and the card keeps its height. */}
+                                {isConfirming && (
+                                    <InlineConfirm
+                                        className="photo-confirm"
+                                        question="Remove this photo?"
+                                        // Only when it is known: older photos
+                                        // have no uploader on record.
+                                        detail={photo.createdByUserId != null && photo.createdByUserId !== sessionUser?.id
+                                            ? "Someone else added it. This can't be undone."
+                                            : "This can't be undone."}
+                                        confirmLabel="Remove"
+                                        busyLabel="Removing..."
+                                        busy={isBusy}
+                                        onConfirm={() => handleRemove(photo, index)}
+                                        onCancel={() => setConfirmingId(null)}
+                                    />
+                                )}
                             </div>
-                            {showSetCover || showRemove ? (
-                                <div className="photo-actions">
-                                    {showSetCover && (
-                                        <button
-                                            className="set-cover-photo"
-                                            disabled={isBusy}
-                                            onClick={() => handleSetCover(photo)}
-                                        >
-                                            <i className="fa-regular fa-star" aria-hidden="true"></i>
-                                            Set as cover
-                                        </button>
-                                    )}
-                                    {showRemove && (
-                                        <button
-                                            className="delete-photo"
-                                            disabled={isBusy}
-                                            onClick={() => handleRemove(photo)}
-                                        >
-                                            <i className="fa-regular fa-trash-can" aria-hidden="true"></i>
-                                            Remove Photo
-                                        </button>
-                                    )}
-                                </div>
-                            ):(
-                                <div className="empty-holder"></div>
-                            )}
+                            {/* On every card, empty or not, so they all end
+                                level. */}
+                            <div className="photo-actions">
+                                {showSetCover && (
+                                    <button
+                                        type="button"
+                                        className="set-cover-photo"
+                                        disabled={isBusy || isConfirming}
+                                        onClick={() => handleSetCover(photo)}
+                                    >
+                                        <i className="fa-regular fa-star" aria-hidden="true"></i>
+                                        Set as cover
+                                    </button>
+                                )}
+                                {showRemove && (
+                                    <button
+                                        type="button"
+                                        className="delete-photo"
+                                        disabled={isBusy}
+                                        aria-expanded={isConfirming}
+                                        onClick={() => askToRemove(photo)}
+                                    >
+                                        <i className="fa-regular fa-trash-can" aria-hidden="true"></i>
+                                        Remove
+                                    </button>
+                                )}
+                            </div>
                         </li>
                     )
                 })}

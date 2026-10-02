@@ -51,6 +51,12 @@
     border-color: var(--color-gray-400);
 }
 
+/* The one "Remove photo 2?" below is asking about. */
+.review-photo-picker .review-photo-picker-item.confirming {
+    border-color: var(--color-primary-dark);
+    box-shadow: 0 0 0 1px var(--color-primary-dark);
+}
+
 .review-photo-picker .review-photo-picker-item img {
     width: 100%;
     height: 100%;
@@ -85,6 +91,14 @@
 .review-photo-picker .review-photo-picker-remove:disabled {
     cursor: not-allowed;
     opacity: 0.6;
+}
+
+.review-photo-picker .review-photo-picker-confirm {
+    padding: var(--space-3);
+    border: 1px solid #fecaca;
+    border-radius: var(--radius-base);
+    background-color: #fef2f2;
+    color: var(--color-gray-700);
 }
 
 .review-photo-picker .review-photo-picker-choose {

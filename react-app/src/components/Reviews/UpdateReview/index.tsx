@@ -74,18 +74,24 @@ function UpdateReview(): React.JSX.Element {
     }
   }, [status, oldReview, filledFrom]);
 
-  // Removing a photo the review already has takes effect at once, the way
-  // "Remove Photo" does in the restaurant's photo modal, rather than waiting
-  // for Submit: it is its own request, and pretending otherwise would mean a
-  // reader who leaves without saving finds the photo gone anyway.
-  const handleRemoveExisting = async (image: ReviewImage) => {
+  // Removing a photo the review already has takes effect at once, once the
+  // picker has asked (#131), the way Remove does in the restaurant's photo
+  // modal, rather than waiting for Submit: it is its own request, and
+  // pretending otherwise would mean a reader who leaves without saving finds
+  // the photo gone anyway. Resolves to whether it went.
+  const handleRemoveExisting = async (image: ReviewImage): Promise<boolean> => {
     setErrors([]);
     setRemovingId(image.id);
     try {
       const failures = await dispatch(deleteReviewImage(+reviewId, image.id));
-      if (failures) setErrors(failures);
+      if (failures) {
+        setErrors(failures);
+        return false;
+      }
+      return true;
     } catch (unexpected) {
       setErrors(["Something went wrong removing the photo. Please try again."]);
+      return false;
     } finally {
       setRemovingId(null);
     }
