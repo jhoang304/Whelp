@@ -1,9 +1,9 @@
 /*
- * Both review forms style their descendants by element -- every `label` is a
- * bold column, every `button` a blue pill with a top margin, every `span`
- * gets a bottom margin, every `input` is full-width. Each rule here names the
- * picker and a class of its own so it out-specifies those, the same as the
- * cuisine chips had to in the restaurant forms.
+ * Each rule names the picker and a class of its own. The review forms used
+ * to style their descendants by element -- every `label` a bold column,
+ * every `button` a pill -- and these had to out-specify that; the shared
+ * ReviewForm (#132) styles only its own classes, and the picker keeps the
+ * habit, the way the cuisine chips do in the restaurant forms.
  */
 .review-photo-picker {
     display: flex;

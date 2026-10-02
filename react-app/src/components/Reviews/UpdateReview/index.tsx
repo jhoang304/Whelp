@@ -5,13 +5,9 @@ import { useAppDispatch, useAppSelector } from "../../../store";
 import { ReviewImage } from "../../../types";
 import PageMessage from "../../PageMessage";
 import { pageTitle, useDocumentTitle } from "../../../hooks/useDocumentTitle";
-import FormErrors from "../../FormErrors";
+import ReviewForm from "../ReviewForm";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
-import './UpdateReview.css'
-
-/** Matches the `review` column and ReviewForm's Length validator. */
-export const MAX_REVIEW_LENGTH = 255;
 
 interface UpdateReviewParams {
   reviewId: string;
@@ -37,7 +33,7 @@ function UpdateReview(): React.JSX.Element {
   const [status, setStatus] = useState<Status>("loading");
   const [loadErrors, setLoadErrors] = useState<string[]>([]);
   const [review, setReview] = useState<string>("");
-  const [rating, setRating] = useState<string>("");
+  const [rating, setRating] = useState<number | null>(null);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [removingId, setRemovingId] = useState<number | null>(null);
   const [errors, setErrors] = useState<string[]>(location.state?.notice ?? []);
@@ -70,7 +66,7 @@ function UpdateReview(): React.JSX.Element {
     if (status === "ready" && oldReview && filledFrom !== oldReview.id) {
       setFilledFrom(oldReview.id);
       setReview(oldReview.review);
-      setRating(String(oldReview.rating));
+      setRating(oldReview.rating);
     }
   }, [status, oldReview, filledFrom]);
 
@@ -97,21 +93,8 @@ function UpdateReview(): React.JSX.Element {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    const trimmed = review.trim();
-    const validationErrors: string[] = [];
-
-    if (!trimmed) validationErrors.push("Review is required.")
-    else if (trimmed.length > MAX_REVIEW_LENGTH) validationErrors.push(`Reviews must be between 1 and ${MAX_REVIEW_LENGTH} characters.`)
-
-    if (validationErrors.length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    setErrors([]);
+  // The form has checked there is a rating and something to say.
+  const send = async (trimmed: string, stars: number) => {
     setIsSubmitting(true);
 
     // Photos go up first, so a file the server refuses stops everything
@@ -132,7 +115,7 @@ function UpdateReview(): React.JSX.Element {
     let failures: string[] | null;
     try {
       failures = await dispatch(
-        updateOneReview({ review: trimmed, rating: Number(rating) }, reviewId)
+        updateOneReview({ review: trimmed, rating: stars }, reviewId)
       );
     } catch (unexpected) {
       failures = ["Something went wrong saving your review. Please try again."];
@@ -210,45 +193,35 @@ function UpdateReview(): React.JSX.Element {
     return loading;
   }
 
-    return (
-      <div  className="update-review-container">
-        <h1>{oldReview.restaurant ? `Edit your review of ${oldReview.restaurant.name}` : "Edit your review"}</h1>
-        <form onSubmit={handleSubmit} className="update-new-review-form">
-          <FormErrors errors={errors} className="review-form-errors" />
-          <label>
-            <span>review:</span>
-            <input
-              type="text"
-              value={review}
-              onChange={e => setReview(e.target.value)}
-              maxLength={MAX_REVIEW_LENGTH}
-              required
-            />
-          </label>
-          <label>
-          <span>rating:</span>
-            <select onChange={e => setRating(e.target.value)} value={rating}>
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-          </select>
-          </label>
-          <ReviewPhotoPicker
-            pending={pending}
-            onPendingChange={setPending}
-            existing={oldReview?.reviewImages ?? []}
-            onRemoveExisting={handleRemoveExisting}
-            removingId={removingId}
-            disabled={isSubmitting}
-          />
-          <button type="submit" disabled={isSubmitting || removingId !== null}>
-            {isSubmitting ? (pending.length ? "Uploading photos..." : "Submitting...") : "Submit"}
-          </button>
-        </form>
-      </div>
-    )
+  const place = oldReview.restaurant;
+  return (
+    <ReviewForm
+      title={place ? `Edit your review of ${place.name}` : "Edit your review"}
+      restaurant={place
+        ? { id: place.id, name: place.name, city: place.city, state: place.state, cover: place.previewImage }
+        : { id: oldReview.restaurant_id, name: "" }}
+      review={review}
+      onReviewChange={setReview}
+      rating={rating}
+      onRatingChange={setRating}
+      errors={errors}
+      onErrors={setErrors}
+      onSubmit={send}
+      submitLabel="Save changes"
+      busy={isSubmitting}
+      busyLabel={pending.length ? "Uploading photos..." : "Saving..."}
+      submitDisabled={removingId !== null}
+    >
+      <ReviewPhotoPicker
+        pending={pending}
+        onPendingChange={setPending}
+        existing={oldReview.reviewImages ?? []}
+        onRemoveExisting={handleRemoveExisting}
+        removingId={removingId}
+        disabled={isSubmitting}
+      />
+    </ReviewForm>
+  );
 }
 
 export default UpdateReview

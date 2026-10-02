@@ -98,13 +98,14 @@ function renderForm(user: any = READER) {
 
 async function writeReview(...photos: string[]) {
   fireEvent.change(await screen.findByRole("textbox"), { target: { value: "Great" } });
+  fireEvent.click(screen.getByRole("radio", { name: /^5 stars/ }));
   if (photos.length) {
     const input = document.querySelector('input[type="file"]') as HTMLInputElement;
     fireEvent.change(input, {
       target: { files: photos.map((name) => new File(["x"], name, { type: "image/png" })) },
     });
   }
-  fireEvent.click(screen.getByRole("button", { name: /submit/i }));
+  fireEvent.click(screen.getByRole("button", { name: "Post review" }));
 }
 
 beforeEach(() => {
@@ -164,7 +165,7 @@ test("a photo the server refuses stops everything before the review is posted", 
   expect(await screen.findByText("big.png: Images must be smaller than 5 MB.")).toBeInTheDocument();
   expect(requests().filter((request) => request.startsWith("POST"))).toEqual([]);
   expect(mockReplace).not.toHaveBeenCalled();
-  expect(screen.getByRole("button", { name: /submit/i })).not.toBeDisabled();
+  expect(screen.getByRole("button", { name: "Post review" })).not.toBeDisabled();
 });
 
 test("a photo that will not attach sends the reader to the edit page, saying why", async () => {
@@ -284,4 +285,47 @@ test("the form's tab names the restaurant, and a prompt's tab is the prompt", as
   renderForm(null);
   await screen.findByRole("heading", { name: "Log in to write a review" });
   expect(document.title).toBe("Log in to write a review · Whelp");
+});
+
+// --- the form itself (#132) -----------------------------------------------------
+
+test("the rating starts empty, and a review without one is not sent", async () => {
+  serve();
+  renderForm();
+  fireEvent.change(await screen.findByRole("textbox"), { target: { value: "Great" } });
+  expect((screen.getAllByRole("radio") as HTMLInputElement[]).some((star) => star.checked)).toBe(false);
+
+  fireEvent.click(screen.getByRole("button", { name: "Post review" }));
+
+  expect(await screen.findByRole("alert")).toHaveTextContent("Choose a rating, from one to five stars.");
+  expect(requests()).toEqual([`GET /api/restaurants/${RESTAURANT}`]);
+});
+
+test("what is posted is the words, trimmed, and the stars chosen", async () => {
+  serve();
+  renderForm();
+  fireEvent.change(await screen.findByRole("textbox"), { target: { value: "  Great  " } });
+  fireEvent.click(screen.getByRole("radio", { name: /^2 stars/ }));
+
+  fireEvent.click(screen.getByRole("button", { name: "Post review" }));
+
+  await waitFor(() => expect(mockReplace).toHaveBeenCalledWith(`/single/${RESTAURANT}`));
+  const [, posted] = ((global as any).fetch as jest.Mock).mock.calls
+    .find(([url, options]) => options?.method === "POST" && url === `/api/restaurants/${RESTAURANT}/reviews`);
+  expect(JSON.parse(posted.body)).toEqual({ review: "Great", rating: 2 });
+});
+
+test("the header shows the restaurant's cover photo and where it is, and Cancel goes back to it", async () => {
+  serve({
+    restaurant: okJson(restaurant({
+      city: "Austin", state: "TX",
+      restaurantImages: [{ id: 1, url: "https://img/first.jpg", preview: false }, { id: 2, url: "https://img/cover.jpg", preview: true }],
+    })),
+  });
+  renderForm();
+
+  await screen.findByRole("heading", { level: 1, name: "Write a review for Uchi" });
+  expect(document.querySelector(".review-form-cover")).toHaveAttribute("src", "https://img/cover.jpg");
+  expect(screen.getByText("Austin, TX")).toBeInTheDocument();
+  expect(screen.getByRole("link", { name: "Cancel" })).toHaveAttribute("href", `/single/${RESTAURANT}`);
 });
