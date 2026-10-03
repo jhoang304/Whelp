@@ -6,6 +6,7 @@ from .categories import ensure_categories, seed_restaurant_categories, undo_cate
 from .amenities import ensure_amenities, seed_restaurant_amenities, undo_amenities
 from .hours import seed_restaurant_hours, undo_hours
 from .backfill import backfill as backfill_demo_details
+from .demo_reset import demo_reset as reset_demo_account
 from .restaurant_images import seed_restaurantImages, undo_restaurantImages
 from .reviews import seed_reviews, undo_reviews
 from .review_images import seed_reviewImages, undo_reviewImages
@@ -120,6 +121,30 @@ def backfill(apply):
 
     if changes and not apply:
         click.echo("Nothing was written. Run again with --apply to write it.")
+
+
+# Creates the `flask seed demo-reset` command
+@seed_commands.command('demo-reset')
+@click.option('--dry-run', is_flag=True, default=False,
+              help='Only report what would change.')
+def demo_reset(dry_run):
+    """
+    Put the shared demo account's profile and restaurants back as seeded.
+
+    Meant for the build command, after `flask seed all`, so every deploy
+    repairs what visitors changed: it only adds and restores, and a second
+    run finds nothing to do (#136).
+    """
+    changes, notes = reset_demo_account(apply=not dry_run)
+    if changes:
+        verb = "Would put back" if dry_run else "Put back"
+        click.echo(f"{verb}:")
+        for what, gets in changes:
+            click.echo(f"  {what}: {'; '.join(gets)}")
+    else:
+        click.echo("The demo account is as seeded; nothing to put back.")
+    for note in notes:
+        click.echo(note)
 
 
 # Creates the `flask seed undo` command

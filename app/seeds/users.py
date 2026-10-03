@@ -18,11 +18,16 @@ def joined(days_after_launch):
     return FIRST_SIGNUP + timedelta(days=days_after_launch)
 
 
+# The demo account's profile as seeded. Everyone who tries the site shares
+# the account, so the API won't let it change this, and `flask seed
+# demo-reset` puts it back (#136).
+DEMO_PROFILE = dict(username='Demo', first_name="Demo", last_name="User", profile_image_url=avatar("Demo"))
+
+
 # Adds a demo user, you can add other users here if you want
 def seed_users():
     demo = User(
-        username='Demo', email='demo@aa.io', password='password', first_name="Demo", last_name="User",
-        profile_image_url=avatar("Demo"), createdAt=joined(0), updatedAt=joined(0))
+        email='demo@aa.io', password='password', **DEMO_PROFILE, createdAt=joined(0), updatedAt=joined(0))
     marnie = User(
         username='marnie', email='marnie@aa.io', password='password', first_name="Marnie", last_name="Johnson",
         profile_image_url=avatar("Marnie"), createdAt=joined(3), updatedAt=joined(3))

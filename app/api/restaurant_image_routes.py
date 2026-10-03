@@ -2,6 +2,7 @@ from flask import Blueprint, request
 from flask_login import login_required, current_user
 from app.models import Restaurant, RestaurantImage
 from app.models import db
+from app.api import demo
 from app.api.aws_helpers import remove_key_from_s3
 from app.api.utils import (
     clear_other_previews, key_still_referenced, lock_restaurant, promote_oldest_photo)
@@ -24,6 +25,10 @@ def delete_res_image(imageId):
     is_owner = image.restaurant is not None and image.restaurant.user_id == current_user.id
     if not (is_uploader or is_owner):
         return {"errors": ["Only the uploader or the business owner can delete this photo"]}, 403
+    # The demo owns its restaurants, but the photos on them that someone else
+    # added -- the seeded ones included -- aren't its to take away (#136).
+    if not is_uploader and demo.is_demo_restaurant(image.restaurant):
+        return {"errors": [demo.REMOVE_PHOTO]}, 403
 
     restaurant_id = image.restaurant_id
 

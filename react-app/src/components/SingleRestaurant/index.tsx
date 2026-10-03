@@ -231,7 +231,9 @@ function SingleRestaurant(): React.JSX.Element {
                                     buttonText={<><i className="fa-solid fa-pen" aria-hidden="true"></i> Edit</>}
                                     modalComponent={<EditRestaurant singleRestaurant={singleRestaurant} />}
                                 />
-                                <OpenModalButton
+                                {/* The demo's own can't be deleted (#136): no
+                                    button for the API to refuse. */}
+                                {!singleRestaurant.isDemoRestaurant && <OpenModalButton
                                     className="restaurant-action danger"
                                     ariaLabel="Delete restaurant"
                                     buttonText={<><i className="fa-solid fa-trash" aria-hidden="true"></i> Delete</>}
@@ -244,10 +246,16 @@ function SingleRestaurant(): React.JSX.Element {
                                             onConfirm={handleDelete}
                                         />
                                     }
-                                />
+                                />}
                             </>
                         )}
                     </div>
+                    {isOwner && singleRestaurant.isDemoRestaurant && (
+                        <p className="restaurant-demo-note">
+                            <i className="fa-solid fa-circle-info" aria-hidden="true"></i>
+                            Everyone who tries the demo shares this restaurant: edit away, but it can't be deleted or renamed.
+                        </p>
+                    )}
                 </div>
             )}
 

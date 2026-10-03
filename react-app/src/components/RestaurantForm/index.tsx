@@ -54,6 +54,12 @@ interface RestaurantFormProps {
     className: string;
     /** Create's cover-photo section, which edit has no use for. */
     children?: React.ReactNode;
+    /**
+     * Why the name can't be changed, if it can't: a demo restaurant keeps its
+     * name, which is how the demo reset finds it again (#136). The field
+     * shows it, read-only, with this under it.
+     */
+    nameLockedReason?: string;
 }
 
 type TextField = Exclude<keyof RestaurantFields, "price" | "description">;
@@ -90,7 +96,7 @@ export function RestaurantFormSection({ title, hint, children }: {
 function RestaurantForm({
     title, subtitle, value, onChange, categoryIds, onCategoryIdsChange, amenityIds,
     onAmenityIdsChange, hours, onHoursChange, timezone, onTimezoneChange, required = false,
-    errors, busy, submitLabel, busyLabel, onSubmit, onCancel, className, children,
+    errors, busy, submitLabel, busyLabel, onSubmit, onCancel, className, children, nameLockedReason,
 }: RestaurantFormProps): React.JSX.Element {
     const dispatch = useAppDispatch();
     const idPrefix = useId();
@@ -171,7 +177,21 @@ function RestaurantForm({
 
                 <RestaurantFormSection title="The basics" hint="What people see first, on the list and at the top of its page.">
                     <div className="restaurant-form-grid">
-                        {field("name", "Business name", { wide: true, autoFocus: true })}
+                        {nameLockedReason ? (
+                            // Not wrapped in its label, like the description:
+                            // the reason would become part of the field's name.
+                            <div className="restaurant-form-field wide">
+                                <label className="restaurant-form-label" htmlFor={`${idPrefix}-name`}>Business name</label>
+                                <input
+                                    id={`${idPrefix}-name`}
+                                    type="text"
+                                    value={value.name}
+                                    readOnly
+                                    aria-describedby={`${idPrefix}-name-locked`}
+                                />
+                                <span id={`${idPrefix}-name-locked`} className="restaurant-form-hint">{nameLockedReason}</span>
+                            </div>
+                        ) : field("name", "Business name", { wide: true, autoFocus: true })}
 
                         <fieldset className="restaurant-form-field wide restaurant-form-price">
                             <legend className="restaurant-form-label">Price range</legend>

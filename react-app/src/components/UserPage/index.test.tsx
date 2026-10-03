@@ -193,3 +193,20 @@ test("one with no name given is its username", async () => {
   await act(async () => answerProfile(server, 1, ok({ ...profile(1, "Ignored"), username: "zed", first_name: "", last_name: "" })));
   expect(document.title).toBe("@zed · Whelp");
 });
+
+// --- the shared demo profile (#136) ------------------------------------------------------
+
+test.each([
+  ["the demo", { id: 1, username: "al", isDemo: true }, false],
+  ["anyone else", { id: 1, username: "al" }, true],
+])("on your own profile, %s is offered Edit profile: %s", async (_, signedIn, offered) => {
+  const { server } = renderProfiles(signedIn);
+  await waitFor(() => expect(server.waiting()).toHaveLength(2));
+  await act(async () => answerProfile(server, 1, ok(profile(1, "Al"))));
+
+  expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Al");
+  expect(screen.queryByRole("button", { name: /Edit profile/ }) !== null).toBe(offered);
+  expect(screen.queryByText("The demo profile is shared, so it can't be edited.") !== null).toBe(!offered);
+  // Account settings either way: it says what the demo can't do there too.
+  expect(screen.getByRole("link", { name: /Account settings/ })).toBeInTheDocument();
+});

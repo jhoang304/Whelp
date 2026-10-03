@@ -38,10 +38,11 @@ function DisplayPhotos({ singleRestaurant }: DisplayPhotosProps): React.JSX.Elem
     const dispatch = useAppDispatch()
 
     // The API lets the uploader *or* the restaurant owner delete a photo, and
-    // only the owner choose the cover. Mirror both rules here.
+    // only the owner choose the cover. Mirror both rules here -- and the
+    // demo's: on its restaurants, only photos it added itself (#136).
     const isOwner = !!sessionUser && sessionUser.id === singleRestaurant.user_id;
     const canDelete = (photo: RestaurantImage) =>
-        !!sessionUser && (isOwner || photo.createdByUserId === sessionUser.id);
+        !!sessionUser && (photo.createdByUserId === sessionUser.id || (isOwner && !singleRestaurant.isDemoRestaurant));
 
     useEffect(() => {
         let cancelled = false;

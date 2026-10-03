@@ -6,6 +6,7 @@ from sqlalchemy.sql import func
 
 from app.models import Favorite, Restaurant, Review, User, db
 from app.forms import ChangePasswordForm, DeleteAccountForm, UserProfileForm
+from app.api import demo
 from app.api.accounts import delete_account, deletion_summary
 from app.extensions import limiter
 from app.api.utils import (
@@ -125,6 +126,9 @@ def edit_profile(id):
         return {'errors': ['The profile does not exist']}, 404
     if profile.id != current_user.id:
         return {'errors': ['You can only edit your own profile']}, 403
+    # Everyone who tries the demo shares it (#136).
+    if profile.is_demo:
+        return {'errors': [demo.EDIT_PROFILE]}, 403
 
     form = UserProfileForm()
     form['csrf_token'].data = request.cookies.get('csrf_token')

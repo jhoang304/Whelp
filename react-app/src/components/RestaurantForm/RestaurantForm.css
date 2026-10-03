@@ -172,6 +172,13 @@
     box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.12);
 }
 
+/* A demo restaurant's name (#136): there to read, not to change. */
+.restaurant-form .restaurant-form-field input[readonly] {
+    color: var(--color-gray-600);
+    background-color: var(--color-gray-100);
+    border-color: var(--color-gray-300);
+}
+
 .restaurant-form .restaurant-form-field textarea {
     min-height: 104px;
     resize: vertical;
