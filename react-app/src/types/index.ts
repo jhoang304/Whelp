@@ -223,7 +223,10 @@ export interface ReviewsState {
 
 export interface UserProfileState {
   profile: UserProfile | null;
+  /** The reviews loaded so far: a page, and each Show more after it (#137). */
   reviews: Review[];
+  /** How many there are in all. */
+  reviewsTotal: number;
 }
 
 export interface RootState {

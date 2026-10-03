@@ -65,7 +65,7 @@ def test_reviews_payloads_include_response(client, ids):
     assert by_restaurant[0]["user"]["username"] == "reviewer"
     assert "email" not in by_restaurant[0]["user"]
 
-    by_user = client.get(f"/api/users/{ids['reviewer']}/reviews").get_json()
+    by_user = client.get(f"/api/users/{ids['reviewer']}/reviews").get_json()["items"]
     assert by_user[0]["response"]["response"] == "We appreciate it"
     assert by_user[0]["restaurant"]["name"] == "Test Bistro"
     assert by_user[0]["restaurant"]["previewImage"] == "https://example.com/a.jpg"
