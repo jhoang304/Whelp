@@ -82,7 +82,7 @@ The Python version, 3.11.9, is pinned in `.python-version`, which Render reads.
 On Render, the build and start commands are:
 
 ```
-npm install --prefix react-app && npm run build --prefix react-app && pip install -r requirements.txt && pip install psycopg2 && flask db upgrade && flask seed all
+npm install --prefix react-app && npm run build --prefix react-app && pip install -r requirements.txt && pip install psycopg2 && flask db upgrade && flask seed all && flask seed demo-reset
 ```
 
 ```
@@ -96,6 +96,8 @@ Keep `flask db upgrade && flask seed all` in the build command. Migrations run o
 Because `flask seed all` skips a database that already has data, a database seeded before cuisines, amenities and opening hours existed has the vocabularies but none of it attached to the demo restaurants. `flask seed backfill` fills that in: it touches only restaurants named in the demo seed, only fills what is empty -- anything an owner has set is kept -- and skips a name that matches more than one restaurant. It only reports what it would do until you add `--apply`. Run it once: `flask seed backfill --apply` from a shell on the service, or, where there is no shell (Render's free instances have none), add `&& flask seed backfill --apply` to the end of the build command for a single deploy and then take it back out. Left in, it runs on every deploy, and it cannot tell a restaurant with no hours from one whose owner cleared them.
 
 Log in with the demo account (`demo@aa.io` / `password`) or the "Log in as Demo User" button. The demo user owns Nancy's Hustle and Bacari Silverlake, so you can try responding to reviews there.
+
+Everyone who tries the site shares the demo account, so the API keeps it from what can't be undone or would take other people's work with it: changing its password, deleting itself, deleting or renaming its two restaurants, changing its profile, and removing a photo someone else added to one of its restaurants. Everything else it may change. `flask seed demo-reset` puts the demo back as seeded -- its profile, and each of its restaurants' details, cuisines, amenities, hours, photos and cover -- and recreates either restaurant if it is gone. It only adds and restores, never removes, and a second run finds nothing to do, so it belongs at the end of the build command (above): every deploy repairs the demo. `flask seed demo-reset --dry-run` reports what it would put back without writing anything.
 
 ### API reference
 

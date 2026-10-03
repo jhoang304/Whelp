@@ -88,6 +88,8 @@ export interface User {
   last_name: string;
   profile_image_url?: string | null;
   createdAt?: string;
+  /** The shared demo account, which may not change its profile (#136). Your own payload only. */
+  isDemo?: boolean;
 }
 
 /** Public subset of a user, as embedded in reviews and responses. */
@@ -175,6 +177,8 @@ export interface SingleRestaurantResponse {
   isFavorited?: boolean;
   /** The reader's own review of this restaurant; null when they have none or are logged out. */
   viewerReviewId?: number | null;
+  /** One of the shared demo account's restaurants: it can't be deleted or renamed (#136). */
+  isDemoRestaurant?: boolean;
 }
 
 // Redux State Types

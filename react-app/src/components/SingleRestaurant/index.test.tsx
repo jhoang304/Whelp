@@ -31,12 +31,12 @@ const RESTAURANT = {
   hours: [{ weekday: 1, opens: "17:00", closes: "22:00" }], openStatus: null, timezone: null, isFavorited: false,
 };
 
-function renderPage(user: any = null) {
+function renderPage(user: any = null, overrides: any = {}) {
   (global as any).fetch = jest.fn((url: string) => Promise.resolve({
     ok: true, status: 200,
     json: () => Promise.resolve(url.includes("/reviews")
       ? { items: [], page: 1, per_page: 10, total: 0 }
-      : RESTAURANT),
+      : { ...RESTAURANT, ...overrides }),
   }));
   const store = createStore(
     combineReducers({ session: (state = { user }) => state, Restaurants: restaurantsReducer, reviews: reviewReducer }),
@@ -115,6 +115,15 @@ test("the owner gets Edit and Delete as well", async () => {
   renderPage({ id: 9 });
   expect(await screen.findByRole("button", { name: "Edit restaurant" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Delete restaurant" })).toBeInTheDocument();
+  expect(screen.queryByText(/Everyone who tries the demo/)).not.toBeInTheDocument();
+});
+
+test("the demo's own restaurant has Edit but no Delete, and says why (#136)", async () => {
+  renderPage({ id: 9, isDemo: true }, { isDemoRestaurant: true });
+  expect(await screen.findByRole("button", { name: "Edit restaurant" })).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Delete restaurant" })).not.toBeInTheDocument();
+  expect(screen.getByText("Everyone who tries the demo shares this restaurant: edit away, but it can't be deleted or renamed."))
+    .toBeInTheDocument();
 });
 
 // --- deleting the restaurant (#116) --------------------------------------------------

@@ -5,6 +5,8 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from app.models import (
     Favorite, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage, User, db)
+from app.api import demo
+from app.api.demo import is_demo_restaurant
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
 from app.api.amenities import read_amenities
 from app.api.categories import read_categories
@@ -31,6 +33,7 @@ def with_details(restaurant):
     """
     rows = [(row.weekday, row.opens, row.closes) for row in restaurant.hours]
     return {**restaurant.to_dict(),
+            "isDemoRestaurant": is_demo_restaurant(restaurant),
             "categories": [category.to_dict() for category in restaurant.categories],
             "amenities": [amenity.to_dict() for amenity in restaurant.amenities],
             "hours": hours_to_dicts(sorted(rows)),
@@ -176,6 +179,9 @@ def restaurants_by_id(id):
        "hours": hours_to_dicts(sorted(hour_rows)),
        "openStatus": open_status(hour_rows, SingleRestaurant.timezone),
        "isFavorited": id in favorited_ids([id]),
+       # One of the shared demo account's restaurants, which can't be deleted
+       # or renamed: the page leaves out what the API would refuse (#136).
+       "isDemoRestaurant": is_demo_restaurant(SingleRestaurant),
        # The reader's own review of this restaurant, if they have written one:
        # the page it is on is not something the first page of reviews can
        # answer, and "Write a review" should send them to it instead.
@@ -365,6 +371,10 @@ def edit_restaurant_by_restaurant_id(restaurantId):
     form["csrf_token"].data = request.cookies.get("csrf_token")
 
     if form.validate_on_submit():
+        # Its name is how the demo reset finds it again (#136).
+        if is_demo_restaurant(restaurant) and form.data["name"] != restaurant.name:
+            return {"errors": [demo.RENAME_RESTAURANT]}, 403
+
         categories, category_error = read_categories(request.get_json())
         if category_error:
             return {"errors": [category_error]}, 400
@@ -429,6 +439,11 @@ def delete_restaurant(restaurantId):
 
     if restaurant.user_id != current_user.id:
         return {"errors": ["You can only delete your own restaurants"]}, 403
+
+    # It would take every other visitor's demo with it, and the reviews,
+    # replies and photos other people left there (#136).
+    if is_demo_restaurant(restaurant):
+        return {"errors": [demo.DELETE_RESTAURANT]}, 403
 
     # Read the keys before the delete: the cascade drops the restaurant_images
     # rows, and without this the objects would sit in the bucket forever,

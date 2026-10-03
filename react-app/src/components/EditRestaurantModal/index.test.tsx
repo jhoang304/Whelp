@@ -36,7 +36,7 @@ const restaurant = {
   description: "A place for tests.",
 };
 
-function renderModal(userId: number | null = OWNER_ID) {
+function renderModal(userId: number | null = OWNER_ID, overrides: any = {}) {
   const store = createStore(
     combineReducers({
       session: (state = { user: userId === null ? null : { id: userId } }) => state,
@@ -48,7 +48,7 @@ function renderModal(userId: number | null = OWNER_ID) {
   );
   return render(
     <Provider store={store as any}>
-      <EditRestaurant singleRestaurant={restaurant} />
+      <EditRestaurant singleRestaurant={{ ...restaurant, ...overrides }} />
     </Provider>
   );
 }
@@ -173,4 +173,30 @@ test("a non-owner is not offered the form at all", () => {
 test("a signed-out visitor is asked to log in", () => {
   renderModal(null);
   expect(screen.getByText(/Please log in to update the restaurant/i)).toBeInTheDocument();
+});
+
+// --- the demo's restaurants keep their names (#136) ----------------------------------
+
+test("a demo restaurant's name is there to read, not to change, and is sent as it was", async () => {
+  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ ...restaurant, price: "$$$" })));
+  renderModal(OWNER_ID, { isDemoRestaurant: true });
+
+  const name = screen.getByRole("textbox", { name: "Business name" });
+  expect(name).toHaveAttribute("readonly");
+  expect(name).toHaveValue("Test Bistro");
+  expect(name).toHaveAccessibleDescription(
+    "The demo account's restaurants keep their names: everyone who tries the demo shares them.");
+
+  fireEvent.click(submitButton());
+  const put = () => ((global as any).fetch as jest.Mock).mock.calls.find(([, options]) => options?.method === "PUT");
+  await waitFor(() => expect(put()).toBeDefined());
+  expect(JSON.parse(put()[1].body).name).toBe("Test Bistro");
+  await waitFor(() => expect(mockCloseModal).toHaveBeenCalled());
+});
+
+test("any other restaurant's name can be changed", () => {
+  renderModal();
+  const name = screen.getByRole("textbox", { name: "Business name" });
+  expect(name).not.toHaveAttribute("readonly");
+  expect(name).not.toHaveAccessibleDescription();
 });

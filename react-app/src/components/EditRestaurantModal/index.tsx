@@ -11,7 +11,7 @@ import RestaurantForm from "../RestaurantForm";
 type EditableRestaurant = Pick<SingleRestaurantResponse,
     "id" | "user_id" | "name" | "price" | "address" | "city" | "state" |
     "zipcode" | "country" | "phone_number" | "website" | "description"> &
-    Partial<Pick<SingleRestaurantResponse, "categories" | "amenities" | "hours" | "timezone">>;
+    Partial<Pick<SingleRestaurantResponse, "categories" | "amenities" | "hours" | "timezone" | "isDemoRestaurant">>;
 
 interface EditRestaurantProps {
     singleRestaurant: EditableRestaurant;
@@ -130,6 +130,9 @@ export default function EditRestaurant({ singleRestaurant }: EditRestaurantProps
             busyLabel="Saving..."
             onSubmit={handleUpdate}
             onCancel={closeModal}
+            nameLockedReason={singleRestaurant.isDemoRestaurant
+                ? "The demo account's restaurants keep their names: everyone who tries the demo shares them."
+                : undefined}
         />
     );
 }

@@ -82,6 +82,8 @@ class User(db.Model, UserMixin):
             'first_name': self.first_name,
             'profile_image_url': self.profile_image_url,
             'createdAt': self.createdAt,
+            # The page leaves out what the API refuses the shared demo (#136).
+            'isDemo': self.is_demo,
         }
 
     def to_dict_public(self):

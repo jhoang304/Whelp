@@ -140,11 +140,16 @@ export default function UserProfilePage(): React.JSX.Element {
                     </div>
                     {isOwnProfile && (
                         <div className="profile-actions">
-                            <OpenModalButton
-                                className="profile-edit-button"
-                                buttonText={<><i className="fa-solid fa-pen" aria-hidden="true"></i> Edit profile</>}
-                                modalComponent={<UpdateProfile user={profile} />}
-                            />
+                            {/* Everyone who tries the demo shares its profile (#136). */}
+                            {sessionUser?.isDemo ? (
+                                <p className="profile-demo-note">The demo profile is shared, so it can't be edited.</p>
+                            ) : (
+                                <OpenModalButton
+                                    className="profile-edit-button"
+                                    buttonText={<><i className="fa-solid fa-pen" aria-hidden="true"></i> Edit profile</>}
+                                    modalComponent={<UpdateProfile user={profile} />}
+                                />
+                            )}
                             <Link to="/settings" className="profile-settings-link">
                                 <i className="fa-solid fa-gear" aria-hidden="true"></i> Account settings
                             </Link>

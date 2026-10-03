@@ -20,7 +20,7 @@ const photo = (id: number, restaurantId: number) => ({
 });
 const ok = (body: any) => ({ ok: true, status: 200, json: () => Promise.resolve(body) });
 
-function renderPhotos(storedPhotos: any[] = [], user: any = null) {
+function renderPhotos(storedPhotos: any[] = [], user: any = null, place: any = restaurant) {
   const store = createStore(
     combineReducers({ session: (state = { user }) => state, photos: photoReducer, Restaurants: restaurantsReducer }),
     { photos: { allRestaurantImages: Object.fromEntries(storedPhotos.map((p) => [p.id, p])) } } as any,
@@ -30,7 +30,7 @@ function renderPhotos(storedPhotos: any[] = [], user: any = null) {
     <Provider store={store as any}>
       {/* It is always in a modal, and its close button closes that. */}
       <ModalProvider>
-        <DisplayPhotos singleRestaurant={restaurant} />
+        <DisplayPhotos singleRestaurant={place} />
       </ModalProvider>
     </Provider>
   );
@@ -186,4 +186,15 @@ test("every card has its row of actions, buttons or none, so the cards end level
   const rows = Array.from(document.querySelectorAll(".photo-li")).map((card) => card.querySelector(".photo-actions"));
   expect(rows.every(Boolean)).toBe(true);
   expect(rows.map((row) => row!.textContent)).toEqual(["", "Remove"]);
+});
+
+test("on a demo restaurant, its owner can remove only the photos it added itself (#136)", async () => {
+  // Its own, someone else's, and a seeded one with no uploader on record.
+  serve([photo(1, 3), { ...photo(2, 3), createdByUserId: 9 }, { ...photo(3, 3), createdByUserId: null }]);
+  renderPhotos([], { ...OWNER, isDemo: true }, { ...restaurant, isDemoRestaurant: true });
+  await waitFor(() => expect(shownPhotos()).toHaveLength(3));
+
+  const rows = Array.from(document.querySelectorAll(".photo-li")).map((card) => card.querySelector(".photo-actions")!.textContent);
+  // Set as cover on all of them still: choosing the cover is the owner's.
+  expect(rows).toEqual(["Set as coverRemove", "Set as cover", "Set as cover"]);
 });
