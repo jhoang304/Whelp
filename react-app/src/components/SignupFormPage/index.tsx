@@ -1,15 +1,17 @@
 import React, { useState } from "react";
-import { Link, Redirect } from "react-router-dom";
+import { Link, Redirect, useLocation } from "react-router-dom";
 import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from "../../utils/password";
 import { signUp } from "../../store/session";
 import { useAppDispatch, useAppSelector } from "../../store";
 import FormErrors from "../FormErrors";
 import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
+import { authLink, returnPath } from "../../utils/returnTo";
 import './SignupForm.css';
 
 function SignupFormPage(): React.JSX.Element {
   const dispatch = useAppDispatch();
   const sessionUser = useAppSelector((state) => state.session.user);
+  const location = useLocation();
   const [email, setEmail] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [first_name, setFirst_Name] = useState<string>("");
@@ -19,7 +21,8 @@ function SignupFormPage(): React.JSX.Element {
   const [errors, setErrors] = useState<string[]>([]);
   useDocumentTitle(pageTitle("Sign up"));
 
-  if (sessionUser) return <Redirect to="/" />;
+  // Back to the page the link was followed from, as after logging in (#135).
+  if (sessionUser) return <Redirect to={returnPath(location.state)} />;
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -128,7 +131,7 @@ function SignupFormPage(): React.JSX.Element {
             <button className="signup-submit-button" type="submit">Sign Up</button>
           </form>
           <p className="login-link">
-            Already have an account? <Link to="/login">Log In</Link>
+            Already have an account? <Link to={authLink("/login", location)}>Log In</Link>
           </p>
         </div>
         <div className="signup-image-section">

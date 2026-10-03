@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { login } from "../../store/session";
-import { Link, Redirect } from "react-router-dom";
+import { Link, Redirect, useLocation } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../../store";
 import FormErrors from "../FormErrors";
 import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
+import { authLink, returnPath } from "../../utils/returnTo";
 import './LoginForm.css';
 
 const ERRORS_ID = "login-errors";
@@ -12,6 +13,7 @@ function LoginFormPage(): React.JSX.Element {
   // --- Hooks must be called first ---
   const dispatch = useAppDispatch();
   const sessionUser = useAppSelector((state) => state.session.user);
+  const location = useLocation();
   const [email_address, setEmail_Address] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   // Every error, in the form, until the next try (#122). They were a toast
@@ -25,7 +27,10 @@ function LoginFormPage(): React.JSX.Element {
   const fieldErrorProps = invalid ? { "aria-invalid": true, "aria-describedby": ERRORS_ID } : {};
 
   // --- Early return can happen AFTER hooks ---
-  if (sessionUser) return <Redirect to="/" />;
+  // Signed in -- just now, or already -- goes back to the page the link was
+  // followed from, rather than home (#135). A Redirect replaces this entry,
+  // so Back doesn't return to a login form for someone logged in.
+  if (sessionUser) return <Redirect to={returnPath(location.state)} />;
   // ------------------------------------------
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -96,7 +101,7 @@ function LoginFormPage(): React.JSX.Element {
             </button>
           </form>
           <p className="signup-link">
-            Don't have an account?  <Link to="/signup">Sign Up</Link>
+            Don't have an account?  <Link to={authLink("/signup", location)}>Sign Up</Link>
           </p>
         </div>
       </div>

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 
 import "./AccountSettings.css";
 import FormErrors from "../FormErrors";
@@ -10,6 +10,7 @@ import {
 } from "../../store/account";
 import { useModal } from "../../context/Modal";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
+import { authLink } from "../../utils/returnTo";
 import { PASSWORD_MIN_LENGTH, PASSWORD_TOO_SHORT } from "../../utils/password";
 
 const plural = (count: number, one: string, many = `${one}s`) => `${count} ${count === 1 ? one : many}`;
@@ -24,6 +25,8 @@ function AccountSettings(): React.JSX.Element {
     const dispatch = useAppDispatch();
     const { setModalContent } = useModal();
     const sessionUser = useAppSelector((state) => state.session.user);
+    // So "Log in" comes back here (#135).
+    const location = useLocation();
 
     useDocumentTitle(pageTitle("Account settings"));
     const [summary, setSummary] = useState<DeletionSummary | null>(null);
@@ -73,7 +76,7 @@ function AccountSettings(): React.JSX.Element {
             <div className="account-settings">
                 <h1>Account settings</h1>
                 <p>
-                    <Link to="/login">Log in</Link> to change your password or delete your account.
+                    <Link to={authLink("/login", location)}>Log in</Link> to change your password or delete your account.
                 </p>
             </div>
         );

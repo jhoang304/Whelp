@@ -8,6 +8,7 @@ import { pageTitle, useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import ReviewForm from "../ReviewForm";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
+import { authLink } from "../../../utils/returnTo";
 
 interface UpdateReviewParams {
   reviewId: string;
@@ -178,7 +179,7 @@ function UpdateReview(): React.JSX.Element {
 
   if (!sessionUser) {
     return (
-      <PageMessage icon="fa-regular fa-user" title="Log in to edit your review" action={{ to: "/login", label: "Log in" }} />
+      <PageMessage icon="fa-regular fa-user" title="Log in to edit your review" action={{ to: authLink("/login", location), label: "Log in" }} />
     );
   }
 

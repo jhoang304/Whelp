@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, LinkProps } from "react-router-dom";
 import { SITE, pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import "./PageMessage.css";
 
@@ -10,9 +10,11 @@ interface PageMessageProps {
   children?: React.ReactNode;
   /**
    * The one thing to do next, as a link that looks like a button: `to` for
-   * a page in the app, `href` for a full page load, such as a reload.
+   * a page in the app -- a path, or a location with state, such as a log-in
+   * link that remembers this page -- and `href` for a full page load, such
+   * as a reload.
    */
-  action?: { to: string; label: string } | { href: string; label: string };
+  action?: { to: LinkProps["to"]; label: string } | { href: string; label: string };
   /** A second, quieter way on, beside the first: "Go to the home page". */
   secondaryAction?: { to: string; label: string };
   /**
