@@ -11,9 +11,15 @@ class Review(db.Model):
     # leave two reviews of one restaurant by one person (#119). A review
     # whose author has left has no user_id, and NULLs never clash, so any
     # number of "Deleted user" reviews can stand.
+    #
+    # And the two feeds, a restaurant's and a person's, newest first: each
+    # index is the filter then the order, so a page comes straight off it
+    # rather than every matching review being sorted first (#137).
     __table_args__ = (
         db.UniqueConstraint("user_id", "restaurant_id", name="uq_reviews_user_restaurant"),
         db.CheckConstraint("rating BETWEEN 1 AND 5", name="ck_reviews_rating_range"),
+        db.Index("ix_reviews_restaurant_newest", "restaurant_id", "createdAt", "id"),
+        db.Index("ix_reviews_user_newest", "user_id", "createdAt", "id"),
     ) + (({'schema': SCHEMA},) if environment == "production" else ())
 
     id = db.Column(db.Integer, primary_key=True)

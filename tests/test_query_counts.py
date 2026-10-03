@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import pytest
 from sqlalchemy import event
 
-from app.models import Restaurant, RestaurantImage, Review, User, db
+from app.models import Restaurant, RestaurantImage, Review, ReviewResponse, User, db
 from tests.conftest import critics, login
 
 
@@ -110,7 +110,7 @@ def test_a_users_review_feed_does_not_cost_a_query_each(client, ids):
 
     with counted() as after:
         res = client.get(url)
-    assert len(res.get_json()) == 8
+    assert len(res.get_json()["items"]) == 8
     assert len(after) == len(before), "\n".join(after)
 
 
@@ -173,3 +173,105 @@ def test_the_cards_still_say_what_they_said(client, ids):
     assert profile["restaurants"][0]["avgRating"] == 4
     assert profile["restaurants"][0]["numReviews"] == 1
     assert profile["restaurants"][0]["previewImage"] == "https://example.com/a.jpg"
+
+
+# --- what #137 found left over ----------------------------------------------------------
+
+def test_a_users_review_feed_reads_every_replys_author_in_one_go(client, ids):
+    """
+    Replies read their author, and on a person's feed each reply can be from
+    a different owner: one SELECT users each, 7 queries for 2 reviews and 13
+    for 8, until the authors came in the replies' batch (#137).
+    """
+    url = f"/api/users/{ids['reviewer']}/reviews"
+
+    def replied_to_by_their_owners(count, start):
+        owners = critics(count, start=start)
+        for n, owner in enumerate(owners):
+            place = Restaurant(user_id=owner, name=f"Owned {start + n}", price="$", address="1 Side St",
+                               city="Austin", state="TX", zipcode="78701", country="USA",
+                               phone_number="(555) 000-0000", website="http://x.com", description="Owned.")
+            db.session.add(place)
+            db.session.commit()
+            review = Review(user_id=ids["reviewer"], restaurant_id=place.id, review=f"Owned {start + n}", rating=4)
+            db.session.add(review)
+            db.session.commit()
+            db.session.add(ReviewResponse(review_id=review.id, user_id=owner, response="Thanks!"))
+        db.session.commit()
+
+    replied_to_by_their_owners(2, start=200)
+    with counted() as before:
+        assert client.get(url).status_code == 200
+
+    replied_to_by_their_owners(6, start=210)
+    with counted() as after:
+        res = client.get(url)
+    replies = [review["response"] for review in res.get_json()["items"] if review["response"]]
+    assert len(replies) == 8
+    assert len({reply["user"]["id"] for reply in replies}) == 8
+    assert len(after) == len(before), "\n".join(after)
+
+
+@pytest.mark.parametrize("signed_in", [False, True])
+def test_a_restaurants_page_costs_the_same_however_many_reviews_it_has(client, ids, signed_in):
+    """
+    It loaded every review to count and average them in Python (#137); now
+    one aggregate does, and the reader's own review is one row by index.
+    """
+    if signed_in:
+        login(client, "bystander@test.io")
+    url = f"/api/restaurants/{ids['restaurant']}"
+    with counted() as before:
+        assert client.get(url).status_code == 200
+
+    db.session.add_all([
+        Review(user_id=author, restaurant_id=ids["restaurant"], review=f"Another {n}", rating=2)
+        for n, author in enumerate(critics(9))
+    ])
+    db.session.commit()
+
+    with counted() as after:
+        body = client.get(url).get_json()
+    assert body["numReviews"] == 10
+    assert body["avgStarRating"] == round((4 + 2 * 9) / 10, 2)
+    assert len(after) == len(before), "\n".join(after)
+
+
+def test_the_page_still_finds_the_readers_own_review(client, ids):
+    login(client, "reviewer@test.io")
+    assert client.get(f"/api/restaurants/{ids['restaurant']}").get_json()["viewerReviewId"] == ids["review"]
+    client.get("/api/auth/logout")
+    login(client, "bystander@test.io")
+    assert client.get(f"/api/restaurants/{ids['restaurant']}").get_json()["viewerReviewId"] is None
+
+
+def test_a_profile_counts_reviews_without_loading_them(client, ids):
+    """`len(profile.reviews)` read every review a person had written to say how many (#137)."""
+    url = f"/api/users/get/{ids['reviewer']}"
+    add_restaurants(ids["owner"], ids["reviewer"], 1)
+    with counted() as before:
+        assert client.get(url).status_code == 200
+
+    add_restaurants(ids["owner"], ids["reviewer"], 8)
+    with counted() as after:
+        body = client.get(url).get_json()
+    assert body["review_count"] == 10
+    assert len(after) == len(before), "\n".join(after)
+    # Theirs, not everyone's.
+    assert client.get(f"/api/users/get/{ids['bystander']}").get_json()["review_count"] == 0
+
+
+def test_the_tables_are_read_by_index_not_scanned(app):
+    """The foreign keys every page filters on have indexes (#137); SQLite's plan says it uses them."""
+    queries = {
+        "ix_reviews_restaurant_newest": 'SELECT * FROM reviews WHERE restaurant_id = 1 ORDER BY "createdAt" DESC, id DESC',
+        "ix_reviews_user_newest": 'SELECT * FROM reviews WHERE user_id = 1 ORDER BY "createdAt" DESC, id DESC',
+        "ix_review_images_review_id": "SELECT * FROM review_images WHERE review_id = 1",
+        "ix_restaurant_images_restaurant_id": "SELECT * FROM restaurant_images WHERE restaurant_id = 1 ORDER BY id",
+        "ix_restaurants_user_id": "SELECT * FROM restaurants WHERE user_id = 1",
+        "ix_restaurant_categories_category_id": "SELECT * FROM restaurant_categories WHERE category_id = 1",
+    }
+    for index, query in queries.items():
+        plan = " | ".join(row[-1] for row in db.session.execute(db.text("EXPLAIN QUERY PLAN " + query)))
+        assert f"USING INDEX {index}" in plan, plan
+        assert "TEMP B-TREE" not in plan, plan

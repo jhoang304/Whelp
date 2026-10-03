@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { SITE, pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { useAppDispatch, useAppSelector } from "../../store";
 import { Restaurant, Review } from "../../types";
-import { getProfileThunk } from "../../store/userProfile";
+import { getProfileThunk, loadMoreProfileReviews } from "../../store/userProfile";
 import { deleteReviewById } from "../../store/reviews";
 import OpenModalButton from "../OpenModalButton";
 import ConfirmDeleteModal from "../ConfirmDeleteModal";
@@ -21,6 +21,7 @@ import {
 } from "../../utils/images";
 import "./UserProfilePage.css";
 import "../RowActions/RowActions.css";
+import "../../styles/show-more.css";
 
 type Tab = "reviews" | "businesses" | "saved";
 type Status = "loading" | "ready" | "error";
@@ -39,16 +40,21 @@ export default function UserProfilePage(): React.JSX.Element {
     const { userId } = useParams<{ userId: string }>();
 
     const sessionUser = useAppSelector((state) => state.session.user);
-    const { profile, reviews } = useAppSelector((state) => state.user);
+    const { profile, reviews, reviewsTotal } = useAppSelector((state) => state.user);
 
     const [status, setStatus] = useState<Status>("loading");
     const [loadErrors, setLoadErrors] = useState<string[]>([]);
     const [activeTab, setActiveTab] = useState<Tab>("reviews");
+    // Show more under the reviews (#137): whether a page is on its way, and
+    // why the last one didn't come.
+    const [loadingMore, setLoadingMore] = useState(false);
+    const [moreErrors, setMoreErrors] = useState<string[]>([]);
 
     useEffect(() => {
         let cancelled = false;
         setStatus("loading");
         setActiveTab("reviews");
+        setMoreErrors([]);
         dispatch(getProfileThunk(userId)).then((errors: string[] | null) => {
             if (cancelled) return;
             if (errors) {
@@ -73,6 +79,14 @@ export default function UserProfilePage(): React.JSX.Element {
             : status === "error" || !profile ? pageTitle((loadErrors[0] || "User not found").replace(/\.+$/, ""))
                 : pageTitle(nameOnTab ? `${nameOnTab} (@${profile.username})` : `@${profile.username}`)
     );
+
+    const showMoreReviews = async () => {
+        setLoadingMore(true);
+        setMoreErrors([]);
+        const failures = await dispatch(loadMoreProfileReviews(userId, reviews.length));
+        setLoadingMore(false);
+        if (failures) setMoreErrors(failures);
+    };
 
     // Resolves to the messages when the delete was refused, which the dialog
     // shows instead of closing (#116).
@@ -165,7 +179,7 @@ export default function UserProfilePage(): React.JSX.Element {
                     aria-pressed={activeTab === "reviews"}
                     onClick={() => setActiveTab("reviews")}
                 >
-                    Reviews <span className="profile-tab-count">{reviews.length}</span>
+                    Reviews <span className="profile-tab-count">{reviewsTotal}</span>
                 </button>
                 <button
                     type="button"
@@ -259,6 +273,21 @@ export default function UserProfilePage(): React.JSX.Element {
                                     />
                                 </article>
                             ))}
+                            {reviews.length < reviewsTotal && (
+                                <div className="show-more">
+                                    <button
+                                        type="button"
+                                        className="show-more-button"
+                                        onClick={showMoreReviews}
+                                        disabled={loadingMore}
+                                    >
+                                        {loadingMore ? "Loading…" : `Show more (${reviews.length} of ${reviewsTotal})`}
+                                    </button>
+                                    {moreErrors.length > 0 && (
+                                        <p className="show-more-error" role="alert">{moreErrors[0]}</p>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     )
                 )}

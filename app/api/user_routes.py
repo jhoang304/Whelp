@@ -4,7 +4,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
-from app.models import Favorite, Restaurant, Review, User, db
+from app.models import Favorite, Restaurant, Review, ReviewResponse, User, db
 from app.forms import ChangePasswordForm, DeleteAccountForm, UserProfileForm
 from app.api import demo
 from app.api.accounts import delete_account, deletion_summary
@@ -56,8 +56,10 @@ def get_user_profile(id):
     if current_user.is_authenticated and current_user.id == profile.id:
         data["email"] = profile.email
     data["restaurants"] = restaurant_cards(profile.restaurants)
-    data["restaurant_count"] = len(profile.restaurants)
-    data["review_count"] = len(profile.reviews)
+    data["restaurant_count"] = len(data["restaurants"])
+    # Counted, not loaded: every review a prolific reviewer had written was
+    # read just to take its length (#137).
+    data["review_count"] = db.session.query(func.count(Review.id)).filter(Review.user_id == profile.id).scalar()
     if current_user.is_authenticated and current_user.id == profile.id:
         # For the Saved tab's count. Nobody else is told how many there are.
         data["favorite_count"] = Favorite.query.filter_by(user_id=profile.id).count()
@@ -67,20 +69,32 @@ def get_user_profile(id):
 @user_routes.route('/<int:id>/reviews', methods=['GET'])
 def get_user_reviews(id):
     """
-    Every review a user has written, newest first, with the restaurant each
-    was left on and any business-owner response. Public, like the profile
-    that lists them. (This was GET /api/reviews/<id>, which is now one review.)
+    A page of the reviews a user has written, newest first, with the
+    restaurant each was left on and any business-owner response. Public,
+    like the profile that lists them. (This was GET /api/reviews/<id>, which
+    is now one review.)
+
+    Paged like the other feeds (#137): a prolific reviewer's profile loaded
+    every review, photo and reply at once. Each reply's author comes in the
+    same batch as the replies, not a query each.
     """
     if not db.session.get(User, id):
         return {'errors': ["User couldn't be found"]}, 404
 
-    reviews = Review.query.options(
+    page_request = read_page_request()
+    if page_request.error:
+        return {"errors": [page_request.error]}, 400
+
+    query = Review.query.options(
         selectinload(Review.user),
         selectinload(Review.review_images),
-        selectinload(Review.response),
+        selectinload(Review.response).selectinload(ReviewResponse.user),
         selectinload(Review.restaurant),
-    ).filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc()).all()
-    return reviews_with_details(reviews)
+    ).filter(Review.user_id == id).order_by(Review.createdAt.desc(), Review.id.desc())
+
+    total = query.count()
+    reviews = query.limit(page_request.per_page).offset(page_request.offset).all()
+    return page_response(reviews_with_details(reviews), page_request, total)
 
 
 @user_routes.route('/<int:id>/favorites', methods=['GET'])

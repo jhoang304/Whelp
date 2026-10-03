@@ -4,7 +4,7 @@ from sqlalchemy import case, func
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 from app.models import (
-    Favorite, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage, User, db)
+    Favorite, Restaurant, RestaurantHours, Review, RestaurantImage, ReviewImage, ReviewResponse, User, db)
 from app.api import demo
 from app.api.demo import is_demo_restaurant
 from app.api.aws_helpers import key_uploaded_by, remove_keys_from_s3
@@ -17,7 +17,7 @@ from app.api.search import keyword_match
 from app.forms import RestaurantForm, RestaurantImageForm, ReviewForm
 from app.api.utils import (
     clear_other_previews, error_messages, favorited_ids, key_still_referenced, page_response,
-    read_page_request, restaurant_cards, reviews_with_details)
+    read_page_request, restaurant_cards, review_stats, reviews_with_details)
 
 restaurant_routes = Blueprint('restaurants', __name__)
 
@@ -136,17 +136,14 @@ def restaurants_by_id(id):
     # In id order: without one the database's own, which can change (#129).
     images = RestaurantImage.query.filter(RestaurantImage.restaurant_id==id).order_by(RestaurantImage.id).all()
 
-    reviews=Review.query.filter(Review.restaurant_id==id).all()
-    numReviews=len(reviews)
-
-
-    total_rating=0
-    for review in reviews:
-        total_rating=total_rating+review.rating
-    if numReviews ==0:
-        avgStarRating=0
-    else:
-        avgStarRating=total_rating/numReviews
+    # One aggregate, as the cards use: every review used to be loaded to be
+    # counted and averaged in Python (#137).
+    avgStarRating, numReviews = review_stats([id]).get(id, (0, 0))
+    # The reader's own review, if any: one row by the one-review-per-person
+    # index, not a search through all of them.
+    viewer_review_id = (db.session.query(Review.id)
+                        .filter(Review.restaurant_id == id, Review.user_id == current_user.id).scalar()
+                        if current_user.is_authenticated else None)
 
 
     data = {
@@ -185,8 +182,7 @@ def restaurants_by_id(id):
        # The reader's own review of this restaurant, if they have written one:
        # the page it is on is not something the first page of reviews can
        # answer, and "Write a review" should send them to it instead.
-       "viewerReviewId": next((review.id for review in reviews
-                               if current_user.is_authenticated and review.user_id == current_user.id), None),
+       "viewerReviewId": viewer_review_id,
     }
 
     return data
@@ -563,7 +559,7 @@ def get_reviews_by_restaurant_id(id):
     query = Review.query.options(
         selectinload(Review.user),
         selectinload(Review.review_images),
-        selectinload(Review.response),
+        selectinload(Review.response).selectinload(ReviewResponse.user),
     ).filter(Review.restaurant_id == id).order_by(*order)
 
     total = query.count()

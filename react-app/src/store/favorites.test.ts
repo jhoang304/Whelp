@@ -35,7 +35,7 @@ test("a restaurant the store does not hold is left out, not invented", () => {
 });
 
 test("the Saved count moves by one when the flag changes, and not when it does not", () => {
-  const own = { profile: { id: 3, restaurants: [], favorite_count: 2 } as any, reviews: [] };
+  const own = { profile: { id: 3, restaurants: [], favorite_count: 2 } as any, reviews: [], reviewsTotal: 0 };
 
   expect(userProfileReducer(own, favoriteChanged(1, true, false)).profile!.favorite_count).toBe(3);
   expect(userProfileReducer(own, favoriteChanged(1, false, true)).profile!.favorite_count).toBe(1);
@@ -44,7 +44,7 @@ test("the Saved count moves by one when the flag changes, and not when it does n
 });
 
 test("someone else's profile has no count to move", () => {
-  const theirs = { profile: { id: 4, restaurants: [card(1)] } as any, reviews: [] };
+  const theirs = { profile: { id: 4, restaurants: [card(1)] } as any, reviews: [], reviewsTotal: 0 };
 
   const next = userProfileReducer(theirs, favoriteChanged(1, true, false));
 

@@ -9,9 +9,11 @@ restaurant_categories = db.Table(
     db.Column("restaurant_id", db.Integer,
               db.ForeignKey(add_prefix_for_prod("restaurants.id"), ondelete="CASCADE"),
               primary_key=True),
+    # Indexed on its own: the primary key leads with restaurant_id, and the
+    # listing's cuisine filter asks by category (#137).
     db.Column("category_id", db.Integer,
               db.ForeignKey(add_prefix_for_prod("categories.id"), ondelete="CASCADE"),
-              primary_key=True),
+              primary_key=True, index=True),
     **({"schema": SCHEMA} if environment == "production" else {}),
 )
 

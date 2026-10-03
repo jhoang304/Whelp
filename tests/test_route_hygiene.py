@@ -49,7 +49,7 @@ def test_public_gets_do_not_depend_on_rule_ordering(client, ids):
 
     own_reviews = client.get(f"/api/users/{ids['reviewer']}/reviews")
     assert own_reviews.status_code == 200
-    assert isinstance(own_reviews.get_json(), list)
+    assert len(own_reviews.get_json()["items"]) == 1
 
 
 def test_get_on_a_post_only_route_is_a_405_not_a_404(client, ids):

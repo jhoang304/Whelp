@@ -55,7 +55,9 @@ def test_a_users_reviews_are_at_their_own_url(client, ids):
 
     res = client.get(f"/api/users/{ids['reviewer']}/reviews")
     assert res.status_code == 200
-    reviews = res.get_json()
+    body = res.get_json()
+    reviews = body["items"]
+    assert body["total"] == 2
     assert [review["review"] for review in reviews] == ["Newer.", "Solid."]
     assert reviews[0]["restaurant"]["name"] == "Second Spot"
 
@@ -63,7 +65,8 @@ def test_a_users_reviews_are_at_their_own_url(client, ids):
 def test_a_user_with_no_reviews(client, ids):
     res = client.get(f"/api/users/{ids['bystander']}/reviews")
     assert res.status_code == 200
-    assert res.get_json() == []
+    assert res.get_json()["items"] == []
+    assert res.get_json()["total"] == 0
 
 
 def test_the_reviews_of_a_user_who_does_not_exist(client):
@@ -123,3 +126,26 @@ def test_the_refusals_say_what_happened_in_plain_words(client, ids):
     res = client.post(f"/api/restaurants/{ids['restaurant']}/reviews", json={"review": "Again.", "rating": 5})
     assert res.status_code == 403
     assert res.get_json()["errors"] == ["You've already reviewed this restaurant"]
+
+
+def test_a_users_reviews_come_a_page_at_a_time(client, ids):
+    """Paged like the other feeds (#137): a prolific reviewer's profile loaded every one."""
+    for n in range(4):
+        place = Restaurant(user_id=ids["owner"], name=f"Spot {n}", price="$", address=f"{n} Main St",
+                           city="Houston", state="TX", zipcode="77001", country="USA",
+                           phone_number="(555) 555-5555", website="http://spot.com", description="Somewhere.")
+        db.session.add(place)
+        db.session.commit()
+        db.session.add(Review(user_id=ids["reviewer"], restaurant_id=place.id, review=f"Spot {n}.", rating=4))
+    db.session.commit()
+
+    first = client.get(f"/api/users/{ids['reviewer']}/reviews?per_page=2").get_json()
+    assert len(first["items"]) == 2 and first["total"] == 5 and first["per_page"] == 2
+
+    rest = client.get(f"/api/users/{ids['reviewer']}/reviews?offset=2&per_page=10").get_json()
+    assert len(rest["items"]) == 3
+    seen = [review["id"] for review in first["items"] + rest["items"]]
+    assert len(set(seen)) == 5
+
+    bad = client.get(f"/api/users/{ids['reviewer']}/reviews?per_page=zero")
+    assert bad.status_code == 400
