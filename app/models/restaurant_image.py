@@ -25,7 +25,9 @@ class RestaurantImage(db.Model):
         __table_args__ = (one_preview_per_restaurant,)
 
     id = db.Column(db.Integer, primary_key=True)
-    restaurant_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("restaurants.id")),nullable=False)
+    # Indexed for every restaurant's photos: the partial index above only
+    # serves the cover, "WHERE preview" (#137).
+    restaurant_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod("restaurants.id")),nullable=False, index=True)
     url = db.Column(db.String(255))
     # The object key this app minted for the uploader, when the url names one
     # of our objects and the caller uploaded it. Null for a hot-linked image,

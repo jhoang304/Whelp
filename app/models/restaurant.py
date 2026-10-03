@@ -11,7 +11,8 @@ class Restaurant(db.Model):
         __table_args__ = {'schema': SCHEMA}
 
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod('users.id')),nullable=False)
+    # Indexed: a profile lists its owner's restaurants by it (#137).
+    user_id = db.Column(db.Integer, db.ForeignKey(add_prefix_for_prod('users.id')),nullable=False, index=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.String(5), nullable=False)
     address = db.Column(db.String(100), nullable=False)

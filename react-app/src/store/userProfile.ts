@@ -9,11 +9,31 @@ import { apiFetch, NETWORK_ERROR } from '../utils/api';
 
 const LOAD_PROFILE = 'userProfile/LOAD_PROFILE';
 const CLEAR_PROFILE = 'userProfile/CLEAR_PROFILE';
+const LOAD_MORE_REVIEWS = 'userProfile/LOAD_MORE_REVIEWS';
 
-const loadProfile = (profile: UserProfile, reviews: Review[]) => ({
+/**
+ * A profile's reviews come a page at a time, like a restaurant's (#137): a
+ * prolific reviewer's profile loaded every review, photo and reply at once.
+ */
+export const PROFILE_REVIEWS_PER_PAGE = 10;
+
+/** A page of a user's reviews, as GET /api/users/<id>/reviews answers. */
+interface ReviewPage {
+    items: Review[];
+    total: number;
+}
+
+const loadProfile = (profile: UserProfile, reviews: Review[], reviewsTotal: number) => ({
     type: LOAD_PROFILE,
     profile,
     reviews,
+    reviewsTotal,
+});
+
+const loadMoreReviews = (reviews: Review[], reviewsTotal: number) => ({
+    type: LOAD_MORE_REVIEWS,
+    reviews,
+    reviewsTotal,
 });
 
 export const clearProfile = () => ({ type: CLEAR_PROFILE });
@@ -27,7 +47,7 @@ let latestProfileId: string | null = null;
 
 /**
  * Load a user's public profile (name, avatar, businesses, counts) together
- * with every review they have written. Returns null on success or a list of
+ * with the first page of their reviews. Returns null on success or a list of
  * error messages on failure, and null without touching the store when
  * another profile has been asked for since.
  */
@@ -41,7 +61,7 @@ export const getProfileThunk = (userId: string | number) => async (dispatch: App
     try {
         [profileRes, reviewsRes] = await Promise.all([
             apiFetch(`/api/users/get/${userId}`),
-            apiFetch(`/api/users/${userId}/reviews`),
+            apiFetch(`/api/users/${userId}/reviews?per_page=${PROFILE_REVIEWS_PER_PAGE}`),
         ]);
     } catch (networkError) {
         // "Loading profile..." stayed up for good on a dropped connection (#116).
@@ -50,9 +70,9 @@ export const getProfileThunk = (userId: string | number) => async (dispatch: App
 
     if (profileRes.ok && reviewsRes.ok) {
         const profile: UserProfile = await profileRes.json();
-        const reviews: Review[] = await reviewsRes.json();
+        const page: ReviewPage = await reviewsRes.json();
         if (superseded()) return null;
-        dispatch(loadProfile(profile, reviews));
+        dispatch(loadProfile(profile, page.items, page.total));
         return null;
     }
 
@@ -62,6 +82,29 @@ export const getProfileThunk = (userId: string | number) => async (dispatch: App
         return ["We couldn't find that user."];
     }
     return ["Something went wrong loading this profile."];
+};
+
+/**
+ * The next page of the profile's reviews, after the `offset` already shown.
+ * An offset rather than a page number, so a review deleted meanwhile can't
+ * make the next page skip one. Returns null on success, or the messages.
+ */
+export const loadMoreProfileReviews = (userId: string | number, offset: number) => async (dispatch: AppDispatch) => {
+    const requested = String(userId);
+    let response: Response;
+    try {
+        response = await apiFetch(`/api/users/${userId}/reviews?offset=${offset}&per_page=${PROFILE_REVIEWS_PER_PAGE}`);
+    } catch (networkError) {
+        return [NETWORK_ERROR];
+    }
+    if (!response.ok) {
+        return parseErrors(response, "Couldn't load more reviews. Please try again.");
+    }
+    const page: ReviewPage = await response.json();
+    // Another profile since: these aren't its reviews.
+    if (latestProfileId !== requested) return null;
+    dispatch(loadMoreReviews(page.items, page.total));
+    return null;
 };
 
 export interface ProfileUpdates {
@@ -96,14 +139,22 @@ export const editProfileThunk = (updates: ProfileUpdates, userId: string | numbe
     return parseErrors(response, "Could not update your profile. Please try again.");
 };
 
-const initialState: UserProfileState = { profile: null, reviews: [] };
+const initialState: UserProfileState = { profile: null, reviews: [], reviewsTotal: 0 };
 
 export default function userProfileReducer(state: UserProfileState = initialState, action: AnyAction): UserProfileState {
     switch (action.type) {
         case LOAD_PROFILE:
-            return { profile: action.profile, reviews: action.reviews };
+            return { profile: action.profile, reviews: action.reviews, reviewsTotal: action.reviewsTotal };
         case CLEAR_PROFILE:
-            return { profile: null, reviews: [] };
+            return initialState;
+        case LOAD_MORE_REVIEWS: {
+            // A review written since moves the rest down one, so one can
+            // arrive twice: keep the first copy. Nothing new means the end,
+            // whatever the count says, or Show more would stay and fetch nothing.
+            const fresh = (action.reviews as Review[]).filter((review) => !state.reviews.some((kept) => kept.id === review.id));
+            const reviews = [...state.reviews, ...fresh];
+            return { ...state, reviews, reviewsTotal: fresh.length ? action.reviewsTotal : reviews.length };
+        }
         case FAVORITE_CHANGED: {
             const { profile } = state;
             if (!profile) return state;
