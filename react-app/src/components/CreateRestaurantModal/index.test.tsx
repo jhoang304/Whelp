@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import restaurantsReducer from "../../store/restaurants";
 import categoriesReducer from "../../store/categories";
 import CreateRestaurantModal from "./index";
+import type { Mock } from "vitest";
 
 /**
  * What creating a restaurant does, written before #61 pulls the ten fields
@@ -20,20 +21,20 @@ import CreateRestaurantModal from "./index";
  * make another restaurant on every retry (#114).
  */
 
-const mockCloseModal = jest.fn();
-jest.mock("../../context/Modal", () => ({
+const mockCloseModal = vi.fn();
+vi.mock("../../context/Modal", () => ({
   useModal: () => ({ closeModal: mockCloseModal }),
 }));
 
-const mockPush = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+const mockPush = vi.fn();
+vi.mock("react-router-dom", async () => ({
+  ...(await vi.importActual<typeof import("react-router-dom")>("react-router-dom")),
   useHistory: () => ({ push: mockPush }),
 }));
 
-const mockUploadImage = jest.fn();
-jest.mock("../../utils/uploads", () => ({
-  ...jest.requireActual("../../utils/uploads"),
+const mockUploadImage = vi.fn();
+vi.mock("../../utils/uploads", async () => ({
+  ...(await vi.importActual<typeof import("../../utils/uploads")>("../../utils/uploads")),
   uploadImage: (file: File) => mockUploadImage(file),
 }));
 
@@ -87,7 +88,7 @@ function fillTheForm() {
 
 /** The bodies of the JSON requests the modal sent, by URL. */
 function sentJson() {
-  return ((global as any).fetch as jest.Mock).mock.calls
+  return ((global as any).fetch as Mock).mock.calls
     .filter(([, options]) => options?.body && typeof options.body === "string")
     .map(([url, options]) => ({ url, body: JSON.parse(options.body) }));
 }
@@ -95,17 +96,17 @@ function sentJson() {
 beforeEach(() => {
   // The cover preview draws a chosen file through a blob: url, which jsdom
   // does not implement.
-  (global.URL as any).createObjectURL = jest.fn(() => "blob:cover");
-  (global.URL as any).revokeObjectURL = jest.fn();
+  (global.URL as any).createObjectURL = vi.fn(() => "blob:cover");
+  (global.URL as any).revokeObjectURL = vi.fn();
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
 test("a valid submission creates the restaurant with its cover, in one request, and opens its page", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ id: 7 })));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ id: 7 })));
 
   renderModal();
   fillTheForm();
@@ -127,7 +128,7 @@ test("a valid submission creates the restaurant with its cover, in one request, 
 });
 
 test("the cuisines picked are sent with the restaurant", async () => {
-  (global as any).fetch = jest.fn((url: string) => {
+  (global as any).fetch = vi.fn((url: string) => {
     if (url === "/api/categories/") return Promise.resolve(okJson({ items: [
       { id: 4, name: "Pizza", slug: "pizza" },
       { id: 9, name: "Italian", slug: "italian" },
@@ -146,18 +147,24 @@ test("the cuisines picked are sent with the restaurant", async () => {
 });
 
 test("client-side validation blocks the request entirely", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
 
   renderModal();
-  fireEvent.click(submitButton()); // nothing filled in
 
+  // Nothing filled in: the browser's own check of the required fields stops
+  // it first -- and jsdom runs that check too, since the move to Vitest (#138).
+  fireEvent.click(submitButton());
+  expect(sentJson()).toHaveLength(0);
+
+  // The form's own check, behind it, for whatever the browser lets through.
+  fireEvent.submit(submitButton().closest("form")!);
   expect(await screen.findByText("Restaurant name is required")).toBeInTheDocument();
   expect(sentJson()).toHaveLength(0);
   expect(mockCloseModal).not.toHaveBeenCalled();
 });
 
 test("a cover photo is required before anything is created", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
 
   renderModal();
   fillTheForm();
@@ -169,7 +176,7 @@ test("a cover photo is required before anything is created", async () => {
 });
 
 test("a failed upload stops before the restaurant is created", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
   mockUploadImage.mockResolvedValue({ errors: ["Images must be smaller than 5 MB."] });
 
   renderModal();
@@ -189,7 +196,7 @@ test("a failed upload stops before the restaurant is created", async () => {
 });
 
 test("the server's errors are shown and the modal stays open", async () => {
-  (global as any).fetch = jest.fn(() =>
+  (global as any).fetch = vi.fn(() =>
     Promise.resolve({
       ok: false,
       status: 400,
@@ -208,7 +215,7 @@ test("the server's errors are shown and the modal stays open", async () => {
 });
 
 test("a dropped connection is reported instead of stranding the form", async () => {
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
 
   renderModal();
   fillTheForm();
@@ -220,7 +227,7 @@ test("a dropped connection is reported instead of stranding the form", async () 
 });
 
 test("the cover photo is previewed once there is one to show", () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({})));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({})));
   renderModal();
   const preview = () => document.querySelector(".image-picker-preview img");
   expect(preview()).toBeNull();
@@ -244,7 +251,7 @@ const refused = (errors: string[]) => ({ ok: false, status: 400, json: () => Pro
 
 /** Answer each create with the next of `answers`; the form's own lists with nothing. */
 function answerCreates(...answers: any[]) {
-  (global as any).fetch = jest.fn((url: string, options: any = {}) =>
+  (global as any).fetch = vi.fn((url: string, options: any = {}) =>
     Promise.resolve(options.method === "POST" && url === "/api/restaurants/" ? answers.shift() : okJson({ items: [] })));
 }
 
@@ -266,7 +273,7 @@ test("a refused create made nothing, so trying again is one restaurant, not two"
 });
 
 test("a pasted link longer than the API takes is caught before anything is sent", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
 
   renderModal();
   fillTheForm();
@@ -280,7 +287,7 @@ test("a pasted link longer than the API takes is caught before anything is sent"
 });
 
 test("a link may say HTTPS in capitals, as the API allows", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ id: 7 })));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ id: 7 })));
 
   renderModal();
   fillTheForm();

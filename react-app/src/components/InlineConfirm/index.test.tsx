@@ -9,7 +9,7 @@ import { axe } from "../../testUtils/axe";
  * is under way the buttons wait without dropping focus.
  */
 
-function Harness({ busy = false, onConfirm = jest.fn() }: { busy?: boolean; onConfirm?: () => void }) {
+function Harness({ busy = false, onConfirm = vi.fn() }: { busy?: boolean; onConfirm?: () => void }) {
   const [asking, setAsking] = useState(false);
   return (
     <div>
@@ -47,7 +47,7 @@ test("it is named by its question, and focus moves to Cancel", async () => {
 });
 
 test("Remove does the removing, and Cancel takes the question back, focus and all", () => {
-  const onConfirm = jest.fn();
+  const onConfirm = vi.fn();
   render(<Harness onConfirm={onConfirm} />);
   const { opener, question } = ask();
 
@@ -72,7 +72,7 @@ test("Escape is Cancel, and stops there, so the modal around it stays open", () 
 });
 
 test("while it is under way, it says so and ignores clicks, without dropping focus", () => {
-  const onConfirm = jest.fn();
+  const onConfirm = vi.fn();
   render(<Harness busy onConfirm={onConfirm} />);
   const { question } = ask();
   const remove = within(question).getByRole("button", { name: "Removing..." });

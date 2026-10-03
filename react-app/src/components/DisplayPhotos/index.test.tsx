@@ -6,6 +6,7 @@ import photoReducer from "../../store/restaurantPhoto";
 import restaurantsReducer from "../../store/restaurants";
 import { ModalProvider } from "../../context/Modal";
 import DisplayPhotos from "./index";
+import type { Mock } from "vitest";
 
 /**
  * "See all photos". A load that failed used to leave "Loading..." up for
@@ -45,7 +46,7 @@ afterEach(() => {
 
 test("a load that can't reach the server says so, and Try again loads them", async () => {
   const answers = [() => Promise.reject(new TypeError("Failed to fetch")), () => Promise.resolve(ok([photo(1, 3)]))];
-  (global as any).fetch = jest.fn(() => answers.shift()!());
+  (global as any).fetch = vi.fn(() => answers.shift()!());
   renderPhotos();
 
   expect(await screen.findByRole("alert")).toHaveTextContent("Couldn't reach the server");
@@ -56,7 +57,7 @@ test("a load that can't reach the server says so, and Try again loads them", asy
 });
 
 test("another restaurant's photos left in the store are not shown as this one's", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({ errors: ["boom"] }) }));
+  (global as any).fetch = vi.fn(() => Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({ errors: ["boom"] }) }));
   renderPhotos([photo(7, 1), photo(8, 1)]);
 
   expect(await screen.findByRole("alert")).toBeInTheDocument();
@@ -64,7 +65,7 @@ test("another restaurant's photos left in the store are not shown as this one's"
 });
 
 test("only this restaurant's photos are listed, even alongside another's", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(ok([photo(1, 3), photo(2, 3)])));
+  (global as any).fetch = vi.fn(() => Promise.resolve(ok([photo(1, 3), photo(2, 3)])));
   renderPhotos([photo(7, 1)]);
 
   await waitFor(() => expect(shownPhotos()).toEqual(["https://img/1.jpg", "https://img/2.jpg"]));
@@ -81,7 +82,7 @@ const OWNER = { id: 1, username: "owner" };
  */
 function serve(photos: any[], remove: () => any = () => ok({ message: "Successfully deleted" })) {
   let current = photos;
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => {
     if (options.method === "DELETE") {
       const answer = remove();
       if (answer.ok) current = current.filter((p) => url !== `/api/restaurant-images/${p.id}`);
@@ -92,7 +93,7 @@ function serve(photos: any[], remove: () => any = () => ok({ message: "Successfu
   });
 }
 
-const deletes = () => ((global as any).fetch as jest.Mock).mock.calls
+const deletes = () => ((global as any).fetch as Mock).mock.calls
   .filter(([, options]) => options?.method === "DELETE").map(([url]) => url);
 
 /** The first photo's Remove, clicked with focus on it, as in a browser. */

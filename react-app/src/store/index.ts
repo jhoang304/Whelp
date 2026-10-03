@@ -3,6 +3,7 @@ import {
 } from 'redux';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import thunk, { ThunkDispatch } from 'redux-thunk';
+import logger from 'redux-logger';
 import { RootState } from '../types';
 import session from './session'
 import restaurantsReducer from './restaurants';
@@ -41,10 +42,12 @@ declare global {
 
 let enhancer: StoreEnhancer;
 
-if (process.env.NODE_ENV === 'production') {
+// The logger and the devtools hook are for development. A production build
+// drops this branch, and the logger with it (#138: it was a require(), which
+// Vite's ES modules don't have).
+if (import.meta.env.PROD) {
   enhancer = applyMiddleware(thunk);
 } else {
-  const logger = require('redux-logger').default;
   const composeEnhancers =
     window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__ || compose;
   enhancer = composeEnhancers(applyMiddleware(thunk, logger));

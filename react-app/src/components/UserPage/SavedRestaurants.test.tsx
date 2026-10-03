@@ -34,12 +34,12 @@ function renderSaved() {
 }
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
 test("it lists what the API returns, in its order", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({
     items: [card(2, "Second Saved"), card(1, "First Saved")], page: 1, per_page: 20, total: 2,
   })));
   renderSaved();
@@ -51,7 +51,7 @@ test("it lists what the API returns, in its order", async () => {
 });
 
 test("unsaving one takes it off the list", async () => {
-  (global as any).fetch = jest.fn((_url: string, options: any = {}) =>
+  (global as any).fetch = vi.fn((_url: string, options: any = {}) =>
     Promise.resolve(options.method === "DELETE"
       ? okJson({ isFavorited: false })
       : okJson({ items: [card(2, "Keep Me"), card(1, "Drop Me")], page: 1, per_page: 20, total: 2 })));
@@ -64,7 +64,7 @@ test("unsaving one takes it off the list", async () => {
 });
 
 test("with nothing saved it says how to save something", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ items: [], page: 1, per_page: 20, total: 0 })));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ items: [], page: 1, per_page: 20, total: 0 })));
   renderSaved();
 
   expect(await screen.findByText("You haven't saved any restaurants yet")).toBeInTheDocument();
@@ -72,7 +72,7 @@ test("with nothing saved it says how to save something", async () => {
 });
 
 test("a refusal is shown rather than an empty list", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: false, status: 403, json: () => Promise.resolve({ errors: ["You can only see your own saved restaurants"] }),
   }));
   renderSaved();
@@ -82,7 +82,7 @@ test("a refusal is shown rather than an empty list", async () => {
 });
 
 test("focus moves to the next heart after an unsave, and to the heading after the last", async () => {
-  (global as any).fetch = jest.fn((_url: string, options: any = {}) =>
+  (global as any).fetch = vi.fn((_url: string, options: any = {}) =>
     Promise.resolve(options.method === "DELETE"
       ? okJson({ isFavorited: false })
       : okJson({ items: [card(2, "Alpha"), card(1, "Beta")], page: 1, per_page: 20, total: 2 })));
@@ -106,7 +106,7 @@ test("focus moves to the next heart after an unsave, and to the heading after th
  */
 function serveSaved(count: number) {
   let list = Array.from({ length: count }, (_, index) => card(count - index, `Saved ${count - index}`));
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => {
     if (options.method === "DELETE") {
       const id = Number(url.split("/")[3]);
       list = list.filter((item) => item.id !== id);

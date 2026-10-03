@@ -8,6 +8,7 @@ import restaurantsReducer from "../../../store/restaurants";
 import { UPDATE_REVIEW_PATH } from "../paths";
 import UpdateReview from "./index";
 import { axe } from "../../../testUtils/axe";
+import type { Mock } from "vitest";
 
 /**
  * The edit form, where a review's photos can go as well as come.
@@ -22,16 +23,16 @@ import { axe } from "../../../testUtils/axe";
  * author, at the restaurant it belongs to (#112).
  */
 
-const mockPush = jest.fn();
-const mockReplace = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+const mockPush = vi.fn();
+const mockReplace = vi.fn();
+vi.mock("react-router-dom", async () => ({
+  ...(await vi.importActual<typeof import("react-router-dom")>("react-router-dom")),
   useHistory: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
-const mockUploadImage = jest.fn();
-jest.mock("../../../utils/uploads", () => ({
-  ...jest.requireActual("../../../utils/uploads"),
+const mockUploadImage = vi.fn();
+vi.mock("../../../utils/uploads", async () => ({
+  ...(await vi.importActual<typeof import("../../../utils/uploads")>("../../../utils/uploads")),
   uploadImage: (file: File) => mockUploadImage(file),
 }));
 
@@ -57,7 +58,7 @@ const review = {
  * The review is what the page asks for first, and again after a partial save.
  */
 function serve(others: (url: string, options: any) => any = () => okJson({}), found: any = okJson(review)) {
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => {
     if ((options.method ?? "GET") === "GET" && url === `/api/reviews/${REVIEW}`) return Promise.resolve(found);
     return Promise.resolve(others(url, options));
   });
@@ -89,7 +90,7 @@ function renderForm({ state, user = AUTHOR, stored = {}, path = `/${RESTAURANT}/
 }
 
 const attachCalls = () =>
-  ((global as any).fetch as jest.Mock).mock.calls
+  ((global as any).fetch as Mock).mock.calls
     .filter(([url, options]) => options?.method === "POST" && url === `/api/reviews/${REVIEW}/images`)
     .map(([, options]) => JSON.parse(options.body).url);
 
@@ -99,19 +100,19 @@ const chosenRating = () => (screen.getByRole("radio", { checked: true }) as HTML
 
 beforeEach(() => {
   let n = 0;
-  (global.URL as any).createObjectURL = jest.fn(() => `blob:${n++}`);
-  (global.URL as any).revokeObjectURL = jest.fn();
+  (global.URL as any).createObjectURL = vi.fn(() => `blob:${n++}`);
+  (global.URL as any).revokeObjectURL = vi.fn();
   mockUploadImage.mockImplementation(async (file: File) => ({ url: `https://bucket/${file.name}` }));
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
 // --- photos -------------------------------------------------------------------
 
-const deletes = () => ((global as any).fetch as jest.Mock).mock.calls.filter(([, options]) => options?.method === "DELETE");
+const deletes = () => ((global as any).fetch as Mock).mock.calls.filter(([, options]) => options?.method === "DELETE");
 
 /**
  * The × on the review's photo, and Remove when it asks, once the form is up.
@@ -340,6 +341,6 @@ test("saving sends the stars as they are now", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Save changes" }));
 
   await waitFor(() => expect(mockReplace).toHaveBeenCalledWith(`/single/${RESTAURANT}`));
-  const [, saved] = ((global as any).fetch as jest.Mock).mock.calls.find(([, options]) => options?.method === "PUT");
+  const [, saved] = ((global as any).fetch as Mock).mock.calls.find(([, options]) => options?.method === "PUT")!;
   expect(JSON.parse(saved.body)).toEqual({ review: "Solid.", rating: 2 });
 });

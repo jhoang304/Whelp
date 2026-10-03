@@ -12,7 +12,7 @@ import PhotoCarousel, { ROTATE_PX_PER_SECOND } from "./PhotoCarousel";
 
 const PHOTOS = [0, 1, 2].map((index) => ({ id: index + 10, url: `https://img/${index}.jpg`, index }));
 
-function renderCarousel(onOpen = jest.fn()) {
+function renderCarousel(onOpen = vi.fn()) {
   const view = render(
     <PhotoCarousel photos={PHOTOS} name="Nancy's Hustle" onOpen={onOpen}
       corner={<button type="button">See all</button>}>
@@ -24,7 +24,7 @@ function renderCarousel(onOpen = jest.fn()) {
   Object.defineProperty(track, "clientWidth", { value: 500, configurable: true });
   Object.defineProperty(set, "scrollWidth", { value: 1200, configurable: true });
   Object.defineProperty(set, "offsetWidth", { value: 1200, configurable: true });
-  (track as any).scrollBy = jest.fn();
+  (track as any).scrollBy = vi.fn();
   act(() => { window.dispatchEvent(new Event("resize")); });
   const section = document.querySelector(".restaurant-carousel") as HTMLElement;
   return { ...view, track, section, onOpen };
@@ -33,16 +33,16 @@ function renderCarousel(onOpen = jest.fn()) {
 /** How far it drifts in `ms` of animation frames. */
 const drift = (track: HTMLElement, ms: number) => {
   const before = track.scrollLeft;
-  act(() => { jest.advanceTimersByTime(ms); });
+  act(() => { vi.advanceTimersByTime(ms); });
   return track.scrollLeft - before;
 };
 
 beforeEach(() => {
-  jest.useFakeTimers();
+  vi.useFakeTimers();
 });
 
 afterEach(() => {
-  jest.useRealTimers();
+  vi.useRealTimers();
   delete (window as any).matchMedia;
 });
 
@@ -124,7 +124,7 @@ test("a hover holds it exactly where it is, and it carries on from there", () =>
   drift(track, 1000);
   fireEvent.mouseEnter(section);
   const heldAt = track.scrollLeft;
-  act(() => { jest.advanceTimersByTime(1000); });
+  act(() => { vi.advanceTimersByTime(1000); });
   expect(track.scrollLeft).toBe(heldAt);
 
   fireEvent.mouseLeave(section);
@@ -163,7 +163,7 @@ test("a swipe on a touch screen is taking over", () => {
 });
 
 test("for anyone who asked for less motion it never moves, and has no pause button", () => {
-  (window as any).matchMedia = jest.fn((query: string) => ({
+  (window as any).matchMedia = vi.fn((query: string) => ({
     matches: query.includes("reduce"), media: query, onchange: null,
     addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
     dispatchEvent() { return false; },
@@ -175,7 +175,7 @@ test("for anyone who asked for less motion it never moves, and has no pause butt
 });
 
 test("with photos that all fit, nothing moves and there are no arrows", () => {
-  render(<PhotoCarousel photos={PHOTOS.slice(0, 1)} name="Tiny" onOpen={jest.fn()} />);
+  render(<PhotoCarousel photos={PHOTOS.slice(0, 1)} name="Tiny" onOpen={vi.fn()} />);
   // jsdom's widths are all 0, so one photo "fits".
   expect(screen.queryByRole("button", { name: "Next photos" })).not.toBeInTheDocument();
   expect(document.querySelectorAll(".restaurant-carousel-set")).toHaveLength(1);

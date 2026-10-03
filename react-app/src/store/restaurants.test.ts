@@ -78,7 +78,7 @@ afterEach(() => {
 
 test("refreshing the restaurant on show, and failing, leaves it on show", async () => {
   // As after adding a photo or deleting a review: the page is up already.
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
   const store = storeShowing({ id: 3, name: "Uchi" });
 
   const errors = await (store.dispatch as any)(getSingleRestaurant(3));
@@ -88,7 +88,7 @@ test("refreshing the restaurant on show, and failing, leaves it on show", async 
 });
 
 test("opening another restaurant that fails doesn't leave the last one showing", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: false, status: 404, json: () => Promise.resolve({ errors: ["Restaurant couldn't be found"] }),
   }));
   const store = storeShowing({ id: 3, name: "Uchi" });

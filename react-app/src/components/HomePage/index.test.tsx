@@ -6,6 +6,7 @@ import { MemoryRouter, Route } from "react-router-dom";
 import restaurantsReducer from "../../store/restaurants";
 import HomePage from "./index";
 import { axe } from "../../testUtils/axe";
+import type { Mock } from "vitest";
 
 /**
  * The home page shows what is on the site (#134): a search, the cuisines
@@ -56,7 +57,7 @@ const DATA: Record<string, any> = {
 
 /** Each list from DATA, unless `answers` says otherwise for its url. */
 function serve(answers: Record<string, () => any> = {}) {
-  (global as any).fetch = jest.fn((url: string) => {
+  (global as any).fetch = vi.fn((url: string) => {
     if (answers[url]) return Promise.resolve(answers[url]());
     if (DATA[url]) return Promise.resolve(ok(DATA[url]));
     return Promise.resolve(broken());
@@ -143,7 +144,7 @@ test("top rated asks only for restaurants someone has reviewed", async () => {
   renderHome();
   await settled();
 
-  const urls = ((global as any).fetch as jest.Mock).mock.calls.map(([url]) => url);
+  const urls = ((global as any).fetch as Mock).mock.calls.map(([url]) => url);
   expect(urls).toEqual(expect.arrayContaining(["/api/restaurants/?sort=rating&min_rating=1&per_page=6"]));
 });
 
@@ -207,7 +208,7 @@ test("a section that can't load says so, and tries again on its own", async () =
 });
 
 test("a dropped connection says so in the section", async () => {
-  (global as any).fetch = jest.fn((url: string) => url.startsWith("/api/categories")
+  (global as any).fetch = vi.fn((url: string) => url.startsWith("/api/categories")
     ? Promise.reject(new TypeError("Failed to fetch"))
     : Promise.resolve(ok(DATA[url])));
   renderHome();
@@ -217,7 +218,7 @@ test("a dropped connection says so in the section", async () => {
 });
 
 test("an empty site is still a page: no empty sections, and a word about why", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(ok({ items: [] })));
+  (global as any).fetch = vi.fn(() => Promise.resolve(ok({ items: [] })));
   renderHome();
 
   expect(await screen.findByRole("heading", { name: "No restaurants yet" })).toBeInTheDocument();

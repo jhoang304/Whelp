@@ -32,7 +32,7 @@ const RESTAURANT = {
 };
 
 function renderPage(user: any = null, overrides: any = {}) {
-  (global as any).fetch = jest.fn((url: string) => Promise.resolve({
+  (global as any).fetch = vi.fn((url: string) => Promise.resolve({
     ok: true, status: 200,
     json: () => Promise.resolve(url.includes("/reviews")
       ? { items: [], page: 1, per_page: 10, total: 0 }
@@ -55,7 +55,7 @@ function renderPage(user: any = null, overrides: any = {}) {
 }
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
@@ -132,7 +132,7 @@ const OWNER = { id: 9, username: "demo" };
 
 function renderForDelete(deleteAnswer: () => Promise<any>) {
   const requests: string[] = [];
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => {
     requests.push(`${options.method ?? "GET"} ${url}`);
     if (options.method === "DELETE") return deleteAnswer();
     return Promise.resolve({

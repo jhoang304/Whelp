@@ -50,7 +50,7 @@ CI runs both test suites and a production build on every pull request (GitHub Ac
 Running the backend server:
 * From the root directory, copy `.env.example` to `.env` (the defaults use a local SQLite database)
 * Put a `SECRET_KEY` in it. The app refuses to boot without one; generate yours with `python -c "import secrets; print(secrets.token_hex(32))"`
-* Use Python 3.11 (pinned in `.python-version`) and Node 18
+* Use Python 3.11 (pinned in `.python-version`) and Node 22 (pinned in `.node-version`; the build runs on Node 18 or later, the tests need 20 or later)
 * Run "pipenv install --dev" to install the dependencies the `Pipfile` lists, including the test tools. The deployed service and CI install the same pinned versions from `requirements.txt`
 * Run "pipenv shell" to run the virtual environment
 * Run "flask db upgrade" to create a local database
@@ -60,7 +60,7 @@ Running the backend server:
 Running the frontend server:
 * From the root directory, cd into the react-app directory/folder
 * Run "npm install" to install dependencies
-* Run "npm start" to boot up the frontend server and open a browser tab to the landing page
+* Run "npm start" to boot up the frontend's development server (Vite), then open http://localhost:3000. It sends `/api` requests on to the Flask server on port 5000, so run "flask run" alongside it
 
 ### Deploying
 
@@ -127,11 +127,11 @@ pytest
 Frontend, from `react-app/`:
 ```
 npm ci
-npx tsc --noEmit
-npm test -- --watchAll=false
+npx tsc
+npx vitest run
 ```
 
-The Flask tests run the app against an in-memory SQLite database with S3 mocked, and cover the routes, permissions, error shape, form rules and query counts. Every pull request runs both suites, plus the production build and an advisory dependency audit: see `.github/workflows/ci.yml`.
+The Flask tests run the app against an in-memory SQLite database with S3 mocked, and cover the routes, permissions, error shape, form rules and query counts. Every pull request runs both suites, the production build, and a dependency audit of each side -- `pip-audit` for the backend and `npm audit --omit=dev` for the frontend -- either of which fails the run: see `.github/workflows/ci.yml`.
 
 ### Checking a layout change on small screens
 

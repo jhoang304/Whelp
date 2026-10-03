@@ -21,7 +21,7 @@ const review = (id: number, user: any) => ({
 });
 
 test("an author who has left is 'Deleted user', with no link", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 200,
     json: () => Promise.resolve({
       items: [review(1, null), review(2, { id: 5, username: "rita", profile_image_url: null })],
@@ -56,7 +56,7 @@ test("an author who has left is 'Deleted user', with no link", async () => {
 
 test("the author's Edit and Delete sit in the review's header, named for what they act on", async () => {
   const rita = { id: 5, username: "rita", profile_image_url: null };
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 200,
     json: () => Promise.resolve({
       items: [review(1, rita), review(2, { id: 6, username: "sam", profile_image_url: null })],
@@ -113,7 +113,7 @@ function serveReviews(count: number, mine: number | null = null) {
     return review(1000 - index, author);
   });
   const requests: string[] = [];
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => {
     requests.push(`${options.method ?? "GET"} ${url}`);
     if (options.method === "DELETE") {
       const id = Number(url.split("/").pop());
@@ -282,7 +282,7 @@ test("a Show more that answers after the sort changed is dropped", async () => {
   serveReviews(25);
   const realFetch = (global as any).fetch;
   let releaseLate: () => void = () => {};
-  (global as any).fetch = jest.fn((url: string, options: any) => {
+  (global as any).fetch = vi.fn((url: string, options: any) => {
     if (url.includes("sort=newest&offset=20")) {
       return new Promise((resolve) => { releaseLate = () => resolve(realFetch(url, options)); });
     }
@@ -305,7 +305,7 @@ test("the list doesn't say there are no reviews before they have arrived", async
   let release: () => void = () => {};
   serveReviews(25);
   const realFetch = (global as any).fetch;
-  (global as any).fetch = jest.fn((url: string, options: any) =>
+  (global as any).fetch = vi.fn((url: string, options: any) =>
     new Promise((resolve) => { release = () => resolve(realFetch(url, options)); }));
   renderReviews(null);
 
@@ -329,7 +329,7 @@ test("reviews that couldn't be loaded say so, not 'No reviews yet', and Try agai
   serveReviews(3);
   const working = (global as any).fetch;
   let failNext = true;
-  (global as any).fetch = jest.fn((url: string, options: any) => {
+  (global as any).fetch = vi.fn((url: string, options: any) => {
     if (failNext && url.startsWith("/api/restaurants/3/reviews")) {
       failNext = false;
       return Promise.reject(new TypeError("Failed to fetch"));
@@ -349,7 +349,7 @@ test("reviews that couldn't be loaded say so, not 'No reviews yet', and Try agai
 test("a Show more that fails says so, and can be pressed again", async () => {
   serveReviews(25);
   const working = (global as any).fetch;
-  (global as any).fetch = jest.fn((url: string, options: any) =>
+  (global as any).fetch = vi.fn((url: string, options: any) =>
     url.includes("offset=20") ? Promise.reject(new TypeError("Failed to fetch")) : working(url, options));
   renderReviews(null);
 
@@ -363,7 +363,7 @@ test("a refused delete of your review keeps it, and the dialog says why", async 
   const server = serveReviews(3, 0);
   const mine = server.ids()[0];
   const working = (global as any).fetch;
-  (global as any).fetch = jest.fn((url: string, options: any = {}) =>
+  (global as any).fetch = vi.fn((url: string, options: any = {}) =>
     options.method === "DELETE"
       ? Promise.resolve({ ok: false, status: 401, json: () => Promise.resolve({ errors: ["Unauthorized"] }) })
       : working(url, options));

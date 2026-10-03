@@ -54,7 +54,7 @@ jobs:
           pip-audit --requirement requirements.txt
 
   frontend:
-    name: tsc, jest and build
+    name: tsc, vitest, build and audit
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -64,9 +64,8 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          # CRA 4's build needs --openssl-legacy-provider, which only exists on
-          # Node 17+. Modernising that toolchain is #33.
-          node-version: '18'
+          # The version Render builds with too: .node-version at the root.
+          node-version-file: .node-version
           cache: npm
           cache-dependency-path: react-app/package-lock.json
 
@@ -74,10 +73,18 @@ jobs:
         run: npm ci
 
       - name: Type-check
-        run: npx tsc --noEmit
+        run: npx tsc
 
       - name: Run the tests
-        run: npm test -- --watchAll=false
+        run: npx vitest run
 
       - name: Build
-        run: npm run build
+        run: npx vite build
+
+      - name: Audit dependencies
+        # Blocking, like pip-audit above. Under Create React App it was 29
+        # advisories, every one in its build and test tooling and none of them
+        # fixable while it sat in dependencies; since the move to Vite (#138)
+        # what the app ships with is clean, and a new advisory is something
+        # to answer.
+        run: npm audit --omit=dev

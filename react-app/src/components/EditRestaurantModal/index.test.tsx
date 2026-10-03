@@ -5,6 +5,7 @@ import thunk from "redux-thunk";
 import restaurantsReducer from "../../store/restaurants";
 import categoriesReducer from "../../store/categories";
 import EditRestaurant from "./index";
+import type { Mock } from "vitest";
 
 /**
  * The save lifecycle, which is what this component gets wrong when it
@@ -13,9 +14,9 @@ import EditRestaurant from "./index";
  * undefined instead of throwing. Backend tests cannot see any of that.
  */
 
-// Jest hoists jest.mock above the file, so the spy must be `mock`-prefixed.
-const mockCloseModal = jest.fn();
-jest.mock("../../context/Modal", () => ({
+// vi.mock is hoisted above the file; the spy is only read when a test runs.
+const mockCloseModal = vi.fn();
+vi.mock("../../context/Modal", () => ({
   useModal: () => ({ closeModal: mockCloseModal }),
 }));
 
@@ -69,13 +70,13 @@ function deferred<T>() {
 const okJson = (body: any) => ({ ok: true, status: 200, json: () => Promise.resolve(body) });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
 test("the modal stays open until the PUT resolves, then closes", async () => {
   const put = deferred<any>();
-  (global as any).fetch = jest.fn((_url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((_url: string, options: any = {}) => {
     if (options.method === "PUT") return put.promise;
     return Promise.resolve(okJson(restaurant)); // the refetch after a save
   });
@@ -94,7 +95,7 @@ test("the modal stays open until the PUT resolves, then closes", async () => {
 });
 
 test("a rejected save shows the server's errors and keeps the modal open", async () => {
-  (global as any).fetch = jest.fn(() =>
+  (global as any).fetch = vi.fn(() =>
     Promise.resolve({
       ok: false,
       status: 403,
@@ -114,7 +115,7 @@ test("a rejected save shows the server's errors and keeps the modal open", async
 test("a 400 the API should never send still tells the user something", async () => {
   // The API answers {"errors": [message, ...]}; anything else (a proxy's HTML
   // error page, say) must not leave the form silent.
-  (global as any).fetch = jest.fn(() =>
+  (global as any).fetch = vi.fn(() =>
     Promise.resolve({
       ok: false,
       status: 400,
@@ -132,7 +133,7 @@ test("a 400 the API should never send still tells the user something", async () 
 });
 
 test("a dropped connection is reported instead of stranding the form", async () => {
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
 
   renderModal();
   fireEvent.click(submitButton());
@@ -145,7 +146,7 @@ test("a dropped connection is reported instead of stranding the form", async () 
 });
 
 test("client-side validation blocks the request entirely", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
 
   renderModal();
   // A website with no dot fails the shared rules.
@@ -159,7 +160,7 @@ test("client-side validation blocks the request entirely", async () => {
   ).toBeInTheDocument();
   // Not "fetch was never called": the form reads the cuisine list when it
   // opens. What must not happen is the save.
-  const sent = ((global as any).fetch as jest.Mock).mock.calls;
+  const sent = ((global as any).fetch as Mock).mock.calls;
   expect(sent.every(([, options]) => options?.method !== "PUT")).toBe(true);
   expect(mockCloseModal).not.toHaveBeenCalled();
 });
@@ -178,7 +179,7 @@ test("a signed-out visitor is asked to log in", () => {
 // --- the demo's restaurants keep their names (#136) ----------------------------------
 
 test("a demo restaurant's name is there to read, not to change, and is sent as it was", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ ...restaurant, price: "$$$" })));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ ...restaurant, price: "$$$" })));
   renderModal(OWNER_ID, { isDemoRestaurant: true });
 
   const name = screen.getByRole("textbox", { name: "Business name" });
@@ -188,9 +189,9 @@ test("a demo restaurant's name is there to read, not to change, and is sent as i
     "The demo account's restaurants keep their names: everyone who tries the demo shares them.");
 
   fireEvent.click(submitButton());
-  const put = () => ((global as any).fetch as jest.Mock).mock.calls.find(([, options]) => options?.method === "PUT");
+  const put = () => ((global as any).fetch as Mock).mock.calls.find(([, options]) => options?.method === "PUT");
   await waitFor(() => expect(put()).toBeDefined());
-  expect(JSON.parse(put()[1].body).name).toBe("Test Bistro");
+  expect(JSON.parse(put()![1].body).name).toBe("Test Bistro");
   await waitFor(() => expect(mockCloseModal).toHaveBeenCalled());
 });
 

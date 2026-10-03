@@ -8,6 +8,7 @@ import restaurantsReducer from "../../../store/restaurants";
 import { CREATE_REVIEW_PATH, UPDATE_REVIEW_PATH } from "../paths";
 import CreateNewReview from "./index";
 import { axe } from "../../../testUtils/axe";
+import type { Mock } from "vitest";
 
 /**
  * Posting a review with photos is three steps, and their order is the point:
@@ -24,16 +25,16 @@ import { axe } from "../../../testUtils/axe";
  * to someone the server would take a review from (#112).
  */
 
-const mockPush = jest.fn();
-const mockReplace = jest.fn();
-jest.mock("react-router-dom", () => ({
-  ...jest.requireActual("react-router-dom"),
+const mockPush = vi.fn();
+const mockReplace = vi.fn();
+vi.mock("react-router-dom", async () => ({
+  ...(await vi.importActual<typeof import("react-router-dom")>("react-router-dom")),
   useHistory: () => ({ push: mockPush, replace: mockReplace }),
 }));
 
-const mockUploadImage = jest.fn();
-jest.mock("../../../utils/uploads", () => ({
-  ...jest.requireActual("../../../utils/uploads"),
+const mockUploadImage = vi.fn();
+vi.mock("../../../utils/uploads", async () => ({
+  ...(await vi.importActual<typeof import("../../../utils/uploads")>("../../../utils/uploads")),
   uploadImage: (file: File) => mockUploadImage(file),
 }));
 
@@ -52,10 +53,10 @@ const restaurant = (overrides: any = {}) => ({
 
 /** Every request the form made, in order, as "METHOD url". */
 const requests = () =>
-  ((global as any).fetch as jest.Mock).mock.calls.map(([url, options]) => `${options?.method ?? "GET"} ${url}`);
+  ((global as any).fetch as Mock).mock.calls.map(([url, options]) => `${options?.method ?? "GET"} ${url}`);
 
 function serve(overrides: { attach?: any; post?: any; restaurant?: any } = {}) {
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => {
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => {
     if (options.method === "POST" && url === `/api/restaurants/${RESTAURANT}/reviews`) {
       return Promise.resolve(overrides.post
         ?? okJson({ id: NEW_REVIEW, review: "Great", rating: 5, restaurant_id: RESTAURANT }));
@@ -109,13 +110,13 @@ async function writeReview(...photos: string[]) {
 }
 
 beforeEach(() => {
-  (global.URL as any).createObjectURL = jest.fn(() => "blob:preview");
-  (global.URL as any).revokeObjectURL = jest.fn();
+  (global.URL as any).createObjectURL = vi.fn(() => "blob:preview");
+  (global.URL as any).revokeObjectURL = vi.fn();
   mockUploadImage.mockImplementation(async (file: File) => ({ url: `https://bucket/uploads/2/${file.name}` }));
 });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
@@ -137,7 +138,7 @@ test("photos go up first, then the review, then each photo onto it", async () =>
     `POST /api/reviews/${NEW_REVIEW}/images`,
   ]);
 
-  const attached = ((global as any).fetch as jest.Mock).mock.calls
+  const attached = ((global as any).fetch as Mock).mock.calls
     .filter(([url]) => url === `/api/reviews/${NEW_REVIEW}/images`)
     .map(([, options]) => JSON.parse(options.body).url);
   expect(attached).toEqual(["https://bucket/uploads/2/a.png", "https://bucket/uploads/2/b.png"]);
@@ -315,8 +316,8 @@ test("what is posted is the words, trimmed, and the stars chosen", async () => {
   fireEvent.click(screen.getByRole("button", { name: "Post review" }));
 
   await waitFor(() => expect(mockReplace).toHaveBeenCalledWith(`/single/${RESTAURANT}`));
-  const [, posted] = ((global as any).fetch as jest.Mock).mock.calls
-    .find(([url, options]) => options?.method === "POST" && url === `/api/restaurants/${RESTAURANT}/reviews`);
+  const [, posted] = ((global as any).fetch as Mock).mock.calls
+    .find(([url, options]) => options?.method === "POST" && url === `/api/restaurants/${RESTAURANT}/reviews`)!;
   expect(JSON.parse(posted.body)).toEqual({ review: "Great", rating: 2 });
 });
 

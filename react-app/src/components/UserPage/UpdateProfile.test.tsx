@@ -7,8 +7,8 @@ import { axe } from "../../testUtils/axe";
 
 /** A pasted profile picture link is held to what the API takes before it is sent (#114). */
 
-jest.mock("../../context/Modal", () => ({
-  useModal: () => ({ closeModal: jest.fn() }),
+vi.mock("../../context/Modal", () => ({
+  useModal: () => ({ closeModal: vi.fn() }),
 }));
 
 const user = {
@@ -21,7 +21,7 @@ afterEach(() => {
 });
 
 test("a link longer than the API takes is refused without a request", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
   const store = createStore(combineReducers({ session: (state = { user }) => state }), applyMiddleware(thunk));
   render(
     <Provider store={store as any}>
@@ -40,7 +40,7 @@ test("a link longer than the API takes is refused without a request", async () =
 });
 
 test("a save that can't reach the server gives the form back, saying so", async () => {
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
   const store = createStore(combineReducers({ session: (state = { user }) => state }), applyMiddleware(thunk));
   render(
     <Provider store={store as any}>
@@ -57,7 +57,7 @@ test("a save that can't reach the server gives the form back, saying so", async 
 
 test("a name cleared to spaces is refused here, not quietly kept by the API", async () => {
   // It used to "save": the modal closed, and the old name came back (#117).
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
   const store = createStore(combineReducers({ session: (state = { user }) => state }), applyMiddleware(thunk));
   render(
     <Provider store={store as any}>
@@ -95,7 +95,7 @@ test("the boxes say what they hold, for autofill", () => {
 });
 
 test("a refusal is announced, and the form has nothing axe objects to", async () => {
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
   const { container } = renderForm();
   expect(await axe(container)).toHaveNoViolations();
 

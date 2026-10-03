@@ -15,7 +15,7 @@ const setCookie = (value: string | null) => {
 const sent = () => (global as any).fetch.mock.calls[0];
 
 beforeEach(() => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({ ok: true }));
+  (global as any).fetch = vi.fn(() => Promise.resolve({ ok: true }));
   setCookie("IjdiNGU.token-value_1");
 });
 

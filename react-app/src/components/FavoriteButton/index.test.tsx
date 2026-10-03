@@ -34,7 +34,7 @@ function makeStore(user: any = { id: 3 }) {
 }
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
@@ -58,7 +58,7 @@ test("it is a toggle named for the restaurant, pressed when saved", () => {
 });
 
 test("saving posts, and every copy of the restaurant in the store takes the flag", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
   const store = makeStore();
   render(
     <Provider store={store as any}>
@@ -73,7 +73,7 @@ test("saving posts, and every copy of the restaurant in the store takes the flag
 });
 
 test("unsaving a saved one sends DELETE", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ isFavorited: false })));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ isFavorited: false })));
   render(
     <Provider store={makeStore() as any}>
       <FavoriteButton restaurantId={7} name="Nancy's Hustle" isFavorited />
@@ -89,7 +89,7 @@ test("the save carries the CSRF token the server set (#109)", async () => {
   // A cross-site form can make the browser send this cookie, but only the
   // page can read it back into the header, which is what the API checks.
   document.cookie = "csrf_token=the-token";
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
   render(
     <Provider store={makeStore() as any}>
       <FavoriteButton restaurantId={7} name="Nancy's Hustle" isFavorited={false} />
@@ -104,7 +104,7 @@ test("the save carries the CSRF token the server set (#109)", async () => {
 });
 
 test("a failure leaves the heart as it was and says why", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: false, status: 404, json: () => Promise.resolve({ errors: ["Restaurant couldn't be found"] }),
   }));
   const store = makeStore();
@@ -121,7 +121,7 @@ test("a failure leaves the heart as it was and says why", async () => {
 });
 
 test("on a card, the heart saves without following the card's link", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
+  (global as any).fetch = vi.fn(() => Promise.resolve(okJson({ isFavorited: true }, 201)));
   render(
     <Provider store={makeStore() as any}>
       <MemoryRouter initialEntries={["/restaurants"]}>

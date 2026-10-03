@@ -45,7 +45,7 @@ test("the arrow keys step too", () => {
 });
 
 test("Escape closes it, and so does the close button", () => {
-  const onClose = jest.fn();
+  const onClose = vi.fn();
   render(<Harness onClose={onClose} />);
   fireEvent.keyDown(document, { key: "Escape" });
   fireEvent.click(screen.getByRole("button", { name: "Close image viewer" }));
@@ -53,7 +53,7 @@ test("Escape closes it, and so does the close button", () => {
 });
 
 test("clicking the photo itself does not close it", () => {
-  const onClose = jest.fn();
+  const onClose = vi.fn();
   render(<Harness onClose={onClose} />);
   fireEvent.click(screen.getByAltText("First"));
   expect(onClose).not.toHaveBeenCalled();

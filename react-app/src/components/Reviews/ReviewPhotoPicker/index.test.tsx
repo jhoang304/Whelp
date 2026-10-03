@@ -13,8 +13,8 @@ import { ReviewImage } from "../../../types";
 
 beforeEach(() => {
   let n = 0;
-  (global.URL as any).createObjectURL = jest.fn(() => `blob:preview-${n++}`);
-  (global.URL as any).revokeObjectURL = jest.fn();
+  (global.URL as any).createObjectURL = vi.fn(() => `blob:preview-${n++}`);
+  (global.URL as any).revokeObjectURL = vi.fn();
 });
 
 const file = (name: string, bytes = 10) => new File(["x".repeat(bytes)], name, { type: "image/png" });
@@ -100,7 +100,7 @@ function askAboutFirst() {
 }
 
 test("the × on a photo the review already has asks first, and Remove goes through the form's handler", async () => {
-  const onRemoveExisting = jest.fn(() => Promise.resolve(true));
+  const onRemoveExisting = vi.fn(() => Promise.resolve(true));
   render(<Harness existing={[existingPhoto(7)]} onRemoveExisting={onRemoveExisting} />);
   const { remove, question } = askAboutFirst();
 
@@ -116,7 +116,7 @@ test("the × on a photo the review already has asks first, and Remove goes throu
 });
 
 test("Cancel leaves the photo, calls nothing, and gives focus back to its ×", () => {
-  const onRemoveExisting = jest.fn(() => Promise.resolve(true));
+  const onRemoveExisting = vi.fn(() => Promise.resolve(true));
   render(<Harness existing={[existingPhoto(7)]} onRemoveExisting={onRemoveExisting} />);
   const { remove, question } = askAboutFirst();
 

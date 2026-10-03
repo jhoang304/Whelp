@@ -6,6 +6,7 @@ import { MemoryRouter } from "react-router-dom";
 import session from "../../store/session";
 import { ModalProvider, Modal } from "../../context/Modal";
 import AccountSettings from "./index";
+import type { Mock } from "vitest";
 
 /**
  * /settings: a password change that checks what it can before asking, and a
@@ -46,14 +47,14 @@ function renderPage(user: any = { id: 9, username: "rita", email: "rita@test.io"
 
 /** fetch that answers the summary, and whatever `rest` says for the rest. */
 const withSummary = (rest: (url: string, options: any) => any, summary = SUMMARY) =>
-  jest.fn((url: string, options: any = {}) =>
+  vi.fn((url: string, options: any = {}) =>
     Promise.resolve(url.endsWith("/deletion") ? okJson(summary) : rest(url, options)));
 
 const type = (label: string, value: string) =>
   fireEvent.change(screen.getByLabelText(label), { target: { value } });
 
 afterEach(() => {
-  jest.clearAllMocks();
+  vi.clearAllMocks();
   delete (global as any).fetch;
 });
 
@@ -89,7 +90,7 @@ test("a good change is sent, confirmed, and the fields are cleared", async () =>
   fireEvent.click(screen.getByRole("button", { name: "Change password" }));
 
   expect(await screen.findByText("Your password has been changed.")).toBeInTheDocument();
-  const call = ((global as any).fetch as jest.Mock).mock.calls.find(([url]) => url === "/api/users/9/password");
+  const call = ((global as any).fetch as Mock).mock.calls.find(([url]) => url === "/api/users/9/password")!;
   expect(call[1].method).toBe("PUT");
   expect(JSON.parse(call[1].body)).toEqual({ current_password: "old-password", new_password: "new-password" });
   expect(screen.getByLabelText("Current password")).toHaveValue("");
@@ -147,7 +148,7 @@ test("with it, a confirmation comes first, and only then the delete", async () =
   fireEvent.click(dialog.querySelector(".delete-button") as HTMLElement);
 
   expect(await screen.findByRole("heading", { name: "Your account has been deleted" })).toBeInTheDocument();
-  const call = ((global as any).fetch as jest.Mock).mock.calls.find(([url]) => url === "/api/users/9");
+  const call = ((global as any).fetch as Mock).mock.calls.find(([url]) => url === "/api/users/9")!;
   expect(call[1].method).toBe("DELETE");
   expect(JSON.parse(call[1].body)).toEqual({ password: "password" });
   expect((store.getState() as any).session.user).toBeNull();

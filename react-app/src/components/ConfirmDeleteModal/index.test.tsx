@@ -30,7 +30,7 @@ function renderDelete(onConfirm: () => any) {
 }
 
 test("it opens on Cancel, so Enter straight away deletes nothing", () => {
-  const onConfirm = jest.fn();
+  const onConfirm = vi.fn();
   renderDelete(onConfirm);
   fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
 
@@ -39,7 +39,7 @@ test("it opens on Cancel, so Enter straight away deletes nothing", () => {
 });
 
 test("Cancel closes it without deleting", () => {
-  const onConfirm = jest.fn();
+  const onConfirm = vi.fn();
   renderDelete(onConfirm);
   fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
 
@@ -50,7 +50,7 @@ test("Cancel closes it without deleting", () => {
 });
 
 test("the red button deletes, once, and closes it", async () => {
-  const onConfirm = jest.fn();
+  const onConfirm = vi.fn();
   renderDelete(onConfirm);
   fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
 
@@ -80,7 +80,7 @@ test("a refused delete keeps the dialog open and says why", async () => {
 
 test("while it deletes, neither button can be pressed again", async () => {
   let finish: (value: null) => void = () => {};
-  const onConfirm = jest.fn(() => new Promise<null>((resolve) => { finish = resolve; }));
+  const onConfirm = vi.fn(() => new Promise<null>((resolve) => { finish = resolve; }));
   renderDelete(onConfirm);
   fireEvent.click(screen.getByRole("button", { name: "Delete Review" }));
 

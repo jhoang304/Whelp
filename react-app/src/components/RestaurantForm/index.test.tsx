@@ -62,7 +62,7 @@ test("it is headed, and grouped into named sections", () => {
 });
 
 test("price is one choice of five, said in words as well as dollar signs", () => {
-  const onChangeSpy = jest.fn();
+  const onChangeSpy = vi.fn();
   renderForm({ onChangeSpy });
   const group = screen.getByRole("group", { name: "Price range" });
   expect(group).toBeInTheDocument();
@@ -77,7 +77,7 @@ test("price is one choice of five, said in words as well as dollar signs", () =>
 });
 
 test("the close button and Cancel both cancel, and neither submits", () => {
-  const onCancel = jest.fn();
+  const onCancel = vi.fn();
   renderForm({ onCancel });
 
   fireEvent.click(screen.getByRole("button", { name: "Close" }));
