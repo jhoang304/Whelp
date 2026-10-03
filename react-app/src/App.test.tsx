@@ -149,6 +149,45 @@ test("home goes h1, then h2s, and its buttons are links", async () => {
   expect(await axeWholePage(container)).toHaveNoViolations();
 });
 
+// --- back to the page you were on (#135) ------------------------------------------------
+
+test("logging in from a page's own prompt comes back to that page, signed in", async () => {
+  const demo = { id: 1, username: "Demo", email: "demo@aa.io", first_name: "Demo", last_name: "User" };
+  // Signed out until the login; then the settings page asks what deleting
+  // the account would take.
+  const answer = (url: string, options: any) => {
+    if (options.method === "POST" && url === "/api/auth/login") return demo;
+    if (url === "/api/users/1/deletion") return { restaurants: [], reviewsKept: 0, photos: 0, favorites: 0, isDemo: true };
+    return { user: null, items: [] };
+  };
+  (global as any).fetch = jest.fn((url: string, options: any = {}) => Promise.resolve({
+    ok: true, status: 200, json: () => Promise.resolve(answer(url, options)),
+  }));
+  const store = createStore(
+    combineReducers({
+      session, Restaurants: restaurantsReducer, photos: photoReducer, reviews: reviewReducer,
+      user: userProfileReducer, categories: categoriesReducer,
+    }),
+    applyMiddleware(thunk)
+  );
+  render(
+    <Provider store={store as any}>
+      <ModalProvider>
+        <MemoryRouter initialEntries={["/settings"]}>
+          <App />
+        </MemoryRouter>
+      </ModalProvider>
+    </Provider>
+  );
+
+  fireEvent.click(await screen.findByRole("link", { name: "Log in" }));
+  fireEvent.click(await screen.findByRole("button", { name: "Log in as Demo User" }));
+
+  // Account settings, with the form a signed-in reader gets: not the home page.
+  expect(await screen.findByRole("heading", { level: 2, name: "Change password" })).toBeInTheDocument();
+  expect(screen.getByRole("heading", { level: 1, name: "Account settings" })).toBeInTheDocument();
+});
+
 // --- an address the app has no page for (#124) ---------------------------------------
 
 test.each([

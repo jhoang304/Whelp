@@ -230,6 +230,11 @@ test("a reader who is not logged in is asked to, before writing anything", async
   expect(screen.getByText("You need an account to review Uchi.")).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
   expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+
+  // And logging in comes back here (#135).
+  fireEvent.click(screen.getByRole("link", { name: "Log in" }));
+  expect(router.location.pathname).toBe("/login");
+  expect(router.location.state).toEqual({ from: `/${RESTAURANT}/create-review` });
 });
 
 test("the owner is told they can't review their own restaurant", async () => {

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Redirect, useHistory, useParams } from "react-router-dom";
+import { Redirect, useHistory, useLocation, useParams } from "react-router-dom";
 import { CreateReviewResult, createOneReview } from '../../../store/reviews';
 import { getSingleRestaurant } from '../../../store/restaurants';
 import { useAppDispatch, useAppSelector } from "../../../store";
@@ -9,6 +9,7 @@ import { pageTitle, useDocumentTitle } from "../../../hooks/useDocumentTitle";
 import ReviewForm from "../ReviewForm";
 import ReviewPhotoPicker, { PendingPhoto } from "../ReviewPhotoPicker";
 import { attachUploaded, uploadPending } from "../../../utils/reviewPhotos";
+import { authLink } from "../../../utils/returnTo";
 
 /** Its cover photo, or failing that its first. */
 const coverOf = (restaurant: SingleRestaurantResponse): string | null => {
@@ -26,6 +27,7 @@ function CreateNewReview(): React.JSX.Element {
   const { restaurantId } = useParams<CreateNewReviewParams>();
   const dispatch = useAppDispatch();
   const history = useHistory();
+  const location = useLocation();
 
   const sessionUser = useAppSelector((state) => state.session.user);
   const loaded = useAppSelector((state) => state.Restaurants.singleRestaurant);
@@ -137,7 +139,7 @@ function CreateNewReview(): React.JSX.Element {
 
   if (!sessionUser) {
     return (
-      <PageMessage icon="fa-regular fa-user" title="Log in to write a review" action={{ to: "/login", label: "Log in" }}>
+      <PageMessage icon="fa-regular fa-user" title="Log in to write a review" action={{ to: authLink("/login", location), label: "Log in" }}>
         You need an account to review {restaurant.name}.
       </PageMessage>
     );

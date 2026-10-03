@@ -63,6 +63,8 @@ function serve(others: (url: string, options: any) => any = () => okJson({}), fo
   });
 }
 
+let where: any;
+
 function renderForm({ state, user = AUTHOR, stored = {}, path = `/${RESTAURANT}/reviews/${REVIEW}/update` }:
   { state?: any; user?: any; stored?: any; path?: string } = {}) {
   const store = createStore(
@@ -80,6 +82,7 @@ function renderForm({ state, user = AUTHOR, stored = {}, path = `/${RESTAURANT}/
         <Route path={UPDATE_REVIEW_PATH}>
           <UpdateReview />
         </Route>
+        <Route path="*" render={({ location }) => { where = location; return null; }} />
       </MemoryRouter>
     </Provider>
   );
@@ -282,6 +285,11 @@ test("a reader who is not logged in is asked to", async () => {
   expect(await screen.findByRole("heading", { name: "Log in to edit your review" })).toBeInTheDocument();
   expect(screen.getByRole("link", { name: "Log in" })).toHaveAttribute("href", "/login");
   expect(screen.queryByRole("textbox")).not.toBeInTheDocument();
+
+  // And logging in comes back here (#135).
+  fireEvent.click(screen.getByRole("link", { name: "Log in" }));
+  expect(where.pathname).toBe("/login");
+  expect(where.state).toEqual({ from: `/${RESTAURANT}/reviews/${REVIEW}/update` });
 });
 
 // --- what a screen reader gets (#122) ------------------------------------------------
