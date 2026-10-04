@@ -15,7 +15,8 @@ import App from "./App";
 
 const store = configureStore();
 
-if (process.env.NODE_ENV !== "production") {
+// For poking at the store from the console while developing.
+if (import.meta.env.DEV) {
 	window.store = store;
 	window.sessionActions = sessionActions;
 }
@@ -37,7 +38,7 @@ function Root() {
 	);
 }
 
-createRoot(document.getElementById("root")).render(
+createRoot(document.getElementById("root") as HTMLElement).render(
 	<React.StrictMode>
 		<Root />
 	</React.StrictMode>

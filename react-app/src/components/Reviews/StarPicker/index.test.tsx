@@ -35,7 +35,7 @@ test("five stars in one group, named, required, and none chosen to begin with", 
 });
 
 test("choosing a star fills it and the ones before it, and says what it means", () => {
-  const onChange = jest.fn();
+  const onChange = vi.fn();
   render(<Harness onChange={onChange} />);
 
   fireEvent.click(screen.getByRole("radio", { name: "3 stars, OK" }));

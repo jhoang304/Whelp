@@ -24,10 +24,10 @@
     <meta property="og:image:alt" content="The Whelp logo, over the words: Find, review and share great restaurants" />
     <meta name="twitter:card" content="summary_large_image" />
 
-    <link rel="icon" href="%PUBLIC_URL%/favicon.svg" type="image/svg+xml" />
-    <link rel="icon" href="%PUBLIC_URL%/favicon.ico" sizes="32x32" />
-    <link rel="apple-touch-icon" href="%PUBLIC_URL%/apple-touch-icon.png" />
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon.ico" sizes="32x32" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/manifest.json" />
     <!-- One Font Awesome. Both prefixes in the markup, fas and fa-solid, are
          valid in 6.x, and the released 6.7 replaces a beta that was pinned
          alongside 5.5 -- the pair of them were 1.2MB of duplicate icons. -->
@@ -40,5 +40,8 @@
   <body>
     <noscript>Whelp needs JavaScript to show restaurants and reviews. Turn it on in your browser's settings, then reload this page.</noscript>
     <div id="root"></div>
+    <!-- The app. Vite serves it as a module in development and swaps in the
+         built, hashed bundle when it builds (#138). -->
+    <script type="module" src="/src/index.tsx"></script>
   </body>
 </html>

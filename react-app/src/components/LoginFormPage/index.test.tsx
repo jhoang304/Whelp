@@ -50,13 +50,13 @@ test("signup's name and username boxes say what they are, for autofill", () => {
 // --- a refused login is said, and stays said (#122) ----------------------------------
 
 const refuse = (errors: string[]) => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: false, status: 401, json: () => Promise.resolve({ errors }),
   }));
 };
 
 afterEach(() => {
-  jest.useRealTimers();
+  vi.useRealTimers();
   delete (global as any).fetch;
 });
 
@@ -79,15 +79,16 @@ test("a refused login is announced, in the form, and marks both fields", async (
 
 test("the message stays until the next try, and every error is shown", async () => {
   // Fake from the start, so a timer set when the message appears is one this
-  // test can run out.
-  jest.useFakeTimers();
+  // test can run out. Moving with real time as well, so findByRole's own
+  // polling still runs: Testing Library only drives the fake clock under Jest.
+  vi.useFakeTimers({ shouldAdvanceTime: true });
   refuse(["Email is required.", "Password is required."]);
   renderPage(<LoginFormPage />);
   fireEvent.click(screen.getByRole("button", { name: "Log in as Demo User" }));
   await screen.findByRole("alert");
 
   // The toast it replaced went after four seconds.
-  act(() => { jest.advanceTimersByTime(10000); });
+  act(() => { vi.advanceTimersByTime(10000); });
   expect(screen.getByRole("alert")).toHaveTextContent("Email is required.");
   expect(screen.getByRole("alert")).toHaveTextContent("Password is required.");
 });
@@ -116,7 +117,7 @@ const DEMO = { id: 1, username: "Demo", email: "demo@aa.io", first_name: "Demo",
 
 /** Logging in and signing up both succeed, as Demo. */
 const succeed = () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(DEMO) }));
+  (global as any).fetch = vi.fn(() => Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(DEMO) }));
 };
 
 let where: any;

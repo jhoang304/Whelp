@@ -14,17 +14,17 @@ const today = () => document.querySelector("tr.today th")?.textContent;
 const MONDAY_IN_CHICAGO = new Date("2026-09-21T05:30:00Z");
 
 afterEach(() => {
-  jest.useRealTimers();
+  vi.useRealTimers();
 });
 
 test("an LA restaurant's today is Sunday while it's already Monday in Chicago", () => {
-  jest.useFakeTimers().setSystemTime(MONDAY_IN_CHICAGO);
+  vi.useFakeTimers().setSystemTime(MONDAY_IN_CHICAGO);
   render(<OpeningHoursTable hours={WEEK} timezone="America/Los_Angeles" />);
   expect(today()).toBe("Sunday");
 });
 
 test("and a Chicago one's is Monday, at the same moment", () => {
-  jest.useFakeTimers().setSystemTime(MONDAY_IN_CHICAGO);
+  vi.useFakeTimers().setSystemTime(MONDAY_IN_CHICAGO);
   render(<OpeningHoursTable hours={WEEK} timezone="America/Chicago" />);
   expect(today()).toBe("Monday");
 });

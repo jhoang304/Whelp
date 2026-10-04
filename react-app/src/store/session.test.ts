@@ -9,7 +9,7 @@ import session, { authenticate } from "./session";
  */
 
 function answer(body: unknown) {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 200, json: () => Promise.resolve(body),
   }));
   const store = createStore(combineReducers({ session }), applyMiddleware(thunk));

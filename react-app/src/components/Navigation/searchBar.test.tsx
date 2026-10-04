@@ -41,7 +41,7 @@ test("there is no Restaurants link in the bar", () => {
 });
 
 test("with nothing typed, the search button browses every restaurant", () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
   renderBar();
   const button = screen.getByRole("button", { name: "Browse all restaurants" });
   expect(button).toBeEnabled();
@@ -61,7 +61,7 @@ test("only spaces count as nothing typed", () => {
 });
 
 test("with a word typed, the same button goes to its results", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
   renderBar();
   fireEvent.change(input(), { target: { value: "tacos" } });
 

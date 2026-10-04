@@ -8,7 +8,8 @@ import path from "path";
  */
 
 const PUBLIC = path.join(__dirname, "..", "public");
-const html = fs.readFileSync(path.join(PUBLIC, "index.html"), "utf8");
+// Beside package.json since Vite (#138); the files it links to stay in public.
+const html = fs.readFileSync(path.join(__dirname, "..", "index.html"), "utf8");
 const manifest = JSON.parse(fs.readFileSync(path.join(PUBLIC, "manifest.json"), "utf8"));
 
 const meta = (attribute: "name" | "property", key: string) =>
@@ -52,7 +53,7 @@ test("the page and the manifest have the same theme colour", () => {
 });
 
 test("an iPhone has its own 180px icon", () => {
-  const href = html.match(/<link rel="apple-touch-icon" href="%PUBLIC_URL%\/([^"]+)"/)?.[1];
+  const href = html.match(/<link rel="apple-touch-icon" href="\/([^"]+)"/)?.[1];
   expect(href).toBeTruthy();
   expect(pngSize(href!)).toBe("180x180");
 });
@@ -75,4 +76,12 @@ test("there are the icons an install asks for: 192, 512 and a maskable 512", () 
 
 test("without JavaScript, the page says so", () => {
   expect(html).toMatch(/<noscript>[^<]*JavaScript[^<]*<\/noscript>/);
+});
+
+test("the page loads the app as a module, with nothing of Create React App's left in it (#138)", () => {
+  expect(html).toContain('<script type="module" src="/src/index.tsx"></script>');
+  expect(html).not.toContain("%PUBLIC_URL%");
+  // public/ is copied into the build as it is: a second index.html there
+  // would be served in place of the built one.
+  expect(fs.existsSync(path.join(PUBLIC, "index.html"))).toBe(false);
 });

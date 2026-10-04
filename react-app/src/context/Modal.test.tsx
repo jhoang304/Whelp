@@ -77,7 +77,7 @@ test("a field marked data-autofocus takes focus ahead of a Close button before i
 });
 
 test("Escape closes it and focus returns to the button that opened it", () => {
-  const onModalClose = jest.fn();
+  const onModalClose = vi.fn();
   renderWith(<Form />, onModalClose);
   const opener = screen.getByRole("button", { name: "Open" });
   opener.focus();
@@ -170,7 +170,7 @@ test("with a photo enlarged inside the modal, Escape closes the photo and not th
 });
 
 test("the button that opens a modal does not submit the form it sits in", () => {
-  const onSubmit = jest.fn((event: React.FormEvent) => event.preventDefault());
+  const onSubmit = vi.fn((event: React.FormEvent) => event.preventDefault());
   render(
     <ModalProvider>
       <form onSubmit={onSubmit}>
@@ -190,7 +190,7 @@ describe("fading out", () => {
   // jsdom has no matchMedia, which the modal reads as "don't animate"; these
   // give it one, saying whether the reader asked for less motion.
   const motion = (reduce: boolean) => {
-    (window as any).matchMedia = jest.fn((query: string) => ({
+    (window as any).matchMedia = vi.fn((query: string) => ({
       matches: reduce && query.includes("reduce"), media: query, onchange: null,
       addEventListener() {}, removeEventListener() {}, addListener() {}, removeListener() {},
       dispatchEvent() { return false; },
@@ -199,7 +199,7 @@ describe("fading out", () => {
 
   afterEach(() => {
     delete (window as any).matchMedia;
-    jest.useRealTimers();
+    vi.useRealTimers();
   });
 
   const openThenEscape = (onModalClose?: () => void) => {
@@ -212,9 +212,9 @@ describe("fading out", () => {
   };
 
   test("a closing modal stays to fade, takes nothing, and has already given focus back", () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     motion(false);
-    const onModalClose = jest.fn();
+    const onModalClose = vi.fn();
     const opener = openThenEscape(onModalClose);
 
     const overlay = document.getElementById("modal");
@@ -228,17 +228,17 @@ describe("fading out", () => {
     fireEvent.click(document.getElementById("modal-background") as HTMLElement);
     expect(onModalClose).toHaveBeenCalledTimes(1);
 
-    act(() => { jest.advanceTimersByTime(FADE_OUT_MS); });
+    act(() => { vi.advanceTimersByTime(FADE_OUT_MS); });
     expect(document.getElementById("modal")).toBeNull();
   });
 
   test("opened again mid-fade, it comes straight back and stays", () => {
-    jest.useFakeTimers();
+    vi.useFakeTimers();
     motion(false);
     const opener = openThenEscape();
 
     fireEvent.click(opener);
-    act(() => { jest.advanceTimersByTime(FADE_OUT_MS * 2); });
+    act(() => { vi.advanceTimersByTime(FADE_OUT_MS * 2); });
 
     expect(document.getElementById("modal")).not.toHaveClass("closing");
     expect(screen.getByRole("dialog", { name: "Add Something" })).toBeInTheDocument();

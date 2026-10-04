@@ -5,6 +5,7 @@ import thunk from "redux-thunk";
 import categoriesReducer from "../../store/categories";
 import FilterBar from "./index";
 import { NO_FILTERS } from "../../utils/filters";
+import type { Mock } from "vitest";
 
 /**
  * The cities are asked for every time a list opens (#128): a restaurant in a
@@ -15,7 +16,7 @@ import { NO_FILTERS } from "../../utils/filters";
 const ok = (body: unknown) => ({ ok: true, status: 200, json: () => Promise.resolve(body) });
 
 function renderBar(fetchCities: () => Promise<unknown>) {
-  (global as any).fetch = jest.fn((url: string) =>
+  (global as any).fetch = vi.fn((url: string) =>
     url.startsWith("/api/restaurants/cities") ? fetchCities() : Promise.resolve(ok({ items: [] })));
   const store = createStore(
     combineReducers({ categories: categoriesReducer }),
@@ -48,7 +49,7 @@ test("the cuisines, already known, are not asked for again", async () => {
   renderBar(() => Promise.resolve(ok({ items: ["Houston"] })));
 
   await waitFor(() => expect((global as any).fetch).toHaveBeenCalled());
-  const urls = ((global as any).fetch as jest.Mock).mock.calls.map(([url]) => url);
+  const urls = ((global as any).fetch as Mock).mock.calls.map(([url]) => url);
   expect(urls.some((url: string) => url.startsWith("/api/categories"))).toBe(false);
 });
 

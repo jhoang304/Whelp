@@ -27,7 +27,7 @@ let searches: { q: string | null; page: string | null; price: string[] }[] = [];
 
 function renderAt(path: string, total = 3) {
   searches = [];
-  (global as any).fetch = jest.fn((url: string) => {
+  (global as any).fetch = vi.fn((url: string) => {
     if (url.startsWith("/api/categories") || url.startsWith("/api/restaurants/cities")) {
       return Promise.resolve(ok({ items: [] }));
     }

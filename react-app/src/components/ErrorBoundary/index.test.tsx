@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { render, screen, fireEvent } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
 import ErrorBoundary from "./index";
+import type { MockInstance } from "vitest";
 
 /**
  * A page that throws while rendering shows "Something went wrong" instead
@@ -27,10 +28,10 @@ function Shell() {
   );
 }
 
-let consoleError: jest.SpyInstance;
+let consoleError: MockInstance;
 beforeEach(() => {
   // React and the boundary both report the error; the test expects it.
-  consoleError = jest.spyOn(console, "error").mockImplementation(() => {});
+  consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 });
 afterEach(() => {
   consoleError.mockRestore();

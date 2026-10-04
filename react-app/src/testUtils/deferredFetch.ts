@@ -8,7 +8,7 @@
  */
 export function deferredFetch(immediate: (url: string) => unknown = () => undefined) {
   const waiting: { url: string; resolve: (response: unknown) => void; reject: (error: Error) => void }[] = [];
-  (global as any).fetch = jest.fn((url: string) => {
+  (global as any).fetch = vi.fn((url: string) => {
     const now = immediate(url);
     if (now !== undefined) return Promise.resolve(now);
     return new Promise((resolve, reject) => waiting.push({ url, resolve, reject }));

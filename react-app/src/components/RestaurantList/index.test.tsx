@@ -27,7 +27,7 @@ const PAGE_ONE = [card(9, "Best"), card(2, "Second"), card(5, "Third")];
 const PAGE_TWO = [card(7, "Fourth"), card(1, "Fifth")];
 
 function renderAt(path: string, routePath: string, element: React.ReactNode) {
-  (global as any).fetch = jest.fn((url: string) => {
+  (global as any).fetch = vi.fn((url: string) => {
     if (url.startsWith("/api/categories") || url.startsWith("/api/restaurants/cities")) {
       return Promise.resolve(ok({ items: [] }));
     }
@@ -263,7 +263,7 @@ function renderCards(path: string, routePath: string, element: React.ReactNode) 
     { ...card(9, "Best"), categories: [WINE, BISTRO], oneReview: "Lovely." },
     { ...card(2, "Second"), categories: [BISTRO] },
   ];
-  (global as any).fetch = jest.fn((url: string) => {
+  (global as any).fetch = vi.fn((url: string) => {
     if (url.startsWith("/api/categories")) return Promise.resolve(ok({ items: [WINE, BISTRO] }));
     if (url.startsWith("/api/restaurants/cities")) return Promise.resolve(ok({ items: ["Houston"] }));
     return Promise.resolve(ok({ items: cards, page: 1, per_page: 20, total: 2 }));

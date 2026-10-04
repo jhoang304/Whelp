@@ -16,7 +16,7 @@ const UCHI: ReviewFormRestaurant = { id: 3, name: "Uchi", city: "Houston", state
 
 function Harness({
   restaurant = UCHI, initialReview = "", initialRating = null as number | null,
-  onSubmit = jest.fn(), busy = false, submitDisabled = false,
+  onSubmit = vi.fn(), busy = false, submitDisabled = false,
 }) {
   const [review, setReview] = useState(initialReview);
   const [rating, setRating] = useState<number | null>(initialRating);
@@ -86,7 +86,7 @@ test("the browser's own required-field bubbles are off: the form says what's mis
 });
 
 test("without a rating it says so, sends nothing, and puts focus on the first star", () => {
-  const onSubmit = jest.fn();
+  const onSubmit = vi.fn();
   render(<Harness initialReview="Great omakase." onSubmit={onSubmit} />);
 
   post();
@@ -97,7 +97,7 @@ test("without a rating it says so, sends nothing, and puts focus on the first st
 });
 
 test("without any words it says so, and puts focus in the box", () => {
-  const onSubmit = jest.fn();
+  const onSubmit = vi.fn();
   render(<Harness initialReview="   " initialRating={4} onSubmit={onSubmit} />);
 
   post();
@@ -109,7 +109,7 @@ test("without any words it says so, and puts focus in the box", () => {
 });
 
 test("with both, it sends the review trimmed and the stars, and clears what it said before", () => {
-  const onSubmit = jest.fn();
+  const onSubmit = vi.fn();
   render(<Harness onSubmit={onSubmit} />);
   post();
   expect(screen.getByRole("alert")).toBeInTheDocument();
@@ -155,7 +155,7 @@ test("a review over the limit is refused, with the limit in the message", () => 
 });
 
 test("a review well past the old 255 goes through", () => {
-  const onSubmit = jest.fn();
+  const onSubmit = vi.fn();
   const long = "Every course was better than the last. ".repeat(20).trim();
   render(<Harness initialReview={long} initialRating={5} onSubmit={onSubmit} />);
 

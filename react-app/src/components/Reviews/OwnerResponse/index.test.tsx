@@ -37,7 +37,7 @@ afterEach(() => {
 });
 
 test("a reply that can't reach the server gives the form back, saying so", async () => {
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
   renderReply();
 
   fireEvent.click(screen.getByRole("button", { name: /Respond to this review/ }));
@@ -51,7 +51,7 @@ test("a reply that can't reach the server gives the form back, saying so", async
 });
 
 test("a refused delete of the reply stays in the dialog and says why", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: false, status: 403, json: () => Promise.resolve({ errors: ["Only the owner of this business can respond to its reviews"] }),
   }));
   renderReply(true);
@@ -65,7 +65,7 @@ test("a refused delete of the reply stays in the dialog and says why", async () 
 });
 
 test("a garbled answer to a reply still gives the form back", async () => {
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 201, json: () => Promise.reject(new SyntaxError("Unexpected token <")),
   }));
   renderReply();

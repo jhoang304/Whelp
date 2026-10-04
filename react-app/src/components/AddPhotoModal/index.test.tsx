@@ -7,8 +7,8 @@ import AddPhotoModal from "./index";
 
 /** A pasted photo link is held to what the API takes before it is sent (#114). */
 
-jest.mock("../../context/Modal", () => ({
-  useModal: () => ({ closeModal: jest.fn() }),
+vi.mock("../../context/Modal", () => ({
+  useModal: () => ({ closeModal: vi.fn() }),
 }));
 
 function renderModal() {
@@ -28,7 +28,7 @@ afterEach(() => {
 });
 
 test("a link longer than the API takes is refused without a request", async () => {
-  (global as any).fetch = jest.fn();
+  (global as any).fetch = vi.fn();
   renderModal();
 
   fireEvent.click(screen.getByRole("button", { name: /paste a url/i }));

@@ -24,7 +24,7 @@ afterEach(() => {
 });
 
 test("a dropped connection at start-up still draws the page, signed out", async () => {
-  (global as any).fetch = jest.fn(() => Promise.reject(new TypeError("Failed to fetch")));
+  (global as any).fetch = vi.fn(() => Promise.reject(new TypeError("Failed to fetch")));
   const store = createStore(
     combineReducers({
       session,
@@ -54,7 +54,7 @@ test("a dropped connection at start-up still draws the page, signed out", async 
 test("a garbled answer at start-up still draws the page", async () => {
   // A 200 whose body won't parse: authenticate itself rejects, and the app
   // must not wait on it for good either.
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 200, json: () => Promise.reject(new SyntaxError("Unexpected token <")),
   }));
   const store = createStore(
@@ -90,7 +90,7 @@ const axeWholePage = configureAxe({ rules: { "color-contrast": { enabled: false 
 function renderAppAt(path: string) {
   // Signed out, as the API says it: {"user": null}, with a 200 (#126). And
   // every list empty: the home page asks for four of them (#134).
-  (global as any).fetch = jest.fn(() => Promise.resolve({
+  (global as any).fetch = vi.fn(() => Promise.resolve({
     ok: true, status: 200, json: () => Promise.resolve({ user: null, items: [] }),
   }));
   const store = createStore(
@@ -160,7 +160,7 @@ test("logging in from a page's own prompt comes back to that page, signed in", a
     if (url === "/api/users/1/deletion") return { restaurants: [], reviewsKept: 0, photos: 0, favorites: 0, isDemo: true };
     return { user: null, items: [] };
   };
-  (global as any).fetch = jest.fn((url: string, options: any = {}) => Promise.resolve({
+  (global as any).fetch = vi.fn((url: string, options: any = {}) => Promise.resolve({
     ok: true, status: 200, json: () => Promise.resolve(answer(url, options)),
   }));
   const store = createStore(
