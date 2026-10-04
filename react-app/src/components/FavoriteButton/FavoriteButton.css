@@ -1,7 +1,6 @@
 /*
- * The heart, in two sizes. Every rule names the button, so the global
- * `button` rule (grey, 4px margin) and the `.buttons button` rule on the
- * restaurant page cannot restyle it.
+ * The heart, in two sizes. Every rule names the button, so a page's own
+ * rules for the buttons in it cannot restyle it.
  */
 .favorite {
     display: inline-flex;

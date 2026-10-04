@@ -11,7 +11,3 @@
     color: var(--color-error-text);
     font-weight: var(--font-bold);
 }
-
-.open-status-detail {
-    color: inherit;
-}

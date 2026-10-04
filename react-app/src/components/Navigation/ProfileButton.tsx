@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { logout } from "../../store/session";
 import OpenModalButton from "../OpenModalButton";
-import LoginFormModal from "../LoginFormModal";
-import SignupFormModal from "../SignupFormModal";
 import CreateRestaurantModal from "../CreateRestaurantModal";
 import { Link, useHistory } from "react-router-dom";
 import { useAppDispatch } from "../../store";
@@ -10,7 +8,7 @@ import { User } from "../../types";
 import { onAvatarError } from "../../utils/images";
 
 interface ProfileButtonProps {
-  user: User | null;
+  user: User;
 }
 
 function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
@@ -86,68 +84,47 @@ function ProfileButton({ user }: ProfileButtonProps): React.JSX.Element {
         aria-label="User menu"
         aria-expanded={showMenu}
       >
-        {user && user.profile_image_url ? (
+        {user.profile_image_url ? (
           <img className="profileButton-avatar" src={user.profile_image_url} alt="" onError={onAvatarError} />
         ) : (
           <i className="fa-solid fa-user" aria-hidden="true"></i>
         )}
       </button>
       <ul className={ulClassName} ref={ulRef}>
-        {user ? (
-          <>
-            <li className='user-dropdown-username'>{user.username}</li>
-            <li className='user-dropdown-email'>{user.email}</li>
-            {/* Links: they go to a page, so they open in a new tab like any
-                other (#122). */}
-            <li>
-              <Link className="user-profile-button" to={`/users/get/${user.id}`} onClick={closeMenu}>
-                <i className="fa-solid fa-user-circle" aria-hidden="true"></i>
-                My Profile
-              </Link>
-            </li>
-            <li>
-              <Link className="user-profile-button" to="/settings" onClick={closeMenu}>
-                <i className="fa-solid fa-gear" aria-hidden="true"></i>
-                Account settings
-              </Link>
-            </li>
-            <li className="add-restaurant-dropdown-button">
-              <OpenModalButton
-                buttonText={
-                  <>
-                    <i className="fa-solid fa-plus" aria-hidden="true"></i>
-                    Add Restaurant
-                  </>
-                }
-                onModalClose={closeMenuAfterModal}
-                modalComponent={<CreateRestaurantModal />}
-              />
-            </li>
-            <li>
-              <button className='user-logout-button' onClick={handleLogout}>
-                <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
-                Log Out
-              </button>
-            </li>
-          </>
-        ) : (
-          <>
-            <li>
-              <OpenModalButton
-                buttonText="Log In"
-                onModalClose={closeMenuAfterModal}
-                modalComponent={<LoginFormModal />}
-              />
-            </li>
-            <li>
-              <OpenModalButton
-                buttonText="Sign Up"
-                onModalClose={closeMenuAfterModal}
-                modalComponent={<SignupFormModal />}
-              />
-            </li>
-          </>
-        )}
+        <li className='user-dropdown-username'>{user.username}</li>
+        <li className='user-dropdown-email'>{user.email}</li>
+        {/* Links: they go to a page, so they open in a new tab like any
+            other (#122). */}
+        <li>
+          <Link className="user-profile-button" to={`/users/get/${user.id}`} onClick={closeMenu}>
+            <i className="fa-solid fa-user-circle" aria-hidden="true"></i>
+            My Profile
+          </Link>
+        </li>
+        <li>
+          <Link className="user-profile-button" to="/settings" onClick={closeMenu}>
+            <i className="fa-solid fa-gear" aria-hidden="true"></i>
+            Account settings
+          </Link>
+        </li>
+        <li className="add-restaurant-dropdown-button">
+          <OpenModalButton
+            buttonText={
+              <>
+                <i className="fa-solid fa-plus" aria-hidden="true"></i>
+                Add Restaurant
+              </>
+            }
+            onModalClose={closeMenuAfterModal}
+            modalComponent={<CreateRestaurantModal />}
+          />
+        </li>
+        <li>
+          <button className='user-logout-button' onClick={handleLogout}>
+            <i className="fa-solid fa-arrow-right-from-bracket" aria-hidden="true"></i>
+            Log Out
+          </button>
+        </li>
       </ul>
     </>
   );

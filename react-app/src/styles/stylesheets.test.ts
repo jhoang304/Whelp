@@ -357,3 +357,61 @@ test.each([
     const bodies = rules.filter((rule) => rule.file === file && rule.selectors.includes(selector)).map((rule) => rule.body);
     expect(bodies.join(";")).toMatch(/white-space:\s*pre-wrap/);
 });
+
+// --- nothing styled that nothing draws (#139) ---------------------------------------------
+
+/** The app's own code -- not its tests -- and the page, which is where a class goes on an element. */
+function appSources(dir: string = SRC): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    if (entry.isDirectory()) return appSources(full);
+    return /\.tsx?$/.test(entry.name) && !/\.test\.|\.d\.ts$/.test(entry.name) ? [full] : [];
+  });
+}
+
+const appCode = [...appSources(), path.join(SRC, "..", "index.html")]
+  .map((file) => fs.readFileSync(file, "utf8")).join("\n");
+
+/** The start of a class built in a template string: `favorite-button-${variant}`. */
+const builtPrefixes = Array.from(appCode.matchAll(/([A-Za-z][\w-]*-)\$\{/g), (match) => match[1]);
+
+const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const putOnThePage = (name: string) =>
+  new RegExp(`(?<![\\w-])${escapeRegExp(name)}(?![\\w-])`).test(appCode)
+  || builtPrefixes.some((prefix) => name.startsWith(prefix));
+
+test("every class a stylesheet styles is one the app puts on the page", () => {
+  // An old card layout, a detail-page chip size and a GitHub icon class
+  // were each styled for years after the markup that used them had gone.
+  const unused = files.flatMap((file) => {
+    const classes = new Set(selectors(source(file)).flatMap((selector) =>
+      Array.from(selector.matchAll(/\.([A-Za-z_][\w-]*)/g), (match) => match[1])));
+    return Array.from(classes)
+      .filter((name) => !name.startsWith("fa-") && !putOnThePage(name))
+      .map((name) => `${relative(file)}: .${name}`);
+  });
+  expect(unused).toEqual([]);
+});
+
+test("the check above sees a class however the markup builds it", () => {
+  expect(putOnThePage("restaurant-carousel")).toBe(true);
+  // favorite-button-${variant} in FavoriteButton.
+  expect(putOnThePage("favorite-button-labelled")).toBe(true);
+  expect(putOnThePage("search-restaurant-body")).toBe(false);
+});
+
+test("no stylesheet is empty", () => {
+  // Three were, and each was still imported.
+  const empty = files.filter((file) => source(file).trim() === "").map(relative);
+  expect(empty).toEqual([]);
+});
+
+test("every keyframes is played by some animation", () => {
+  const css = files.map(source).join("\n");
+  const played = new Set(Array.from(css.matchAll(/animation(?:-name)?\s*:\s*([^;}]+)/g),
+    (match) => match[1]).flatMap((value) => value.match(/[A-Za-z][\w-]*/g) ?? []));
+  const unplayed = files.flatMap((file) => keyframes(source(file)).names
+    .filter((name) => !played.has(name)).map((name) => `${relative(file)}: ${name}`));
+  expect(unplayed).toEqual([]);
+});

@@ -1,5 +1,4 @@
 import React from "react";
-import "./RatingStar.css"
 import { RatingStarProps } from "../../types";
 
 /*

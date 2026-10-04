@@ -22,13 +22,6 @@
     color: var(--color-gray-700);
 }
 
-.hours-editor .hours-editor-title {
-    display: inline;
-    width: auto;
-    font-size: var(--text-sm);
-    font-weight: var(--font-semibold);
-}
-
 .hours-editor .hours-editor-timezone {
     display: flex;
     align-items: center;

@@ -28,7 +28,7 @@ function OpenStatus({ status, className = "" }: OpenStatusProps): React.JSX.Elem
                 {described.isOpen ? "Open" : "Closed"}
             </span>
             {described.text && (
-                <span className="open-status-detail">
+                <span>
                     {/* "Open until 10:00 PM" reads as one phrase; "Closed" and
                         "Opens 11:00 AM Tuesday" are two, and need parting. */}
                     {described.isOpen ? " " : " · "}{described.text}

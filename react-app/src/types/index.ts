@@ -287,10 +287,6 @@ export interface SearchErrorAction {
   error: string;
 }
 
-export interface ClearSearchAction {
-  type: 'restaurants/clearSearchResults';
-}
-
 export interface LoadRestaurantsErrorAction {
   type: 'restaurants/loadError';
   error: string;
@@ -303,7 +299,6 @@ export type RestaurantActionTypes =
   | SearchRestaurantsAction
   | SearchLoadingAction
   | SearchErrorAction
-  | ClearSearchAction
   | LoadRestaurantsErrorAction
   | FavoriteChangedAction;
 

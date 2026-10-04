@@ -153,7 +153,6 @@ export const getAllRestaurants = (
 export const SEARCH_RESTAURANTS = "restaurants/searchedRestaurants";
 export const SEARCH_RESTAURANTS_LOADING = "restaurants/searchLoading";
 export const SEARCH_RESTAURANTS_ERROR = "restaurants/searchError";
-export const CLEAR_SEARCH_RESULTS = "restaurants/clearSearchResults";
 
 const searchLoading = () => ({
     type: SEARCH_RESTAURANTS_LOADING
@@ -168,10 +167,6 @@ const search = (restaurants: RestaurantsResponse, append: boolean) => ({
     type: SEARCH_RESTAURANTS,
     restaurants,
     append
-});
-
-const clearSearchResults = () => ({
-    type: CLEAR_SEARCH_RESULTS
 });
 
 export const search_restaurants = (
@@ -220,10 +215,6 @@ export const search_restaurants = (
         dispatch(searchError("Network error. Please check your connection."));
         return null;
     }
-};
-
-export const clearSearch = () => (dispatch: AppDispatch) => {
-    dispatch(clearSearchResults());
 };
 
 // Load a single restaurant
@@ -458,14 +449,6 @@ export default function restaurantsReducer(
             return {
                 ...state,
                 listError: action.error
-            };
-        case CLEAR_SEARCH_RESULTS:
-            return {
-                ...state,
-                searchedRestaurants: {},
-                searchedIds: [],
-                searchLoading: false,
-                searchError: null
             };
         case FAVORITE_CHANGED: {
             const { restaurantId, isFavorited } = action;
