@@ -209,3 +209,47 @@ test("the login form gives its place in the history to the page it returns to", 
   expect(routerHistory.action).toBe("REPLACE");
   expect(routerHistory.entries.map((entry: any) => entry.pathname)).toEqual(["/single/2"]);
 });
+
+// --- signing in with Google --------------------------------------------------------------
+
+/** Google offered, and everything else as `succeed` answers it. */
+const offerGoogle = () => {
+  (global as any).fetch = vi.fn((url: string) => Promise.resolve({
+    ok: true, status: 200,
+    json: () => Promise.resolve(url === "/api/auth/google" ? { available: true, confirmed: false } : DEMO),
+  }));
+};
+
+test("Google, too, comes back to where the login link was followed from", async () => {
+  offerGoogle();
+  renderFlow({ pathname: "/login", state: { from: "/single/2" } });
+  expect(await screen.findByRole("link", { name: "Continue with Google" }))
+    .toHaveAttribute("href", "/api/auth/google/start?next=%2Fsingle%2F2");
+});
+
+test("and from signup", async () => {
+  offerGoogle();
+  renderFlow({ pathname: "/signup", state: { from: "/single/2" } });
+  expect(await screen.findByRole("link", { name: "Continue with Google" }))
+    .toHaveAttribute("href", "/api/auth/google/start?next=%2Fsingle%2F2");
+});
+
+test("back from Google unsigned-in, the page says why, without blaming the fields", async () => {
+  refuse(["Invalid credentials"]);
+  renderFlow({ pathname: "/login", search: "?google=account-exists", state: { from: "/single/2" } });
+
+  expect(screen.getByRole("alert")).toHaveTextContent(
+    "An account already uses that Google account's email address. Log in with your password, "
+    + "then connect Google in Account settings.");
+  expect(screen.getByLabelText("Email Address")).not.toHaveAttribute("aria-invalid");
+  // Said once: taken out of the address, keeping where to go back to.
+  await waitFor(() => expect(where.search).toBe(""));
+  expect(where.state).toEqual({ from: "/single/2" });
+
+  // The next try's answer replaces it.
+  fireEvent.change(screen.getByLabelText("Email Address"), { target: { value: "owner@example.test" } });
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "wrong" } });
+  fireEvent.click(screen.getByRole("button", { name: "Log In" }));
+  await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Invalid credentials"));
+  expect(screen.getByRole("alert")).not.toHaveTextContent("Google");
+});

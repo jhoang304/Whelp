@@ -18,7 +18,7 @@ os.environ.setdefault("SECRET_KEY", "test-secret-key")
 os.environ["DATABASE_URL"] = "sqlite://"
 for var in ("APP_ENV", "FLASK_ENV"):
     os.environ.pop(var, None)
-for var in ("S3_BUCKET", "S3_KEY", "S3_SECRET"):
+for var in ("S3_BUCKET", "S3_KEY", "S3_SECRET", "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET"):
     os.environ.pop(var, None)
 
 import logging  # noqa: E402

@@ -5,8 +5,8 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.sql import func
 
 from app.models import Favorite, Restaurant, Review, ReviewResponse, User, db
-from app.forms import ChangePasswordForm, DeleteAccountForm, UserProfileForm
-from app.api import demo
+from app.forms import ChangePasswordForm, DeleteAccountForm, SetPasswordForm, UserProfileForm
+from app.api import demo, google
 from app.api.accounts import delete_account, deletion_summary
 from app.extensions import limiter
 from app.api.utils import (
@@ -224,12 +224,18 @@ def change_password(id):
     The current one is required even though you are logged in, so a session
     left open on a shared computer is not enough to take the account over.
     The new one follows the signup rule.
+
+    An account made with Google sets its first password with just
+    {"new_password"}, having signed in with Google in the last ten minutes:
+    that stands in for the current password it doesn't have.
     """
     user, refusal = _own_account(id)
     if refusal:
         return refusal
     if user.is_demo:
         return {'errors': ["The demo account's password can't be changed: everyone shares it."]}, 403
+    if not user.has_password:
+        return _set_first_password(user)
 
     form = ChangePasswordForm()
     form['csrf_token'].data = request.cookies.get('csrf_token')
@@ -244,6 +250,21 @@ def change_password(id):
     user.password = form.data['new_password']
     db.session.commit()
     return {'message': 'Your password has been changed.'}
+
+
+CONFIRM_WITH_GOOGLE = "Confirm it's you with Google first."
+
+
+def _set_first_password(user):
+    if not google.recently_confirmed(user):
+        return {'errors': [CONFIRM_WITH_GOOGLE]}, 403
+    form = SetPasswordForm()
+    form['csrf_token'].data = request.cookies.get('csrf_token')
+    if not form.validate_on_submit():
+        return {'errors': error_messages(form.errors)}, 400
+    user.password = form.data['new_password']
+    db.session.commit()
+    return {'message': 'Your password has been set.'}
 
 
 @user_routes.route('/<int:id>/deletion', methods=['GET'])
@@ -271,6 +292,9 @@ def delete_user(id):
     Removes the restaurants you own with everything on them, every photo you
     added, your saved list and your avatar. Keeps the reviews you wrote, as
     by "Deleted user". Logs you out.
+
+    An account made with Google, with no password, sends nothing: having
+    signed in with Google in the last ten minutes stands in for it.
     """
     user, refusal = _own_account(id)
     if refusal:
@@ -278,12 +302,15 @@ def delete_user(id):
     if user.is_demo:
         return {'errors': ["The demo account can't be deleted: everyone shares it."]}, 403
 
-    form = DeleteAccountForm()
-    form['csrf_token'].data = request.cookies.get('csrf_token')
-    if not form.validate_on_submit():
-        return {'errors': error_messages(form.errors)}, 400
-    if not user.check_password(form.data['password']):
-        return {'errors': ["That password is incorrect."]}, 400
+    if user.has_password:
+        form = DeleteAccountForm()
+        form['csrf_token'].data = request.cookies.get('csrf_token')
+        if not form.validate_on_submit():
+            return {'errors': error_messages(form.errors)}, 400
+        if not user.check_password(form.data['password']):
+            return {'errors': ["That password is incorrect."]}, 400
+    elif not google.recently_confirmed(user):
+        return {'errors': [CONFIRM_WITH_GOOGLE]}, 403
 
     logout_user()
     delete_account(user)

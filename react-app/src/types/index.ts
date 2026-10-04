@@ -90,6 +90,10 @@ export interface User {
   createdAt?: string;
   /** The shared demo account, which may not change its profile (#136). Your own payload only. */
   isDemo?: boolean;
+  /** False for an account made with Google that hasn't set a password. Your own payload only. */
+  hasPassword?: boolean;
+  /** A Google account signs in to this one. Your own payload only. */
+  googleConnected?: boolean;
 }
 
 /** Public subset of a user, as embedded in reviews and responses. */

@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import FormErrors from "../FormErrors";
 import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { authLink, returnPath } from "../../utils/returnTo";
+import GoogleButton from "../GoogleButton";
 import './SignupForm.css';
 
 function SignupFormPage(): React.JSX.Element {
@@ -48,6 +49,7 @@ function SignupFormPage(): React.JSX.Element {
         <div className="signup-form-section">
           <h1 className="signup-title">Create Your Account</h1>
           <p className="signup-subtitle">Join the Whelp community</p>
+          <GoogleButton next={returnPath(location.state)} />
           <form onSubmit={handleSubmit} className="signup-form">
             <FormErrors errors={errors} className="signup-errors-container" itemClassName="signup-error-message" />
             <div className="name-inputs">

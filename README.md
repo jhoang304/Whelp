@@ -18,7 +18,8 @@ Whelp is a platform where users can search for businesses and leave reviews for 
 * Filtering the listing and the search by cuisine, price, minimum rating and city, and sorting by rating, review count or newest. The filters live in the URL, so a filtered page can be shared and reloaded
 * Saving restaurants to a private list, shown on your own profile and nobody else's
 * User profile pages with an avatar, the reviews a user has written, and the businesses they own
-* Account settings: change your password, or delete your account. Your reviews stay, shown as by "Deleted user", so the restaurants keep their ratings
+* Signing up and logging in with Google, or connecting Google to an account you already have
+* Account settings: change your password, connect or disconnect Google, or delete your account. Your reviews stay, shown as by "Deleted user", so the restaurants keep their ratings
 * Photo uploads (restaurant, review and profile photos) stored in AWS S3, with a paste-a-URL fallback
 * Keyboard and screen-reader support: dialogs that manage focus and close on Escape, labelled fields, visible focus, and motion that stops for anyone who has asked their system for less
 * Layouts for phones and tablets as well as desktops
@@ -73,6 +74,7 @@ Environment variables the deployed service needs:
 | `APP_ENV` | yes | Set to `production` on the service itself, not in a committed file — the flask CLI reads `.flaskenv`, so a value there would reach the deployed build commands. Addresses `SCHEMA`, forces https, sends HSTS, and marks the session cookie Secure (it is SameSite=Lax everywhere). `FLASK_ENV` is still read as a fallback, since Flask removed it in 2.3 |
 | `SCHEMA` | yes | The Postgres schema this app owns |
 | `S3_BUCKET`, `S3_KEY`, `S3_SECRET` | no | Photo uploads. Without them the photo dialogs fall back to pasting an image URL |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no | Signing in with Google (below). Without them no Google button is shown |
 | `RATELIMIT_STORAGE_URI` | no | Where the login/signup rate limit is counted. The default is in-process, so each worker gets its own allowance. Pointing it at Redis makes the limit mean one thing across workers, and needs the client too: install `flask-limiter[redis]` |
 | `TRUSTED_PROXY_HOPS` | no | How many reverse proxies stand in front of the app, so the real client address can be read from `X-Forwarded-For`. Defaults to 1 in production and 0 elsewhere. Leave it at 0 where nothing proxies: trusting that header without a proxy lets a caller spoof an address and walk around the rate limit |
 | `SQLALCHEMY_ECHO` | no | `1` logs every SQL statement. Development only, and ignored in production |
@@ -115,6 +117,25 @@ S3_SECRET=your-secret-access-key
 Uploads are stored under `uploads/<user id>/<random>.<ext>`, and that key is recorded on the row it is attached to. Deletes act on the recorded key, never on the url in the row: a url is whatever a caller typed, so deriving a key from one made typing somebody else's url authority to delete their image. A row with no key -- a hot-linked image, or a url naming an object the caller did not upload -- is never deleted from the bucket. Objects uploaded before this are only cleaned up if the migration could match them unambiguously; the rest stay, which costs storage rather than somebody's photo.
 
 The IAM user needs `s3:PutObject` and `s3:DeleteObject` on the bucket, and objects must be publicly readable (either through a bucket policy or by leaving ACLs enabled; the app retries without an ACL if the bucket has ACLs disabled). After each upload the app checks that the object is publicly readable and rejects the upload with a clear message if it is not. Without these variables the app still works: the photo dialogs accept an image URL instead, and the upload endpoint answers with a clear 503.
+
+### Signing in with Google (optional)
+
+With an OAuth client from Google Cloud Console, the login and signup pages offer "Continue with Google", and Account settings can connect a Google account to an existing one. To set one up:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), make a project. Under **Google Auth Platform**, set up the consent screen with an app name and a support email. The app asks only for `openid`, `email` and `profile`.
+2. Under **Clients**, create a **Web application** client. Add each place Google may send people back to as an authorized redirect URI:
+   - `http://localhost:5000/api/auth/google/callback` for `flask run`
+   - `http://localhost:3000/api/auth/google/callback` for `npm start`
+   - `https://<your-site>/api/auth/google/callback` for the deployed service
+3. Put the client's ID and secret in `.env` as `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, and in the deployed service's environment.
+4. While the consent screen's publishing status is **Testing**, only the test users listed on it can sign in. Publish the app to let anyone.
+
+How it behaves:
+
+- **First sign-in:** this makes an account with no password. Its username comes from the email address, and its name and picture come from Google. The owner can set a password later, in Account settings.
+- **An address that already has an account:** Google sign-in doesn't open it. Whelp never checked that whoever signed up with that address owns it, so Google's word that the address is yours doesn't hand the account over. Log in with the password and connect Google from Account settings instead. Connecting asks for the password again, as changing it does.
+- **Accounts with no password:** they confirm with Google where others would give a password. Signing in with Google counts for ten minutes, and is what lets such an account set a password or delete itself.
+- **How it talks to Google:** this is OpenID Connect's authorization code flow with PKCE, a one-time state and a nonce, in `app/api/google.py`. It uses the standard library and nothing else.
 
 ### Running the tests
 

@@ -9,6 +9,7 @@ from werkzeug.middleware.proxy_fix import ProxyFix
 from .models import db, User
 from .api.user_routes import user_routes
 from .api.auth_routes import auth_routes
+from .api.google_routes import google_routes
 from .api.restaurant_routes import restaurant_routes
 from .api.category_routes import category_routes
 from .api.amenity_routes import amenity_routes
@@ -53,6 +54,7 @@ app.cli.add_command(check_db)
 app.config.from_object(Config)
 app.register_blueprint(user_routes, url_prefix='/api/users')
 app.register_blueprint(auth_routes, url_prefix='/api/auth')
+app.register_blueprint(google_routes, url_prefix='/api/auth/google')
 app.register_blueprint(restaurant_routes, url_prefix='/api/restaurants')
 app.register_blueprint(category_routes, url_prefix='/api/categories')
 app.register_blueprint(amenity_routes, url_prefix='/api/amenities')

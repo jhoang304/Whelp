@@ -1,0 +1,57 @@
+/* Google's light sign-in button: white, a grey border, near-black text,
+   and the logo as it is. Their guidelines ask for these colours. */
+.google-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    min-height: 44px;
+    box-sizing: border-box;
+    padding: 0 16px;
+    border: 1px solid #747775;
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #1f1f1f;
+    font-family: Roboto, Arial, sans-serif;
+    font-size: 0.95rem;
+    font-weight: var(--font-medium);
+    text-decoration: none;
+    cursor: pointer;
+    transition: background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.google-button:hover:not(:disabled) {
+    background-color: #f8faff;
+    box-shadow: 0 1px 3px rgba(60, 64, 67, 0.3);
+}
+
+.google-button:focus-visible {
+    outline: 2px solid var(--color-primary);
+    outline-offset: 2px;
+}
+
+.google-logo {
+    flex-shrink: 0;
+}
+
+/* Above the login and signup forms: the whole width, then "or". */
+.google-sign-in .google-button {
+    display: flex;
+    width: 100%;
+}
+
+.google-sign-in-or {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 20px 0;
+    color: var(--color-gray-500);
+    font-size: 0.85rem;
+}
+
+.google-sign-in-or::before,
+.google-sign-in-or::after {
+    content: "";
+    flex: 1;
+    border-top: 1px solid var(--color-gray-200);
+}

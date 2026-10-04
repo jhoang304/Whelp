@@ -15,14 +15,21 @@ class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(40), nullable=False, unique=True)
     email = db.Column(db.String(255), nullable=False, unique=True)
+    # None for an account made with Google, until its owner sets a password.
+    hashed_password = db.Column(db.String(255), nullable=True)
+    # The Google account that signs in to this one: the ID token's "sub",
+    # which stays the same when the Google account's address changes. None
+    # when Google isn't connected.
+    google_sub = db.Column(db.String(255), nullable=True)
 
     # One account per address, whatever case it was typed in. The column's
     # own constraint tells "Owner@x.io" from "owner@x.io", and signup let the
-    # second become another account (#117).
+    # second become another account (#117). And one Whelp account per Google
+    # account.
     __table_args__ = (
         db.Index("uq_users_email_lower", func.lower(email), unique=True),
+        db.Index("uq_users_google_sub", google_sub, unique=True),
     ) + (({'schema': SCHEMA},) if environment == "production" else ())
-    hashed_password = db.Column(db.String(255), nullable=False)
     first_name = db.Column(db.String(50), nullable=False)
     last_name = db.Column(db.String(50), nullable=False)
     # Optional avatar. Populated by the S3 upload flow (or any public image URL).
@@ -63,6 +70,11 @@ class User(db.Model, UserMixin):
         return self.email == DEMO_EMAIL
 
     @property
+    def has_password(self):
+        """False for an account made with Google whose owner hasn't set one."""
+        return self.hashed_password is not None
+
+    @property
     def password(self):
         return self.hashed_password
 
@@ -71,7 +83,8 @@ class User(db.Model, UserMixin):
         self.hashed_password = generate_password_hash(password)
 
     def check_password(self, password):
-        return check_password_hash(self.password, password)
+        # No password is matched by none.
+        return self.has_password and check_password_hash(self.password, password)
 
     def to_dict(self):
         return {
@@ -84,6 +97,9 @@ class User(db.Model, UserMixin):
             'createdAt': self.createdAt,
             # The page leaves out what the API refuses the shared demo (#136).
             'isDemo': self.is_demo,
+            # Which ways in the account has, for Account settings.
+            'hasPassword': self.has_password,
+            'googleConnected': self.google_sub is not None,
         }
 
     def to_dict_public(self):
