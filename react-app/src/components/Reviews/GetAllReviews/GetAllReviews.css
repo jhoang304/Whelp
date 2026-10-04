@@ -4,6 +4,8 @@
   }
 
   .single-review {
+    flex: 1;
+    min-width: 0;
     margin: 10px;
   }
 
@@ -19,9 +21,6 @@
   }
 
   .review-user-data img {
-    width: 26px;
-    height: 26px;
-    border-radius: 20px;
     margin-top: 4px;
     margin-right: 12px;
   }
@@ -42,11 +41,6 @@
   .write-a-review {
     font-size: 16px;
     font-weight: 500;
-  }
-
-  .user-title {
-    font-size: 16px;
-    font-weight: 700;
   }
 
   .review-time {
@@ -88,20 +82,11 @@
     color: var(--color-gray-700);
   }
 
-  .review-time-star {
-    padding: 0px 10px;
-  }
-
   .review-right-section {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     height: 64px;
-  }
-
-  .single-review {
-    flex: 1;
-    min-width: 0;
   }
 
   .reviews-empty {

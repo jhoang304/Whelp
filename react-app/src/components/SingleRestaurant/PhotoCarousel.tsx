@@ -154,7 +154,7 @@ function PhotoCarousel({ photos, name, onOpen, children, corner }: PhotoCarousel
 
     return (
         <section
-            className={`restaurant-carousel${rotating ? " rotating" : ""}`}
+            className="restaurant-carousel"
             onMouseEnter={() => setHovering(true)}
             onMouseLeave={() => {
                 setHovering(false);

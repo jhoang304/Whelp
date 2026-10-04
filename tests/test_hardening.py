@@ -107,15 +107,19 @@ def test_the_client_and_server_password_rules_are_the_same():
     assert int(declared.group(1)) == PASSWORD_MIN_LENGTH
 
 
-def test_both_signup_forms_check_the_password_length():
+def test_every_signup_form_checks_the_password_length():
     """
-    The page had the check and the modal did not, so the same password was
-    refused in one and sent to fail server-side in the other.
+    The page had the check and a modal did not, so the same password was
+    refused in one and sent to fail server-side in the other. The modal,
+    which nothing ever drew, is gone (#139); whatever signs someone up --
+    the page now, or any form added later -- checks it.
     """
     components = pathlib.Path(__file__).resolve().parents[1] / "react-app" / "src" / "components"
-    for form in ("SignupFormPage", "SignupFormModal"):
-        source = (components / form / "index.tsx").read_text(encoding="utf-8")
-        assert "PASSWORD_MIN_LENGTH" in source, form
+    forms = [path for path in components.rglob("*.tsx")
+             if ".test." not in path.name and "signUp(" in path.read_text(encoding="utf-8")]
+    assert [path.parent.name for path in forms] == ["SignupFormPage"]
+    for path in forms:
+        assert "PASSWORD_MIN_LENGTH" in path.read_text(encoding="utf-8"), path.parent.name
 
 
 @pytest.fixture()

@@ -5,7 +5,6 @@ import { searchLocation } from "../../utils/filters";
 function SearchBar(): React.JSX.Element {
     const history = useHistory();
     const [keyword, setKeyword] = useState<string>("");
-    const [isFocused, setIsFocused] = useState<boolean>(false);
 
     const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
       e.preventDefault();
@@ -37,7 +36,7 @@ function SearchBar(): React.JSX.Element {
 
     return (
       <div className="nav-search">
-        <div className={`nav-search-container ${isFocused ? 'focused' : ''}`}>
+        <div className="nav-search-container">
           <form onSubmit={handleSearch} className="search-bar-form" role="search">
             <input
               className='search-input-values'
@@ -45,8 +44,6 @@ function SearchBar(): React.JSX.Element {
               placeholder="Search restaurants, cuisine, location..."
               value={keyword}
               onChange={handleKeywordChange}
-              onFocus={() => setIsFocused(true)}
-              onBlur={() => setIsFocused(false)}
               maxLength={100}
             />
             <button

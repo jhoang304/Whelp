@@ -281,7 +281,6 @@ function RestaurantForm({
                     hint="Tick the days it opens. A closing time before the opening one runs past midnight."
                 >
                     <HoursEditor
-                        title={null}
                         value={hours}
                         onChange={onHoursChange}
                         timezone={timezone}

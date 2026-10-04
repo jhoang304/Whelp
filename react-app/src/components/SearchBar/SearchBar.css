@@ -145,20 +145,4 @@
         width: 95%;
         padding: 0 10px;
     }
-    
-    .search-restaurant-body {
-        flex-direction: column;
-        align-items: center;
-    }
-    
-    .restaurant-info {
-        padding-left: 0;
-        padding-top: 20px;
-        text-align: center;
-    }
-    
-    .prevImage, .no-image-placeholder {
-        width: 100%;
-        max-width: 300px;
-    }
 }
