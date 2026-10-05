@@ -5,6 +5,8 @@ import { useAppDispatch, useAppSelector } from "../../store";
 import FormErrors from "../FormErrors";
 import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { authLink, returnPath } from "../../utils/returnTo";
+import GoogleButton from "../GoogleButton";
+import { useGoogleOutcome } from "../../hooks/useGoogle";
 import './LoginForm.css';
 
 const ERRORS_ID = "login-errors";
@@ -20,6 +22,10 @@ function LoginFormPage(): React.JSX.Element {
   // of the first one only, gone after four seconds, over the nav bar on a
   // tablet, and never read out.
   const [errors, setErrors] = useState<string[]>([]);
+  // Back from Google without being signed in: why not. Shown where a refused
+  // login is, but it isn't the fields' fault, so they aren't marked.
+  const { problem: googleProblem } = useGoogleOutcome();
+  const [showGoogleProblem, setShowGoogleProblem] = useState(true);
   useDocumentTitle(pageTitle("Log in"));
   // The login refused is the pair, not either field: both are marked, and
   // both point at the message.
@@ -35,6 +41,7 @@ function LoginFormPage(): React.JSX.Element {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    setShowGoogleProblem(false);
     const data = await dispatch(login(email_address, password));
     if (data) {
       setErrors(data);
@@ -44,6 +51,7 @@ function LoginFormPage(): React.JSX.Element {
   };
 
   const handleDemoLogin = () => {
+    setShowGoogleProblem(false);
     dispatch(login('demo@aa.io', 'password')).then((data: string[] | null) => {
       if (data) {
         setErrors(data);
@@ -63,8 +71,13 @@ function LoginFormPage(): React.JSX.Element {
         <div className="login-form-section">
           <h1 className="login-title">Log In to Whelp</h1>
           <p className="login-subtitle">Access your account</p>
+          <GoogleButton next={returnPath(location.state)} />
           <form onSubmit={handleSubmit} className="login-form">
-            <FormErrors errors={errors} id={ERRORS_ID} className="login-errors" />
+            <FormErrors
+              errors={errors.length === 0 && googleProblem && showGoogleProblem ? [googleProblem] : errors}
+              id={ERRORS_ID}
+              className="login-errors"
+            />
             <div className="login-field">
               <label htmlFor="email">Email Address</label>
               <input

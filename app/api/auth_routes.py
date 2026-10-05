@@ -4,6 +4,7 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from app.models import User, db
 from app.forms import LoginForm
 from app.forms import SignUpForm
+from app.api import google
 from app.api.utils import error_messages
 from app.extensions import limiter
 from flask_login import current_user, login_user, logout_user, login_required
@@ -45,9 +46,12 @@ def login():
         return {'errors': ['Invalid credentials']}, 401
 
     # One lookup and one password check, whether or not the address has an
-    # account. The form checks nothing about the account itself any more.
+    # account. The form checks nothing about the account itself any more. An
+    # account made with Google has no password for any to match, and is
+    # refused like an unknown address, at the same cost: saying "use Google"
+    # would tell anyone typing the address that it has an account.
     user = User.with_email(form.data['email'])
-    if user is None:
+    if user is None or not user.has_password:
         check_password_hash(UNKNOWN_ACCOUNT_HASH, form.data['password'])
         return {'errors': ['Invalid credentials']}, 401
     if not user.check_password(form.data['password']):
@@ -63,6 +67,7 @@ def logout():
     Logs a user out
     """
     logout_user()
+    google.forget()
     return {'message': 'User logged out'}
 
 

@@ -76,6 +76,13 @@ class Config:
     REMEMBER_COOKIE_SECURE = is_production()
     REMEMBER_COOKIE_SAMESITE = "Lax"
 
+    # Sign in with Google (app/api/google.py): the two halves of an OAuth
+    # client made in Google Cloud Console. With either missing, nobody is
+    # offered Google -- the button isn't drawn and the routes say it isn't
+    # available -- and the app works as before. See .env.example.
+    GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
+    GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
+
     # Echoing every statement is a debugging tool. It used to be on
     # unconditionally, which meant production logged the whole query storm of
     # every page load. Opt in with SQLALCHEMY_ECHO=1, and never in production.

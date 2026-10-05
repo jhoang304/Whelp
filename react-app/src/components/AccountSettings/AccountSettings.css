@@ -104,6 +104,43 @@
     background-color: var(--color-primary-dark);
 }
 
+.account-settings-section button.account-settings-secondary {
+    color: var(--color-gray-800);
+    background-color: white;
+    border: 1px solid var(--color-gray-300);
+}
+
+.account-settings-section button.account-settings-secondary:hover:not(:disabled) {
+    background-color: var(--color-gray-100);
+}
+
+/* Google's own button, as on the login page, at its own width here. */
+.account-settings-section .google-button {
+    align-self: flex-start;
+}
+
+/* What Google said when it sent the browser back: connected, confirmed, or
+   why not. Nothing, most visits. */
+.account-settings-outcome:not(:empty) {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+    margin-bottom: var(--space-6);
+}
+
+.account-settings-confirm,
+.account-settings-google {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+}
+
+.account-settings-confirm p,
+.account-settings-google p,
+.account-settings-section form > p:not([class]) {
+    margin: 0;
+}
+
 .account-settings-danger {
     border-color: #fecaca;
 }
@@ -165,7 +202,8 @@
         padding: var(--space-4);
     }
 
-    .account-settings-section button {
+    .account-settings-section button,
+    .account-settings-section .google-button {
         align-self: stretch;
     }
 }

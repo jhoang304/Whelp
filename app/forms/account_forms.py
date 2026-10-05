@@ -21,6 +21,23 @@ class ChangePasswordForm(FlaskForm):
                message=f"Password must be at least {PASSWORD_MIN_LENGTH} characters.")])
 
 
+class SetPasswordForm(FlaskForm):
+    """
+    A first password, for an account made with Google: the rule signup
+    follows, and no current one to give.
+    """
+    new_password = TextField('new_password', validators=[
+        DataRequired(message="Enter a new password."),
+        Length(min=PASSWORD_MIN_LENGTH,
+               message=f"Password must be at least {PASSWORD_MIN_LENGTH} characters.")])
+
+
+class ConnectGoogleForm(FlaskForm):
+    """Connecting a Google account asks for the password, as changing it does."""
+    password = TextField('password', validators=[
+        DataRequired(message="Enter your password to connect Google.")])
+
+
 class DeleteAccountForm(FlaskForm):
     """Deleting an account asks for its password, whoever's session it is."""
     password = TextField('password', validators=[
