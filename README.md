@@ -19,6 +19,7 @@ Whelp is a platform where users can search for businesses and leave reviews for 
 * Saving restaurants to a private list, shown on your own profile and nobody else's
 * User profile pages with an avatar, the reviews a user has written, and the businesses they own
 * Signing up and logging in with Google, or connecting Google to an account you already have
+* Resetting a forgotten password with a link sent by email
 * Account settings: change your password, connect or disconnect Google, or delete your account. Your reviews stay, shown as by "Deleted user", so the restaurants keep their ratings
 * Photo uploads (restaurant, review and profile photos) stored in AWS S3, with a paste-a-URL fallback
 * Keyboard and screen-reader support: dialogs that manage focus and close on Escape, labelled fields, visible focus, and motion that stops for anyone who has asked their system for less
@@ -75,6 +76,7 @@ Environment variables the deployed service needs:
 | `SCHEMA` | yes | The Postgres schema this app owns |
 | `S3_BUCKET`, `S3_KEY`, `S3_SECRET` | no | Photo uploads. Without them the photo dialogs fall back to pasting an image URL |
 | `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | no | Signing in with Google (below). Without them no Google button is shown |
+| `RESEND_API_KEY`, `MAIL_FROM`, `PUBLIC_URL` | no | Resetting a forgotten password by email (below). Without all three, production offers no reset |
 | `RATELIMIT_STORAGE_URI` | no | Where the login/signup rate limit is counted. The default is in-process, so each worker gets its own allowance. Pointing it at Redis makes the limit mean one thing across workers, and needs the client too: install `flask-limiter[redis]` |
 | `TRUSTED_PROXY_HOPS` | no | How many reverse proxies stand in front of the app, so the real client address can be read from `X-Forwarded-For`. Defaults to 1 in production and 0 elsewhere. Leave it at 0 where nothing proxies: trusting that header without a proxy lets a caller spoof an address and walk around the rate limit |
 | `SQLALCHEMY_ECHO` | no | `1` logs every SQL statement. Development only, and ignored in production |
@@ -136,6 +138,27 @@ How it behaves:
 - **An address that already has an account:** Google sign-in doesn't open it. Whelp never checked that whoever signed up with that address owns it, so Google's word that the address is yours doesn't hand the account over. Log in with the password and connect Google from Account settings instead. Connecting asks for the password again, as changing it does.
 - **Accounts with no password:** they confirm with Google where others would give a password. Signing in with Google counts for ten minutes, and is what lets such an account set a password or delete itself.
 - **How it talks to Google:** this is OpenID Connect's authorization code flow with PKCE, a one-time state and a nonce, in `app/api/google.py`. It uses the standard library and nothing else.
+
+### Resetting a forgotten password (optional)
+
+"Forgot your password?" on the login page emails a link for choosing a new password. The email goes through [Resend](https://resend.com), over its HTTPS API: Render's free web services block the SMTP ports, so SMTP wouldn't get out.
+
+1. Sign up at Resend. Under **Domains**, add a domain you own and the DNS records it shows you. Until a domain is verified, Resend only emails your own address.
+2. Under **API Keys**, create a key with sending access.
+3. On the deployed service, set:
+   - `RESEND_API_KEY` to that key.
+   - `MAIL_FROM` to an address on that domain, such as `Whelp <noreply@your-domain.com>`. It needn't be a real mailbox.
+   - `PUBLIC_URL` to the site's address, such as `https://your-site.onrender.com`. The link is built from it rather than from the request, because a request's `Host` header is whatever its sender wrote.
+
+**Locally,** without `RESEND_API_KEY`, the email is written to the flask log instead, link and all, so the whole flow can be tried without sending anything.
+
+How it behaves:
+
+- **The same answer for every address.** Asking always gets the same reply, whether or not the address has an account. The email is sent after the response, so how long it takes doesn't give anything away either. The demo account never gets one.
+- **Asking is rate-limited.** One address gets three emails an hour, and one caller can ask ten times a minute.
+- **The link** carries a token signed with `SECRET_KEY`. It lasts an hour, and works once: its signature covers the account's password hash, so any new password ends it, including the one it sets. Nothing is stored in the database.
+- **The token stays out of logs.** It sits after the `#`, which a browser never sends, so it isn't in the server's access log or any `Referer`. The page takes it out of the address bar as soon as it's read.
+- **Using the link** sets the new password and signs you in. An account made with Google can use it to set its first password.
 
 ### Running the tests
 

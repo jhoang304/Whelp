@@ -1,7 +1,7 @@
 from flask_wtf import FlaskForm
-from wtforms.validators import DataRequired, Length
+from wtforms.validators import DataRequired, Email, Length
 
-from .fields import TextField
+from .fields import TextField, email_address
 from .signup_form import PASSWORD_MIN_LENGTH
 
 
@@ -36,6 +36,23 @@ class ConnectGoogleForm(FlaskForm):
     """Connecting a Google account asks for the password, as changing it does."""
     password = TextField('password', validators=[
         DataRequired(message="Enter your password to connect Google.")])
+
+
+class PasswordResetRequestForm(FlaskForm):
+    """The address to email a reset link to."""
+    email = TextField('email', filters=[email_address], validators=[
+        DataRequired(message="Enter your email address."),
+        Email(message="Please enter a valid email address.")])
+
+
+class PasswordResetForm(FlaskForm):
+    """A reset link's token, and the new password: the rule signup follows."""
+    token = TextField('token', validators=[
+        DataRequired(message="This link is incomplete. Open the one in the email again.")])
+    new_password = TextField('new_password', validators=[
+        DataRequired(message="Enter a new password."),
+        Length(min=PASSWORD_MIN_LENGTH,
+               message=f"Password must be at least {PASSWORD_MIN_LENGTH} characters.")])
 
 
 class DeleteAccountForm(FlaskForm):

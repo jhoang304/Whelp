@@ -253,3 +253,27 @@ test("back from Google unsigned-in, the page says why, without blaming the field
   await waitFor(() => expect(screen.getByRole("alert")).toHaveTextContent("Invalid credentials"));
   expect(screen.getByRole("alert")).not.toHaveTextContent("Google");
 });
+
+// --- a forgotten password ---------------------------------------------------------------
+
+test("with reset offered, \"Forgot your password?\" brings the address typed", async () => {
+  (global as any).fetch = vi.fn((url: string) => Promise.resolve({
+    ok: true, status: 200,
+    json: () => Promise.resolve(url === "/api/auth/password-reset" ? { available: true } : DEMO),
+  }));
+  renderFlow("/login");
+  fireEvent.change(screen.getByLabelText("Email Address"), { target: { value: "owner@example.test" } });
+  fireEvent.click(await screen.findByRole("link", { name: "Forgot your password?" }));
+  expect(where.pathname).toBe("/forgot-password");
+  expect(where.state).toEqual({ email: "owner@example.test" });
+});
+
+test("without it, there's no such link", async () => {
+  (global as any).fetch = vi.fn((url: string) => Promise.resolve({
+    ok: true, status: 200,
+    json: () => Promise.resolve(url === "/api/auth/password-reset" ? { available: false } : DEMO),
+  }));
+  renderFlow("/login");
+  await waitFor(() => expect((global as any).fetch).toHaveBeenCalledWith("/api/auth/password-reset"));
+  expect(screen.queryByRole("link", { name: "Forgot your password?" })).not.toBeInTheDocument();
+});
