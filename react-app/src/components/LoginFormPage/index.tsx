@@ -7,6 +7,7 @@ import { pageTitle, useDocumentTitle } from "../../hooks/useDocumentTitle";
 import { authLink, returnPath } from "../../utils/returnTo";
 import GoogleButton from "../GoogleButton";
 import { useGoogleOutcome } from "../../hooks/useGoogle";
+import { usePasswordResetAvailable } from "../../hooks/usePasswordReset";
 import './LoginForm.css';
 
 const ERRORS_ID = "login-errors";
@@ -26,6 +27,7 @@ function LoginFormPage(): React.JSX.Element {
   // login is, but it isn't the fields' fault, so they aren't marked.
   const { problem: googleProblem } = useGoogleOutcome();
   const [showGoogleProblem, setShowGoogleProblem] = useState(true);
+  const canReset = usePasswordResetAvailable();
   useDocumentTitle(pageTitle("Log in"));
   // The login refused is the pair, not either field: both are marked, and
   // both point at the message.
@@ -107,6 +109,12 @@ function LoginFormPage(): React.JSX.Element {
                 required
                 {...fieldErrorProps}
               />
+              {canReset && (
+                // Bringing the address typed above, so it needn't be typed again.
+                <Link className="login-forgot" to={{ pathname: "/forgot-password", state: { email: email_address } }}>
+                  Forgot your password?
+                </Link>
+              )}
             </div>
             <button className="login-submit-button" type="submit">Log In</button>
             <button type="button" className="demo-login-button" onClick={handleDemoLogin}>

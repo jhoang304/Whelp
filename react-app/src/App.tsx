@@ -15,6 +15,8 @@ import Footer from "./components/Footer";
 import RestaurantBySearch, { LegacySearchRedirect } from "./components/SearchBar";
 import HomePage from "./components/HomePage";
 import AccountSettings from "./components/AccountSettings";
+import ForgotPasswordPage from "./components/PasswordReset/ForgotPasswordPage";
+import ResetPasswordPage from "./components/PasswordReset/ResetPasswordPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NotFound from "./components/NotFound";
 import RouteAnnouncer from "./components/RouteAnnouncer";
@@ -54,6 +56,12 @@ function App(): React.JSX.Element {
                 </Route>
                 <Route exact path="/signup">
                   <SignupFormPage />
+                </Route>
+                <Route exact path="/forgot-password">
+                  <ForgotPasswordPage />
+                </Route>
+                <Route exact path="/reset-password">
+                  <ResetPasswordPage />
                 </Route>
                 <Route exact path="/search">
                   <RestaurantBySearch />

@@ -101,6 +101,21 @@
   box-shadow: 0 0 0 3px rgba(240, 12, 19, 0.2);
 }
 
+/* Under the password box, at its right. */
+.login-forgot {
+  display: block;
+  width: fit-content;
+  margin: 8px 0 0 auto;
+  color: var(--color-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.login-forgot:hover {
+  color: var(--color-primary-dark);
+}
+
 /* Buttons */
 .login-submit-button, .demo-login-button {
   width: 100%;

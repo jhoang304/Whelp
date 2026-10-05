@@ -83,6 +83,16 @@ class Config:
     GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID")
     GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET")
 
+    # Email, for resetting a forgotten password (app/api/mail.py): a Resend
+    # API key, and the address it sends from, on a domain verified there --
+    # "Whelp <noreply@your-domain.com>". Development without them writes the
+    # email to the log; production without them offers no reset at all.
+    RESEND_API_KEY = os.environ.get("RESEND_API_KEY")
+    MAIL_FROM = os.environ.get("MAIL_FROM")
+    # Where the site is, for the links emails carry: "https://your-site.com".
+    # Not taken from requests, whose Host header their sender writes.
+    PUBLIC_URL = os.environ.get("PUBLIC_URL")
+
     # Echoing every statement is a debugging tool. It used to be on
     # unconditionally, which meant production logged the whole query storm of
     # every page load. Opt in with SQLALCHEMY_ECHO=1, and never in production.
